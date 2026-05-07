@@ -92,35 +92,36 @@ export default function Home() {
   return (
     <main dir="rtl" className="min-h-screen bg-black text-white overflow-hidden cursor-none">
       <SpeedInsights />
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-  <motion.div
-    animate={{
-      x: [0, 120, -120, 0],
-      y: [0, -60, 60, 0],
-      opacity: [0.08, 0.18, 0.08],
-    }}
-    transition={{
-      duration: 20,
-      repeat: Infinity,
-      ease: "easeInOut",
-    }}
-    className="absolute top-0 left-0 w-[900px] h-[900px] bg-white/10 blur-[180px] rounded-full"
-  />
 
-  <motion.div
-    animate={{
-      x: [0, -100, 100, 0],
-      y: [0, 80, -80, 0],
-      opacity: [0.05, 0.14, 0.05],
-    }}
-    transition={{
-      duration: 24,
-      repeat: Infinity,
-      ease: "easeInOut",
-    }}
-    className="absolute bottom-0 right-0 w-[1000px] h-[1000px] bg-white/10 blur-[200px] rounded-full"
-  />
-</div>
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <motion.div
+          animate={{
+            x: [0, 120, -120, 0],
+            y: [0, -60, 60, 0],
+            opacity: [0.08, 0.18, 0.08],
+          }}
+          transition={{
+            duration: 20,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          className="absolute top-0 left-0 w-[900px] h-[900px] bg-white/10 blur-[180px] rounded-full"
+        />
+
+        <motion.div
+          animate={{
+            x: [0, -100, 100, 0],
+            y: [0, 80, -80, 0],
+            opacity: [0.05, 0.14, 0.05],
+          }}
+          transition={{
+            duration: 24,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          className="absolute bottom-0 right-0 w-[1000px] h-[1000px] bg-white/10 blur-[200px] rounded-full"
+        />
+      </div>
 
       <motion.div
         className="pointer-events-none fixed z-[9999] w-8 h-8 rounded-full border border-white/60 shadow-[0_0_18px_white]"
@@ -211,12 +212,24 @@ export default function Home() {
       </div>
 
       <section id="home" className="relative flex flex-col items-center justify-center h-screen text-center px-6 overflow-hidden">
+        <div className="absolute inset-0 bg-[url('/bg.jpg')] bg-cover bg-center opacity-20 grayscale" />
+
         <motion.div
-          initial={{ scale: 1.15 }}
-          animate={{ scale: 1.28, x: [0, 25, -25, 0], y: [0, -18, 18, 0] }}
+          initial={{ scale: 1.08 }}
+          animate={{ scale: 1.18, x: [0, 20, -20, 0], y: [0, -12, 12, 0] }}
           transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute inset-0 bg-[url('/bg.jpg')] bg-cover bg-center opacity-25 grayscale"
-        />
+          className="absolute inset-0 overflow-hidden"
+        >
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="w-full h-full object-cover opacity-35 grayscale scale-110"
+          >
+            <source src="/bg.mp4" type="video/mp4" />
+          </video>
+        </motion.div>
 
         <div className="absolute inset-0 bg-black/75" />
 
@@ -338,15 +351,16 @@ export default function Home() {
           </div>
         </motion.div>
       </section>
+
       <section className="relative overflow-hidden border-y border-white/10 bg-black py-4">
-  <motion.div
-    animate={{ x: ["100%", "-100%"] }}
-    transition={{ duration: 22, repeat: Infinity, ease: "linear" }}
-    className="whitespace-nowrap text-sm md:text-base font-bold tracking-[4px] text-white/80"
-  >
-    ⚠ TOKYO GANG سيطرت على المنطقة الشرقية — ⚠ تم القضاء على أحد الخونة — ⚠ النفوذ يزداد يومياً — ⚠ TOP 1 GANG داخل السيرفر — ⚠ لا مكان للضعفاء داخل TOKYO —
-  </motion.div>
-</section>
+        <motion.div
+          animate={{ x: ["100%", "-100%"] }}
+          transition={{ duration: 22, repeat: Infinity, ease: "linear" }}
+          className="whitespace-nowrap text-sm md:text-base font-bold tracking-[4px] text-white/80"
+        >
+          ⚠ TOKYO GANG سيطرت على المنطقة الشرقية — ⚠ تم القضاء على أحد الخونة — ⚠ النفوذ يزداد يومياً — ⚠ TOP 1 GANG داخل السيرفر — ⚠ لا مكان للضعفاء داخل TOKYO —
+        </motion.div>
+      </section>
 
       <section id="server" className="py-24 px-6 bg-zinc-950 border-t border-white/10">
         <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center">
