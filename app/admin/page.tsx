@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { AdminDecisionButtons } from "./AdminDecisionButtons";
 import { AdminDiscordTestButton } from "./AdminDiscordTestButton";
+import { AdminSignOutButton } from "./AdminSignOutButton";
 import { AdminSyncButton } from "./AdminSyncButton";
 import Link from "next/link";
 
@@ -27,10 +28,25 @@ const filterTabs = [
   ["المقابلات", "INTERVIEW"],
 ];
 
+function buildAdminHref(status: string, query: string) {
+  const params = new URLSearchParams();
+
+  if (status !== "ALL") {
+    params.set("status", status);
+  }
+
+  if (query) {
+    params.set("q", query);
+  }
+
+  const value = params.toString();
+  return value ? `/admin?${value}` : "/admin";
+}
+
 export default async function AdminPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ status?: string }>;
+  searchParams?: Promise<{ status?: string; q?: string }>;
 }) {
   const session = await auth();
   const adminIds = process.env.ADMIN_DISCORD_IDS?.split(",").map((id) => id.trim()) || [];
@@ -38,6 +54,9 @@ export default async function AdminPage({
   const activeStatus = ["PENDING", "ACCEPTED", "REJECTED", "INTERVIEW"].includes(params?.status ?? "")
     ? params?.status
     : "ALL";
+  const query = params?.q?.trim() ?? "";
+  // eslint-disable-next-line react-hooks/purity
+  const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
   if (!session?.user?.id || !adminIds.includes(session.user.id)) {
     return (
@@ -53,9 +72,30 @@ export default async function AdminPage({
     );
   }
 
-  const [applications, memberCount, totalApplications, acceptedApplications, rejectedApplications] = await Promise.all([
+  const [
+    applications,
+    memberCount,
+    totalApplications,
+    acceptedApplications,
+    rejectedApplications,
+    newPendingApplications,
+  ] = await Promise.all([
     prisma.application.findMany({
-      where: activeStatus === "ALL" ? undefined : { status: activeStatus },
+      where: {
+        ...(activeStatus === "ALL" ? {} : { status: activeStatus }),
+        ...(query
+          ? {
+              OR: [
+                { name: { contains: query, mode: "insensitive" as const } },
+                { age: { contains: query, mode: "insensitive" as const } },
+                { experience: { contains: query, mode: "insensitive" as const } },
+                { reason: { contains: query, mode: "insensitive" as const } },
+                { user: { username: { contains: query, mode: "insensitive" as const } } },
+                { user: { discordId: { contains: query, mode: "insensitive" as const } } },
+              ],
+            }
+          : {}),
+      },
       include: {
         user: true,
       },
@@ -67,6 +107,7 @@ export default async function AdminPage({
     prisma.application.count(),
     prisma.application.count({ where: { status: "ACCEPTED" } }),
     prisma.application.count({ where: { status: "REJECTED" } }),
+    prisma.application.count({ where: { status: "PENDING", createdAt: { gte: dayAgo } } }),
   ]);
 
   const stats = [
@@ -108,6 +149,7 @@ export default async function AdminPage({
           </Link>
           <AdminDiscordTestButton />
           <AdminSyncButton />
+          <AdminSignOutButton />
         </div>
 
         <section className="mb-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -124,9 +166,27 @@ export default async function AdminPage({
           ))}
         </section>
 
-        <section className="mb-8 flex flex-wrap gap-3">
+        <section className="sticky top-0 z-40 mb-8 rounded-3xl border border-white/10 bg-black/80 p-4 backdrop-blur-xl">
+          <form className="mb-4 flex flex-col gap-3 md:flex-row" action="/admin">
+            {activeStatus !== "ALL" && <input type="hidden" name="status" value={activeStatus} />}
+            <input
+              name="q"
+              defaultValue={query}
+              placeholder="ابحث بالاسم أو Discord ID..."
+              className="min-w-0 flex-1 rounded-2xl border border-white/15 bg-zinc-950 px-5 py-3 outline-none"
+            />
+            <button className="rounded-2xl bg-white px-6 py-3 font-black text-black transition hover:bg-gray-300">
+              بحث
+            </button>
+            {query && (
+              <Link href={buildAdminHref(activeStatus ?? "ALL", "")} className="rounded-2xl border border-white/15 px-6 py-3 text-center font-black text-gray-300">
+                مسح
+              </Link>
+            )}
+          </form>
+          <div className="flex flex-wrap gap-3">
           {filterTabs.map(([label, status]) => {
-            const href = status === "ALL" ? "/admin" : `/admin?status=${status}`;
+            const href = buildAdminHref(status, query);
             const active = activeStatus === status;
 
             return (
@@ -140,9 +200,15 @@ export default async function AdminPage({
                 }`}
               >
                 {label}
+                {status === "PENDING" && newPendingApplications > 0 && (
+                  <span className="ms-2 rounded-full bg-red-500 px-2 py-0.5 text-xs text-white">
+                    جديد {newPendingApplications}
+                  </span>
+                )}
               </Link>
             );
           })}
+          </div>
         </section>
 
         <section className="grid gap-6">
