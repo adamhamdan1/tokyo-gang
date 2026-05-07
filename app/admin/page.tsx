@@ -25,7 +25,7 @@ export default async function AdminPage() {
       <h1 className="text-5xl font-black mb-10">لوحة إدارة التقديمات</h1>
 
       <div className="grid gap-6">
-        {applications.map((app) => (
+        {applications.map((app: any) => (
           <div
             key={app.id}
             className="bg-zinc-950 border border-white/20 rounded-3xl p-6"
