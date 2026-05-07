@@ -5,46 +5,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const members = [
-  ["سيلفادور كروز", "القائد", "متواجد", "100%"],
-  ["حمدان كروز", "نائب القائد", "متواجد", "100%"],
-  ["برلين كروز", "نائب القائد", "متواجد", "92%"],
-  ["سنتياغو كروز", "العقل المدبر", "متواجد", "88%"],
-  ["لومي المخفي", "الشبح", "متواجد", "84%"],
-  ["ريد كروز", "الزرقاوي الأصيل", "متواجد", "81%"],
-  ["سنفور كروز", "ابن القائد", "ONLINE", "78%"],
-  ["بابلو كروز", "مقاتل", "OFFLINE", "75%"],
-  ["VIPER", "مقاتل", "ONLINE", "90%"],
-  ["BLADE", "مقاتل", "OFFLINE", "70%"],
-  ["ZERO", "مقاتل", "ONLINE", "86%"],
-  ["REAPER", "مقاتل", "OFFLINE", "83%"],
-  ["NOVA", "مقاتل", "ONLINE", "79%"],
-  ["VENOM", "مقاتل", "ONLINE", "89%"],
-  ["STORM", "مقاتل", "OFFLINE", "73%"],
-  ["ICE", "مقاتل", "ONLINE", "82%"],
-  ["ONYX", "مقاتل", "OFFLINE", "76%"],
-  ["NIGHT", "مقاتل", "ONLINE", "80%"],
-  ["RAGE", "مقاتل", "ONLINE", "91%"],
-  ["KIRA", "مقاتل", "OFFLINE", "77%"],
-  ["SNAKE", "مقاتل", "ONLINE", "85%"],
-  ["WOLF", "مقاتل", "OFFLINE", "74%"],
-  ["ACE", "مقاتل", "ONLINE", "87%"],
-  ["DARK", "مقاتل", "OFFLINE", "72%"],
-  ["RUSH", "سائق", "ONLINE", "83%"],
-  ["SKY", "مراقب", "OFFLINE", "69%"],
-  ["BLACK", "مقاتل", "ONLINE", "88%"],
-  ["FANG", "مقاتل", "OFFLINE", "71%"],
-  ["SMOKE", "مقاتل", "ONLINE", "84%"],
-  ["JIN", "سائق", "OFFLINE", "73%"],
-  ["ROGUE", "مقاتل", "ONLINE", "86%"],
-  ["KANE", "مقاتل", "OFFLINE", "78%"],
-  ["HUNTER", "مراقب", "ONLINE", "82%"],
-  ["SLASH", "مقاتل", "OFFLINE", "75%"],
-  ["RYU", "مقاتل", "ONLINE", "90%"],
-  ["CRASH", "سائق", "ONLINE", "81%"],
-  ["SAINT", "مقاتل", "OFFLINE", "70%"],
-  ["BURN", "مقاتل", "ONLINE", "85%"],
-  ["MUTE", "مراقب", "OFFLINE", "68%"],
-  ["VOID", "مقاتل", "ONLINE", "87%"],
+  ["سيلفادور كروز", "القائد"],
+  ["حمدان كروز", "نائب القائد"],
+  ["برلين كروز", "نائب القائد"],
+  ["سنتياغو كروز", "العقل المدبر"],
+  ["لومي المخفي", "الشبح"],
+  ["ريد كروز", "الزرقاوي الأصيل"],
+  ["سنفور كروز", "ابن القائد"],
+  ["بابلو كروز", "مقاتل"],
+  ...Array.from({ length: 32 }, (_, i) => [`كروز ${i + 1}`, "مقاتل"]),
 ];
 
 export default function Home() {
@@ -108,7 +77,9 @@ export default function Home() {
             >
               TOKYO
             </motion.h1>
-            <p className="mt-4 tracking-[8px] text-gray-400">LOADING UNDERGROUND DATABASE</p>
+            <p className="mt-4 tracking-[8px] text-gray-400">
+              LOADING UNDERGROUND DATABASE
+            </p>
             <div className="mt-8 w-64 h-1 bg-white/20 overflow-hidden rounded-full">
               <motion.div
                 initial={{ x: "-100%" }}
@@ -167,12 +138,7 @@ export default function Home() {
           </p>
 
           <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
-            {[
-              ["40", "عضو"],
-              ["12", "عملية"],
-              ["3", "مناطق"],
-              ["100%", "هيبة"],
-            ].map(([num, label]) => (
+            {[["40", "عضو"], ["12", "عملية"], ["3", "مناطق"], ["100%", "هيبة"]].map(([num, label]) => (
               <div key={label} className="bg-black/50 border border-white/20 rounded-2xl p-4 backdrop-blur-md">
                 <p className="text-3xl font-black">{num}</p>
                 <p className="text-gray-400 text-sm">{label}</p>
@@ -222,16 +188,16 @@ export default function Home() {
             onChange={(e) => setRank(e.target.value)}
             className="bg-zinc-950 border border-white/20 rounded-2xl p-4 outline-none"
           >
-            {["الكل", "القائد", "نائب القائد", "مسؤول العمليات", "مقاتل", "سائق", "مراقب"].map((r) => (
+            {["الكل", "القائد", "نائب القائد", "العقل المدبر", "الشبح", "الزرقاوي الأصيل", "ابن القائد", "مقاتل"].map((r) => (
               <option key={r}>{r}</option>
             ))}
           </select>
         </div>
 
         <div className="max-w-7xl mx-auto grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {filteredMembers.map(([name, role, status, danger], index) => (
+          {filteredMembers.map(([name, role], index) => (
             <motion.div
-              key={name}
+              key={`${name}-${index}`}
               initial={{ opacity: 0, y: 60 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ delay: (index % 8) * 0.05 }}
@@ -244,38 +210,41 @@ export default function Home() {
                   {name[0]}
                 </div>
 
-                <h3 className="text-3xl md:text-4xl font-black text-center tracking-[6px] uppercase text-white drop-shadow-[0_0_18px_white] group-hover:scale-110 transition duration-300">
-  {name}
-</h3>
-                <p className="text-center text-gray-400 mt-1">{role}</p>
+                <h3 className="text-3xl md:text-4xl font-black text-center tracking-[4px] uppercase text-white drop-shadow-[0_0_18px_white] group-hover:scale-110 transition duration-300">
+                  {name}
+                </h3>
+
+                <p className="text-center text-gray-400 mt-2">{role}</p>
 
                 <div className="mt-6 space-y-4">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-green-400 font-bold drop-shadow-[0_0_8px_lime] animate-pulse">
+                      ● متواجد
+                    </span>
 
-  <div className="flex justify-between items-center text-sm">
-    <span className="text-green-400 font-bold drop-shadow-[0_0_8px_lime] animate-pulse">
-      ● متواجد
-    </span>
+                    <span className="text-red-500 font-black tracking-[2px] drop-shadow-[0_0_12px_red]">
+                      خطير جداً
+                    </span>
+                  </div>
 
-    <span className="text-red-500 font-black tracking-[2px] drop-shadow-[0_0_12px_red]">
-      خطير جداً
-    </span>
-  </div>
+                  <div className="relative h-2 bg-white/10 rounded-full overflow-hidden">
+                    <motion.div
+                      initial={{ width: "0%" }}
+                      whileInView={{ width: "100%" }}
+                      transition={{ duration: 2 }}
+                      className="absolute inset-0 bg-gradient-to-r from-red-700 via-red-500 to-white shadow-[0_0_20px_red]"
+                    />
+                  </div>
 
-  <div className="relative h-2 bg-white/10 rounded-full overflow-hidden">
-    <motion.div
-      initial={{ width: "0%" }}
-      whileInView={{ width: "100%" }}
-      transition={{ duration: 2 }}
-      className="absolute inset-0 bg-gradient-to-r from-red-700 via-red-500 to-white shadow-[0_0_20px_red]"
-    />
-  </div>
-
-  <div className="flex justify-between text-xs text-gray-500 tracking-[2px]">
-    <span>THREAT LEVEL</span>
-    <span>MAXIMUM</span>
-  </div>
-
-</div>
+                  <div className="flex justify-between text-xs text-gray-500 tracking-[2px]">
+                    <span>THREAT LEVEL</span>
+                    <span>MAXIMUM</span>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
       </section>
 
       <section id="database" className="py-24 px-6 bg-zinc-950">
@@ -365,7 +334,7 @@ export default function Home() {
       </section>
 
       <footer className="py-10 text-center text-gray-500 bg-black border-t border-white/10">
-        TOKYO GANG © 2026
+        Dev by Hamdan | TOKYO GANG © 2026
       </footer>
     </main>
   );
