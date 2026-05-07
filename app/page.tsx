@@ -165,7 +165,7 @@ export default function Home() {
 
           <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
             {[["35", "عضو"],
-  ["TOP 1", "CFW"],
+  ["TOP 1", "GANG"],
   ["24/7", "سيطرة"],
   ["∞", "نفوذ"],].map(([num, label]) => (
               <div key={label} className="bg-black/50 border border-white/20 rounded-2xl p-4 backdrop-blur-md">
