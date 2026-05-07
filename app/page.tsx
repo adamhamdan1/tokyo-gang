@@ -74,7 +74,6 @@ export default function Home() {
             <a href="#home" className="hover:text-white">الرئيسية</a>
             <a href="#server" className="hover:text-white">السيرفر</a>
             <a href="#rules" className="hover:text-white">القوانين</a>
-            <a href="#cars" className="hover:text-white">السيارات</a>
             <a href="#gallery" className="hover:text-white">المعرض</a>
             <a href="#wars" className="hover:text-white">الحروب</a>
           </div>
@@ -121,8 +120,8 @@ export default function Home() {
         <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center">
           <div>
             <p className="text-sm tracking-[6px] text-gray-400 mb-4">مكان تواجدنا حالياً</p>
-            <h2 className="text-5xl font-black mb-6">EMERGENT RP</h2>
-            <p className="text-gray-300 text-lg leading-9">حالياً تتواجد عصابة TOKYO GANG داخل سيرفر EMERGENT RP، حيث نفرض حضورنا وهيبتنا داخل عالم فايف إم.</p>
+            <h2 className="text-5xl font-black mb-6">INFINITE CITY CFW</h2>
+            <p className="text-gray-300 text-lg leading-9">حالياً تتواجد عصابة TOKYO GANG داخل سيرفر INFINITE CITY CFW، حيث نفرض حضورنا وهيبتنا داخل عالم فايف إم.</p>
           </div>
           <div className="flex justify-center">
             <div className="bg-black border border-white/20 rounded-[40px] p-10">
@@ -143,18 +142,6 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="cars" className="py-24 px-6 bg-zinc-950">
-        <h2 className="text-5xl font-black text-center mb-14">سيارات العصابة</h2>
-        <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-8">
-          {["DRIFT UNIT", "STREET CAR", "ESCAPE CAR"].map((car) => (
-            <div key={car} className="rounded-3xl border border-white/20 bg-black p-8 text-center hover:scale-105 transition">
-              <div className="h-40 rounded-2xl bg-white/10 mb-6 flex items-center justify-center text-gray-500">CAR IMAGE</div>
-              <h3 className="text-2xl font-bold">{car}</h3>
-            </div>
-          ))}
-        </div>
-      </section>
-
       <section id="gallery" className="py-24 px-6 bg-black">
         <h2 className="text-5xl font-black text-center mb-14">المعرض</h2>
         <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-6">
@@ -169,10 +156,10 @@ export default function Home() {
       <section id="wars" className="py-24 px-6 bg-zinc-950">
         <h2 className="text-5xl font-black text-center mb-14">سجل الحروب</h2>
         <div className="max-w-4xl mx-auto space-y-4">
-          {["TOKYO GANG سيطرت على المنطقة الشرقية", "عملية مطاردة ناجحة ضد خصم مجهول", "اجتماع قيادة لتوسيع النفوذ"].map((war, i) => (
+          {["TOKYO GANG صار عالمي والقادم أعظم", "أعدام أول خائن", "فرضت السيطرة المباشرة بأراضي أنفنتي"].map((war, i) => (
             <div key={i} className="bg-black border border-white/20 rounded-2xl p-5 flex justify-between">
               <span>{war}</span>
-              <span className="text-gray-500">2025</span>
+              <span className="text-gray-500">2026</span>
             </div>
           ))}
         </div>
