@@ -17,6 +17,11 @@ type DiscordProfile = {
   image?: string | null;
 };
 
+type TokenWithDiscordId = {
+  sub?: string;
+  discordId?: string;
+};
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
     Discord({
@@ -49,9 +54,23 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     return true;
   },
 
+  async jwt({ token, profile }) {
+    const p = profile as DiscordProfile | undefined;
+    const nextToken = token as TokenWithDiscordId;
+
+    if (p?.id) {
+      nextToken.discordId = p.id;
+    }
+
+    return token;
+  },
+
   async session({ session, token }) {
-    if (session.user && token.sub) {
-      session.user.id = token.sub;
+    const nextToken = token as TokenWithDiscordId;
+    const discordId = nextToken.discordId ?? nextToken.sub;
+
+    if (session.user && discordId) {
+      session.user.id = discordId;
     }
 
     return session;

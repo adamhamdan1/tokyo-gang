@@ -29,18 +29,21 @@ export async function POST(req: Request) {
     );
   }
 
-  const user = await prisma.user.findUnique({
+  const username = session.user.name ?? body.discord ?? "Discord User";
+  const user = await prisma.user.upsert({
     where: {
       discordId: session.user.id,
     },
+    update: {
+      username,
+      image: session.user.image ?? null,
+    },
+    create: {
+      discordId: session.user.id,
+      username,
+      image: session.user.image ?? null,
+    },
   });
-
-  if (!user) {
-    return NextResponse.json(
-      { error: "الحساب غير موجود" },
-      { status: 404 }
-    );
-  }
 
   const application = await prisma.application.create({
     data: {

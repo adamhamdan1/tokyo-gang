@@ -690,7 +690,8 @@ export default function Home() {
               });
 
               if (!response.ok) {
-                alert("صار خطأ أثناء إرسال الطلب");
+                const result = await response.json().catch(() => null);
+                alert(result?.error ?? "صار خطأ أثناء إرسال الطلب");
                 return;
               }
 
