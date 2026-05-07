@@ -108,10 +108,21 @@ export default function Home() {
     setVolume(value);
     if (audioRef.current) audioRef.current.volume = value / 100;
   };
+  <motion.button
+  onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+  whileHover={{ scale: 1.12, y: -4 }}
+  whileTap={{ scale: 0.95 }}
+  className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-white text-black font-black border border-white/20 shadow-[0_0_25px_rgba(255,255,255,0.35)] hover:bg-gray-300 transition"
+>
+  ↑
+</motion.button>
 
   return (
     <main dir="rtl" className="min-h-screen bg-black text-white overflow-hidden cursor-none">
       <SpeedInsights />
+      <div className="pointer-events-none fixed inset-0 z-[9997] opacity-[0.035] bg-[linear-gradient(to_bottom,white_1px,transparent_1px)] bg-[length:100%_4px]" />
+
+<div className="pointer-events-none fixed inset-0 z-[9996] bg-[radial-gradient(circle_at_center,transparent_45%,rgba(0,0,0,0.65)_100%)]" />
 
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         <motion.div
