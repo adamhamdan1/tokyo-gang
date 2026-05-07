@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { AdminDecisionButtons } from "./AdminDecisionButtons";
+import { AdminDiscordTestButton } from "./AdminDiscordTestButton";
 import { AdminSyncButton } from "./AdminSyncButton";
 import Link from "next/link";
 
@@ -8,12 +9,14 @@ const statusStyles: Record<string, string> = {
   PENDING: "border-yellow-400/40 bg-yellow-400/10 text-yellow-300 shadow-[0_0_24px_rgba(250,204,21,0.12)]",
   ACCEPTED: "border-green-400/40 bg-green-400/10 text-green-300 shadow-[0_0_24px_rgba(74,222,128,0.12)]",
   REJECTED: "border-red-500/40 bg-red-500/10 text-red-300 shadow-[0_0_24px_rgba(239,68,68,0.14)]",
+  INTERVIEW: "border-yellow-400/40 bg-yellow-400/10 text-yellow-300 shadow-[0_0_24px_rgba(250,204,21,0.12)]",
 };
 
 const statusLabels: Record<string, string> = {
   PENDING: "قيد المراجعة",
   ACCEPTED: "مقبول",
   REJECTED: "مرفوض",
+  INTERVIEW: "مقابلة",
 };
 
 const filterTabs = [
@@ -21,6 +24,7 @@ const filterTabs = [
   ["قيد المراجعة", "PENDING"],
   ["المقبولين", "ACCEPTED"],
   ["المرفوضين", "REJECTED"],
+  ["المقابلات", "INTERVIEW"],
 ];
 
 export default async function AdminPage({
@@ -31,7 +35,7 @@ export default async function AdminPage({
   const session = await auth();
   const adminIds = process.env.ADMIN_DISCORD_IDS?.split(",").map((id) => id.trim()) || [];
   const params = await searchParams;
-  const activeStatus = ["PENDING", "ACCEPTED", "REJECTED"].includes(params?.status ?? "")
+  const activeStatus = ["PENDING", "ACCEPTED", "REJECTED", "INTERVIEW"].includes(params?.status ?? "")
     ? params?.status
     : "ALL";
 
@@ -95,6 +99,7 @@ export default async function AdminPage({
           >
             الرجوع للرئيسية
           </Link>
+          <AdminDiscordTestButton />
           <AdminSyncButton />
         </div>
 
@@ -194,6 +199,21 @@ export default async function AdminPage({
                     <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4 md:col-span-3">
                       <p className="text-xs text-red-300">سبب الرفض</p>
                       <p className="mt-2 leading-8 text-white">{app.decisionReason}</p>
+                    </div>
+                  )}
+                  {app.interviewNote && (
+                    <div className="rounded-2xl border border-yellow-400/20 bg-yellow-400/10 p-4 md:col-span-3">
+                      <p className="text-xs text-yellow-300">معلومات المقابلة</p>
+                      <p className="mt-2 leading-8 text-white">
+                        {app.interviewAt ? `${app.interviewAt.toLocaleString("ar")} - ` : ""}
+                        {app.interviewNote}
+                      </p>
+                    </div>
+                  )}
+                  {app.internalNote && (
+                    <div className="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-4 md:col-span-3">
+                      <p className="text-xs text-cyan-300">ملاحظة داخلية</p>
+                      <p className="mt-2 leading-8 text-white">{app.internalNote}</p>
                     </div>
                   )}
                 </div>

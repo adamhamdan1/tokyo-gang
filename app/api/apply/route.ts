@@ -66,7 +66,7 @@ export async function POST(req: Request) {
     where: {
       userId: user.id,
       status: {
-        in: ["PENDING", "ACCEPTED"],
+        in: ["PENDING", "ACCEPTED", "INTERVIEW"],
       },
     },
     orderBy: {
@@ -78,6 +78,8 @@ export async function POST(req: Request) {
     const message =
       existingApplication.status === "ACCEPTED"
         ? "طلبك مقبول بالفعل، ما تحتاج تقدم مرة ثانية"
+        : existingApplication.status === "INTERVIEW"
+          ? "طلبك في مرحلة المقابلة بالفعل"
         : "عندك طلب قيد المراجعة بالفعل";
 
     return NextResponse.json({ error: message }, { status: 409 });

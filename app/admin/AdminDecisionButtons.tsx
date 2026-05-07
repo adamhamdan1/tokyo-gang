@@ -12,9 +12,14 @@ export function AdminDecisionButtons({ applicationId, status }: Props) {
   const router = useRouter();
   const [loadingStatus, setLoadingStatus] = useState<string | null>(null);
 
-  const updateStatus = async (status: "ACCEPTED" | "REJECTED") => {
+  const updateStatus = async (status: "ACCEPTED" | "REJECTED" | "INTERVIEW") => {
     const decisionReason =
       status === "REJECTED" ? prompt("اكتب سبب الرفض")?.trim() : undefined;
+    const interviewAt =
+      status === "INTERVIEW" ? prompt("موعد المقابلة بصيغة YYYY-MM-DD HH:mm")?.trim() : undefined;
+    const interviewNote =
+      status === "INTERVIEW" ? prompt("ملاحظة المقابلة")?.trim() : undefined;
+    const internalNote = prompt("ملاحظة داخلية للإدارة (اختياري)")?.trim() || undefined;
 
     if (status === "REJECTED" && !decisionReason) {
       alert("لازم تكتب سبب الرفض");
@@ -29,7 +34,7 @@ export function AdminDecisionButtons({ applicationId, status }: Props) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ status, decisionReason }),
+        body: JSON.stringify({ status, decisionReason, interviewAt, interviewNote, internalNote }),
       });
 
       const result = await response.json().catch(() => null);
@@ -79,6 +84,15 @@ export function AdminDecisionButtons({ applicationId, status }: Props) {
         className="rounded-2xl bg-green-400 px-7 py-3 font-black text-black transition hover:bg-green-300 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {status === "ACCEPTED" ? "مقبول بالفعل" : loadingStatus === "ACCEPTED" ? "جاري القبول..." : "قبول"}
+      </button>
+
+      <button
+        type="button"
+        disabled={loadingStatus !== null}
+        onClick={() => updateStatus("INTERVIEW")}
+        className="rounded-2xl bg-yellow-400 px-7 py-3 font-black text-black transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {loadingStatus === "INTERVIEW" ? "جاري التحديد..." : "مقابلة"}
       </button>
 
       <button

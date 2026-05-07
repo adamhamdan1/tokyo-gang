@@ -44,6 +44,17 @@ function getAcceptedRoleId() {
   return roleId;
 }
 
+async function fetchDiscord(path: string, init?: RequestInit) {
+  return fetch(`${DISCORD_API_BASE}${path}`, {
+    ...init,
+    headers: {
+      ...getBotHeaders(),
+      ...init?.headers,
+    },
+    cache: "no-store",
+  });
+}
+
 export function getAvatarUrl(user?: DiscordMember["user"]) {
   if (!user?.id || !user.avatar) {
     return null;
@@ -61,13 +72,7 @@ export async function getTokyoGuildMember(discordId: string) {
     throw new Error("هذا التقديم قديم وفيه Discord ID غير صحيح. ارفضه وخلي العضو يسجل خروج/دخول ثم يقدم من جديد");
   }
 
-  const response = await fetch(
-    `${DISCORD_API_BASE}/guilds/${getGuildId()}/members/${discordId}`,
-    {
-      headers: getBotHeaders(),
-      cache: "no-store",
-    }
-  );
+  const response = await fetchDiscord(`/guilds/${getGuildId()}/members/${discordId}`);
 
   if (response.status === 404) {
     return null;
@@ -97,12 +102,10 @@ export async function requireTokyoGuildMember(discordId: string) {
 export async function giveAcceptedRole(discordId: string) {
   await requireTokyoGuildMember(discordId);
 
-  const response = await fetch(
-    `${DISCORD_API_BASE}/guilds/${getGuildId()}/members/${discordId}/roles/${getAcceptedRoleId()}`,
+  const response = await fetchDiscord(
+    `/guilds/${getGuildId()}/members/${discordId}/roles/${getAcceptedRoleId()}`,
     {
       method: "PUT",
-      headers: getBotHeaders(),
-      cache: "no-store",
     }
   );
 
@@ -114,13 +117,7 @@ export async function giveAcceptedRole(discordId: string) {
 }
 
 export async function listAcceptedRoleMembers() {
-  const response = await fetch(
-    `${DISCORD_API_BASE}/guilds/${getGuildId()}/members?limit=1000`,
-    {
-      headers: getBotHeaders(),
-      cache: "no-store",
-    }
-  );
+  const response = await fetchDiscord(`/guilds/${getGuildId()}/members?limit=1000`);
 
   if (!response.ok) {
     throw new Error(`فشل جلب أعضاء السيرفر من Discord (${response.status})`);
@@ -145,9 +142,8 @@ export async function sendDiscordDm(discordId: string, content: string) {
     return;
   }
 
-  const channelResponse = await fetch(`${DISCORD_API_BASE}/users/@me/channels`, {
+  const channelResponse = await fetchDiscord("/users/@me/channels", {
     method: "POST",
-    headers: getBotHeaders(),
     body: JSON.stringify({
       recipient_id: discordId,
     }),
@@ -163,9 +159,8 @@ export async function sendDiscordDm(discordId: string, content: string) {
     throw new Error("Discord لم يرجع قناة DM صحيحة");
   }
 
-  const messageResponse = await fetch(`${DISCORD_API_BASE}/channels/${channel.id}/messages`, {
+  const messageResponse = await fetchDiscord(`/channels/${channel.id}/messages`, {
     method: "POST",
-    headers: getBotHeaders(),
     body: JSON.stringify({ content }),
   });
 
@@ -190,4 +185,30 @@ export async function sendAdminLog(content: string) {
       content,
     }),
   });
+}
+
+export async function testDiscordSetup() {
+  const guildResponse = await fetchDiscord(`/guilds/${getGuildId()}`);
+
+  if (!guildResponse.ok) {
+    throw new Error(`البوت لا يستطيع الوصول للسيرفر (${guildResponse.status})`);
+  }
+
+  const roleResponse = await fetchDiscord(`/guilds/${getGuildId()}/roles`);
+
+  if (!roleResponse.ok) {
+    throw new Error(`البوت لا يستطيع قراءة الرتب (${roleResponse.status})`);
+  }
+
+  const roles = (await roleResponse.json()) as Array<{ id: string; name: string }>;
+  const acceptedRole = roles.find((role) => role.id === getAcceptedRoleId());
+
+  if (!acceptedRole) {
+    throw new Error("رتبة القبول غير موجودة داخل السيرفر");
+  }
+
+  return {
+    ok: true,
+    roleName: acceptedRole.name,
+  };
 }

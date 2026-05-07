@@ -6,12 +6,14 @@ const statusLabels: Record<string, string> = {
   PENDING: "قيد المراجعة",
   ACCEPTED: "مقبول",
   REJECTED: "مرفوض",
+  INTERVIEW: "مقابلة",
 };
 
 const statusClasses: Record<string, string> = {
   PENDING: "border-yellow-400/40 bg-yellow-400/10 text-yellow-300",
   ACCEPTED: "border-green-400/40 bg-green-400/10 text-green-300",
   REJECTED: "border-red-500/40 bg-red-500/10 text-red-300",
+  INTERVIEW: "border-cyan-400/40 bg-cyan-400/10 text-cyan-300",
 };
 
 export default async function StatusPage() {
@@ -76,6 +78,16 @@ export default async function StatusPage() {
                 <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4">
                   <p className="text-xs text-red-300">سبب الرفض</p>
                   <p className="mt-2 leading-8">{application.decisionReason}</p>
+                </div>
+              )}
+
+              {application.interviewNote && (
+                <div className="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-4">
+                  <p className="text-xs text-cyan-300">معلومات المقابلة</p>
+                  <p className="mt-2 leading-8">
+                    {application.interviewAt ? `${application.interviewAt.toLocaleString("ar")} - ` : ""}
+                    {application.interviewNote}
+                  </p>
                 </div>
               )}
             </div>

@@ -25,6 +25,9 @@ model Application {
   decisionReason String?
   decidedBy   String?
   decidedAt   DateTime?
+  internalNote String?
+  interviewAt DateTime?
+  interviewNote String?
 
   userId      String
   user        User     @relation(fields: [userId], references: [id])

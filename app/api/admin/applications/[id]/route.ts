@@ -12,6 +12,9 @@ type RouteContext = {
 type UpdateBody = {
   status?: string;
   decisionReason?: string;
+  internalNote?: string;
+  interviewAt?: string;
+  interviewNote?: string;
 };
 
 function getAdminIds() {
@@ -48,7 +51,7 @@ export async function PATCH(req: Request, context: RouteContext) {
   const { id } = await context.params;
   const body = (await req.json()) as UpdateBody;
 
-  if (!body.status || !["ACCEPTED", "REJECTED", "PENDING"].includes(body.status)) {
+  if (!body.status || !["ACCEPTED", "REJECTED", "PENDING", "INTERVIEW"].includes(body.status)) {
     return NextResponse.json({ error: "حالة غير صحيحة" }, { status: 400 });
   }
 
@@ -82,12 +85,19 @@ export async function PATCH(req: Request, context: RouteContext) {
     body.status === "REJECTED"
       ? body.decisionReason?.trim() || "لم يتم ذكر سبب"
       : null;
+  const interviewAt =
+    body.status === "INTERVIEW" && body.interviewAt ? new Date(body.interviewAt) : null;
+  const interviewNote =
+    body.status === "INTERVIEW" ? body.interviewNote?.trim() || "تم تحديد مقابلة" : null;
 
   const application = await prisma.application.update({
     where: { id },
     data: {
       status: body.status,
       decisionReason,
+      internalNote: body.internalNote?.trim() || currentApplication.internalNote,
+      interviewAt,
+      interviewNote,
       decidedBy: admin.session.user.id,
       decidedAt: new Date(),
     },
@@ -107,9 +117,20 @@ export async function PATCH(req: Request, context: RouteContext) {
     ).catch((error) => console.error("Discord DM failed", error));
   }
 
+  if (body.status === "INTERVIEW") {
+    await sendDiscordDm(
+      currentApplication.user.discordId,
+      `طلبك في TOKYO GANG انتقل لمرحلة المقابلة.\nالموعد: ${
+        interviewAt ? interviewAt.toLocaleString("ar") : "سيتم تحديده قريباً"
+      }\nملاحظة: ${interviewNote}`
+    ).catch((error) => console.error("Discord DM failed", error));
+  }
+
   await sendAdminLog(
     `قرار إدارة TOKYO: ${body.status}\nالعضو: ${currentApplication.user.username} (${currentApplication.user.discordId})\nالأدمن: ${admin.session.user.name ?? admin.session.user.id}${
       decisionReason ? `\nسبب الرفض: ${decisionReason}` : ""
+    }${interviewNote ? `\nملاحظة المقابلة: ${interviewNote}` : ""}${
+      body.internalNote ? `\nملاحظة داخلية: ${body.internalNote}` : ""
     }`
   ).catch((error) => console.error("Admin log failed", error));
 
