@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import { Cairo } from "next/font/google";
+import { Providers } from "./providers";
 import "./globals.css";
 
 const cairo = Cairo({
   subsets: ["arabic"],
 });
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "T O K Y O G A N G",
   description: "الموقع الرسمي لعصابة TOKYO GANG داخل عالم FiveM",
   openGraph: {
@@ -40,7 +41,7 @@ export default function RootLayout({
   return (
     <html lang="ar">
       <body className={cairo.className}>
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

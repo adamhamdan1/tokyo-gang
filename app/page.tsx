@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { signIn, useSession } from "next-auth/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 
@@ -39,6 +40,7 @@ const members = [
 ];
 
 export default function Home() {
+  const session = useSession();
   const audioRef = useRef<HTMLAudioElement>(null);
   const [loading, setLoading] = useState(true);
   const [playing, setPlaying] = useState(false);
@@ -46,6 +48,7 @@ export default function Home() {
   const [search, setSearch] = useState("");
   const [rank, setRank] = useState("الكل");
   const [mouse, setMouse] = useState({ x: 0, y: 0 });
+  const [showBackToTop, setShowBackToTop] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 3000);
@@ -59,6 +62,16 @@ export default function Home() {
 
     window.addEventListener("mousemove", move);
     return () => window.removeEventListener("mousemove", move);
+  }, []);
+
+  useEffect(() => {
+    const updateBackToTop = () => {
+      setShowBackToTop(window.scrollY > 500);
+    };
+
+    updateBackToTop();
+    window.addEventListener("scroll", updateBackToTop);
+    return () => window.removeEventListener("scroll", updateBackToTop);
   }, []);
 
   useEffect(() => {
@@ -108,21 +121,14 @@ export default function Home() {
     setVolume(value);
     if (audioRef.current) audioRef.current.volume = value / 100;
   };
-  <motion.button
-  onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-  whileHover={{ scale: 1.12, y: -4 }}
-  whileTap={{ scale: 0.95 }}
-  className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-white text-black font-black border border-white/20 shadow-[0_0_25px_rgba(255,255,255,0.35)] hover:bg-gray-300 transition"
->
-  ↑
-</motion.button>
 
   return (
     <main dir="rtl" className="min-h-screen bg-black text-white overflow-hidden cursor-none">
       <SpeedInsights />
-      <div className="pointer-events-none fixed inset-0 z-[9997] opacity-[0.035] bg-[linear-gradient(to_bottom,white_1px,transparent_1px)] bg-[length:100%_4px]" />
+      <Analytics />
 
-<div className="pointer-events-none fixed inset-0 z-[9996] bg-[radial-gradient(circle_at_center,transparent_45%,rgba(0,0,0,0.65)_100%)]" />
+      <div className="pointer-events-none fixed inset-0 z-[9997] opacity-[0.035] bg-[linear-gradient(to_bottom,white_1px,transparent_1px)] bg-[length:100%_4px]" />
+      <div className="pointer-events-none fixed inset-0 z-[9996] bg-[radial-gradient(circle_at_center,transparent_45%,rgba(0,0,0,0.65)_100%)]" />
 
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         <motion.div
@@ -191,7 +197,7 @@ export default function Home() {
       </AnimatePresence>
 
       <nav className="fixed top-0 left-0 right-0 z-50 bg-black/50 backdrop-blur-md border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center gap-5">
           <h1 className="font-black tracking-[5px]">TOKYO GANG</h1>
           <div className="hidden md:flex gap-6 text-sm text-gray-300">
             <a href="#home" className="hover:text-white">الرئيسية</a>
@@ -204,6 +210,28 @@ export default function Home() {
             <a href="#wars" className="hover:text-white">الحروب</a>
             <a href="#apply" className="hover:text-white">التقديم</a>
           </div>
+          {session.data?.user ? (
+            <div className="flex items-center gap-3 rounded-full border border-white/15 bg-black/50 px-3 py-2 shadow-[0_0_20px_rgba(255,255,255,0.08)]">
+              {session.data.user.image && (
+                <img
+                  src={session.data.user.image}
+                  className="h-10 w-10 rounded-full border border-white/20 object-cover"
+                  alt={session.data.user.name ?? "Discord user"}
+                />
+              )}
+              <p className="hidden max-w-28 truncate text-sm font-bold text-white sm:block">
+                {session.data.user.name}
+              </p>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => signIn("discord")}
+              className="rounded-full border border-white/20 bg-white px-5 py-2 text-sm font-black text-black transition hover:bg-gray-300"
+            >
+              Discord
+            </button>
+          )}
         </div>
       </nav>
 
@@ -629,42 +657,80 @@ export default function Home() {
       <section id="apply" className="py-24 px-6 bg-black">
         <h2 className="text-5xl font-black text-center mb-8">تقديم الانضمام</h2>
 
-        <form
-          onSubmit={async (e) => {
-            e.preventDefault();
+        {!session.data ? (
+          <div className="mx-auto max-w-2xl rounded-3xl border border-white/15 bg-zinc-950 p-8 text-center shadow-[0_0_50px_rgba(255,255,255,0.06)]">
+            <button
+              type="button"
+              onClick={() => signIn("discord")}
+              className="w-full rounded-2xl bg-white py-4 font-black text-black transition hover:bg-gray-300"
+            >
+              سجل دخول بالديسكورد أول
+            </button>
+          </div>
+        ) : (
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
 
-            const form = e.currentTarget;
-            const formData = new FormData(form);
+              const form = e.currentTarget;
+              const formData = new FormData(form);
 
-            await fetch("/api/apply", {
-              method: "POST",
-              body: JSON.stringify({
-                name: formData.get("name"),
-                age: formData.get("age"),
-                discord: formData.get("discord"),
-                experience: formData.get("experience"),
-                reason: formData.get("reason"),
-              }),
-            });
+              const response = await fetch("/api/apply", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  name: formData.get("name"),
+                  age: formData.get("age"),
+                  discord: formData.get("discord"),
+                  experience: formData.get("experience"),
+                  reason: formData.get("reason"),
+                }),
+              });
 
-            alert("تم إرسال طلبك بنجاح");
-            form.reset();
-          }}
-          className="max-w-2xl mx-auto grid gap-4"
-        >
-          <input name="name" required placeholder="اسمك داخل اللعبة" className="bg-zinc-950 border border-white/20 rounded-2xl p-4 outline-none" />
-          <input name="age" required placeholder="عمرك" className="bg-zinc-950 border border-white/20 rounded-2xl p-4 outline-none" />
-          <input name="discord" required placeholder="Discord ID" className="bg-zinc-950 border border-white/20 rounded-2xl p-4 outline-none" />
-          <textarea name="experience" required placeholder="خبرتك في فايف إم" className="bg-zinc-950 border border-white/20 rounded-2xl p-4 h-32 outline-none" />
-          <textarea name="reason" required placeholder="ليش بدك تنضم؟" className="bg-zinc-950 border border-white/20 rounded-2xl p-4 h-32 outline-none" />
+              if (!response.ok) {
+                alert("صار خطأ أثناء إرسال الطلب");
+                return;
+              }
 
-          <button className="bg-white text-black rounded-2xl py-4 font-bold hover:bg-gray-300 transition">إرسال الطلب</button>
-        </form>
+              alert("تم إرسال طلبك بنجاح");
+              form.reset();
+            }}
+            className="max-w-2xl mx-auto grid gap-4"
+          >
+            <input name="name" required placeholder="اسمك داخل اللعبة" className="bg-zinc-950 border border-white/20 rounded-2xl p-4 outline-none" />
+            <input name="age" required placeholder="عمرك" className="bg-zinc-950 border border-white/20 rounded-2xl p-4 outline-none" />
+            <input name="discord" required placeholder="Discord ID" className="bg-zinc-950 border border-white/20 rounded-2xl p-4 outline-none" />
+            <textarea name="experience" required placeholder="خبرتك في فايف إم" className="bg-zinc-950 border border-white/20 rounded-2xl p-4 h-32 outline-none" />
+            <textarea name="reason" required placeholder="ليش بدك تنضم؟" className="bg-zinc-950 border border-white/20 rounded-2xl p-4 h-32 outline-none" />
+
+            <button className="bg-white text-black rounded-2xl py-4 font-bold hover:bg-gray-300 transition">إرسال الطلب</button>
+          </form>
+        )}
       </section>
 
       <footer className="py-10 text-center text-gray-500 bg-black border-t border-white/10">
         Dev by Hamdan | TOKYO GANG © 2026
       </footer>
+
+      <AnimatePresence>
+        {showBackToTop && (
+          <motion.button
+            type="button"
+            aria-label="الرجوع للأعلى"
+            initial={{ opacity: 0, y: 18, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 18, scale: 0.9 }}
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            whileHover={{ scale: 1.12, y: -4 }}
+            whileTap={{ scale: 0.95 }}
+            className="fixed bottom-6 right-6 z-[9998] w-14 h-14 rounded-full bg-white text-black font-black border border-white/20 shadow-[0_0_25px_rgba(255,255,255,0.35)] hover:bg-gray-300 transition"
+          >
+            ↑
+          </motion.button>
+        )}
+      </AnimatePresence>
     </main>
   );
 }
