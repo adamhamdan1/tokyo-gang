@@ -4,16 +4,67 @@ import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
+const members = [
+  ["سيلفادور كروز", "القائد", "متواجد", "100%"],
+  ["حمدان كروز", "نائب القائد", "متواجد", "100%"],
+  ["برلين كروز", "نائب القائد", "متواجد", "92%"],
+  ["سنتياغو كروز", "العقل المدبر", "متواجد", "88%"],
+  ["لومي المخفي", "الشبح", "متواجد", "84%"],
+  ["ريد كروز", "الزرقاوي الأصيل", "متواجد", "81%"],
+  ["سنفور كروز", "ابن القائد", "ONLINE", "78%"],
+  ["بابلو كروز", "مقاتل", "OFFLINE", "75%"],
+  ["VIPER", "مقاتل", "ONLINE", "90%"],
+  ["BLADE", "مقاتل", "OFFLINE", "70%"],
+  ["ZERO", "مقاتل", "ONLINE", "86%"],
+  ["REAPER", "مقاتل", "OFFLINE", "83%"],
+  ["NOVA", "مقاتل", "ONLINE", "79%"],
+  ["VENOM", "مقاتل", "ONLINE", "89%"],
+  ["STORM", "مقاتل", "OFFLINE", "73%"],
+  ["ICE", "مقاتل", "ONLINE", "82%"],
+  ["ONYX", "مقاتل", "OFFLINE", "76%"],
+  ["NIGHT", "مقاتل", "ONLINE", "80%"],
+  ["RAGE", "مقاتل", "ONLINE", "91%"],
+  ["KIRA", "مقاتل", "OFFLINE", "77%"],
+  ["SNAKE", "مقاتل", "ONLINE", "85%"],
+  ["WOLF", "مقاتل", "OFFLINE", "74%"],
+  ["ACE", "مقاتل", "ONLINE", "87%"],
+  ["DARK", "مقاتل", "OFFLINE", "72%"],
+  ["RUSH", "سائق", "ONLINE", "83%"],
+  ["SKY", "مراقب", "OFFLINE", "69%"],
+  ["BLACK", "مقاتل", "ONLINE", "88%"],
+  ["FANG", "مقاتل", "OFFLINE", "71%"],
+  ["SMOKE", "مقاتل", "ONLINE", "84%"],
+  ["JIN", "سائق", "OFFLINE", "73%"],
+  ["ROGUE", "مقاتل", "ONLINE", "86%"],
+  ["KANE", "مقاتل", "OFFLINE", "78%"],
+  ["HUNTER", "مراقب", "ONLINE", "82%"],
+  ["SLASH", "مقاتل", "OFFLINE", "75%"],
+  ["RYU", "مقاتل", "ONLINE", "90%"],
+  ["CRASH", "سائق", "ONLINE", "81%"],
+  ["SAINT", "مقاتل", "OFFLINE", "70%"],
+  ["BURN", "مقاتل", "ONLINE", "85%"],
+  ["MUTE", "مراقب", "OFFLINE", "68%"],
+  ["VOID", "مقاتل", "ONLINE", "87%"],
+];
+
 export default function Home() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [loading, setLoading] = useState(true);
   const [playing, setPlaying] = useState(false);
   const [volume, setVolume] = useState(40);
+  const [search, setSearch] = useState("");
+  const [rank, setRank] = useState("الكل");
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 2600);
     return () => clearTimeout(timer);
   }, []);
+
+  const filteredMembers = members.filter(([name, role]) => {
+    const matchesSearch = name.toLowerCase().includes(search.toLowerCase());
+    const matchesRank = rank === "الكل" || role === rank;
+    return matchesSearch && matchesRank;
+  });
 
   const toggleMusic = () => {
     if (!audioRef.current) return;
@@ -35,6 +86,8 @@ export default function Home() {
 
   return (
     <main dir="rtl" className="min-h-screen bg-black text-white overflow-hidden cursor-crosshair">
+      <SpeedInsights />
+
       <audio ref={audioRef} loop>
         <source src="/music.mp3" type="audio/mpeg" />
       </audio>
@@ -55,7 +108,7 @@ export default function Home() {
             >
               TOKYO
             </motion.h1>
-            <p className="mt-4 tracking-[8px] text-gray-400">LOADING GANG SYSTEM</p>
+            <p className="mt-4 tracking-[8px] text-gray-400">LOADING UNDERGROUND DATABASE</p>
             <div className="mt-8 w-64 h-1 bg-white/20 overflow-hidden rounded-full">
               <motion.div
                 initial={{ x: "-100%" }}
@@ -74,9 +127,11 @@ export default function Home() {
           <div className="hidden md:flex gap-8 text-sm text-gray-300">
             <a href="#home" className="hover:text-white">الرئيسية</a>
             <a href="#server" className="hover:text-white">السيرفر</a>
+            <a href="#members" className="hover:text-white">الأعضاء</a>
+            <a href="#database" className="hover:text-white">الملفات</a>
             <a href="#rules" className="hover:text-white">القوانين</a>
-            <a href="#gallery" className="hover:text-white">المعرض</a>
             <a href="#wars" className="hover:text-white">الحروب</a>
+            <a href="#apply" className="hover:text-white">التقديم</a>
           </div>
         </div>
       </nav>
@@ -110,9 +165,24 @@ export default function Home() {
           <p className="mt-6 text-gray-300 text-lg md:text-xl max-w-2xl mx-auto leading-9">
             أهلاً بك في الموقع الرسمي لعصابة TOKYO GANG. هنا يجتمع الولاء، الاحترام، والقوة داخل عالم فايف إم.
           </p>
+
+          <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
+            {[
+              ["40", "عضو"],
+              ["12", "عملية"],
+              ["3", "مناطق"],
+              ["100%", "هيبة"],
+            ].map(([num, label]) => (
+              <div key={label} className="bg-black/50 border border-white/20 rounded-2xl p-4 backdrop-blur-md">
+                <p className="text-3xl font-black">{num}</p>
+                <p className="text-gray-400 text-sm">{label}</p>
+              </div>
+            ))}
+          </div>
+
           <div className="mt-10 flex gap-4 justify-center flex-wrap">
             <a href="#apply" className="px-8 py-4 bg-white text-black hover:bg-gray-300 rounded-2xl text-lg font-bold transition hover:scale-105">تقديم انضمام</a>
-            <a href="discord.gg/tok" target="_blank" className="px-8 py-4 border border-white hover:bg-white hover:text-black rounded-2xl text-lg font-bold transition hover:scale-105">دخول الديسكورد</a>
+            <a href="https://discord.gg/tok" target="_blank" className="px-8 py-4 border border-white hover:bg-white hover:text-black rounded-2xl text-lg font-bold transition hover:scale-105">دخول الديسكورد</a>
           </div>
         </motion.div>
       </section>
@@ -122,13 +192,91 @@ export default function Home() {
           <div>
             <p className="text-sm tracking-[6px] text-gray-400 mb-4">مكان تواجدنا حالياً</p>
             <h2 className="text-5xl font-black mb-6">INFINITE CITY CFW</h2>
-            <p className="text-gray-300 text-lg leading-9">حالياً تتواجد عصابة TOKYO GANG داخل سيرفر INFINITE CITY CFW، حيث نفرض حضورنا وهيبتنا داخل عالم فايف إم.</p>
+            <p className="text-gray-300 text-lg leading-9">
+              حالياً تتواجد عصابة TOKYO GANG داخل سيرفر INFINITE CITY CFW، حيث نفرض حضورنا وهيبتنا داخل عالم فايف إم.
+            </p>
           </div>
+
           <div className="flex justify-center">
-            <div className="bg-black border border-white/20 rounded-[40px] p-10">
+            <div className="bg-black border border-white/20 rounded-[40px] p-10 shadow-[0_0_80px_rgba(255,255,255,0.08)]">
               <img src="/server-logo.png" alt="Server Logo" className="w-72 object-contain grayscale hover:grayscale-0 transition duration-500" />
             </div>
           </div>
+        </div>
+      </section>
+
+      <section id="members" className="py-24 px-6 bg-black">
+        <h2 className="text-5xl font-black text-center mb-6">أعضاء TOKYO GANG</h2>
+        <p className="text-center text-gray-400 mb-10">قاعدة بيانات كاملة لأعضاء العصابة وعددهم 40 عضو</p>
+
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row gap-4 mb-10">
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="ابحث عن عضو..."
+            className="flex-1 bg-zinc-950 border border-white/20 rounded-2xl p-4 outline-none"
+          />
+
+          <select
+            value={rank}
+            onChange={(e) => setRank(e.target.value)}
+            className="bg-zinc-950 border border-white/20 rounded-2xl p-4 outline-none"
+          >
+            {["الكل", "القائد", "نائب القائد", "مسؤول العمليات", "مقاتل", "سائق", "مراقب"].map((r) => (
+              <option key={r}>{r}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="max-w-7xl mx-auto grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {filteredMembers.map(([name, role, status, danger], index) => (
+            <motion.div
+              key={name}
+              initial={{ opacity: 0, y: 60 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ delay: (index % 8) * 0.05 }}
+              className="group relative overflow-hidden bg-zinc-950 border border-white/15 rounded-3xl p-6 hover:border-white transition duration-300"
+            >
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-br from-white/10 to-transparent" />
+
+              <div className="relative z-10">
+                <div className="w-20 h-20 rounded-full bg-white text-black mx-auto mb-5 flex items-center justify-center font-black text-2xl">
+                  {name[0]}
+                </div>
+
+                <h3 className="text-2xl font-black text-center tracking-[3px]">{name}</h3>
+                <p className="text-center text-gray-400 mt-1">{role}</p>
+
+                <div className="mt-5 flex justify-between text-sm">
+                  <span className={status === "ONLINE" ? "text-green-400" : "text-gray-500"}>{status}</span>
+                  <span className="text-gray-300">خطورة {danger}</span>
+                </div>
+
+                <div className="mt-4 h-1 bg-white/10 rounded-full overflow-hidden">
+                  <div className="h-full bg-white rounded-full" style={{ width: danger }} />
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      <section id="database" className="py-24 px-6 bg-zinc-950">
+        <h2 className="text-5xl font-black text-center mb-14">TOKYO DATABASE</h2>
+
+        <div className="max-w-6xl mx-auto grid md:grid-cols-4 gap-6">
+          {[
+            ["BLACKLIST", "قائمة الممنوعين"],
+            ["WANTED", "المطلوبين"],
+            ["OPERATIONS", "العمليات"],
+            ["TERRITORIES", "المناطق"],
+          ].map(([title, desc]) => (
+            <div key={title} className="bg-black border border-white/20 rounded-3xl p-8 hover:scale-105 hover:border-white transition">
+              <p className="text-3xl font-black tracking-[4px]">{title}</p>
+              <p className="text-gray-400 mt-4">{desc}</p>
+              <div className="mt-8 h-1 bg-white/20 rounded-full" />
+            </div>
+          ))}
         </div>
       </section>
 
@@ -143,69 +291,64 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="gallery" className="py-24 px-6 bg-black">
-        <h2 className="text-5xl font-black text-center mb-14">المعرض</h2>
-        <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-6">
-          {["/bg.jpg", "/bg.jpg", "/bg.jpg", "/bg.jpg", "/bg.jpg", "/bg.jpg"].map((img, i) => (
-            <div key={i} className="h-64 rounded-3xl overflow-hidden border border-white/20">
-              <img src={img} className="w-full h-full object-cover grayscale hover:grayscale-0 hover:scale-110 transition duration-500" />
-            </div>
-          ))}
-        </div>
-      </section>
-
       <section id="wars" className="py-24 px-6 bg-zinc-950">
         <h2 className="text-5xl font-black text-center mb-14">سجل الحروب</h2>
+
         <div className="max-w-4xl mx-auto space-y-4">
-          {["TOKYO GANG صار عالمي والقادم أعظم", "أعدام أول خائن", "فرضت السيطرة المباشرة بأراضي أنفنتي"].map((war, i) => (
-            <div key={i} className="bg-black border border-white/20 rounded-2xl p-5 flex justify-between">
+          {["TOKYO GANG صار عالمي والقادم أعظم", "إعدام أول خائن", "فرضت السيطرة المباشرة بأراضي أنفنتي"].map((war, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, x: 80 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              className="bg-black border border-white/20 rounded-2xl p-5 flex justify-between"
+            >
               <span>{war}</span>
               <span className="text-gray-500">2026</span>
-            </div>
+            </motion.div>
           ))}
         </div>
       </section>
 
       <section id="apply" className="py-24 px-6 bg-black">
-  <h2 className="text-5xl font-black text-center mb-8">تقديم الانضمام</h2>
+        <h2 className="text-5xl font-black text-center mb-8">تقديم الانضمام</h2>
 
-  <form
-    onSubmit={async (e) => {
-      e.preventDefault();
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
 
-      const form = e.currentTarget;
-      const formData = new FormData(form);
+            const form = e.currentTarget;
+            const formData = new FormData(form);
 
-      await fetch("/api/apply", {
-        method: "POST",
-        body: JSON.stringify({
-          name: formData.get("name"),
-          age: formData.get("age"),
-          discord: formData.get("discord"),
-          experience: formData.get("experience"),
-          reason: formData.get("reason"),
-        }),
-      });
+            await fetch("/api/apply", {
+              method: "POST",
+              body: JSON.stringify({
+                name: formData.get("name"),
+                age: formData.get("age"),
+                discord: formData.get("discord"),
+                experience: formData.get("experience"),
+                reason: formData.get("reason"),
+              }),
+            });
 
-      alert("تم إرسال طلبك بنجاح");
-      form.reset();
-    }}
-    className="max-w-2xl mx-auto grid gap-4"
-  >
-    <input name="name" required placeholder="اسمك داخل اللعبة" className="bg-zinc-950 border border-white/20 rounded-2xl p-4" />
-    <input name="age" required placeholder="عمرك" className="bg-zinc-950 border border-white/20 rounded-2xl p-4" />
-    <input name="discord" required placeholder="Discord ID" className="bg-zinc-950 border border-white/20 rounded-2xl p-4" />
-    <textarea name="experience" required placeholder="خبرتك في فايف إم" className="bg-zinc-950 border border-white/20 rounded-2xl p-4 h-32" />
-    <textarea name="reason" required placeholder="ليش بدك تنضم؟" className="bg-zinc-950 border border-white/20 rounded-2xl p-4 h-32" />
+            alert("تم إرسال طلبك بنجاح");
+            form.reset();
+          }}
+          className="max-w-2xl mx-auto grid gap-4"
+        >
+          <input name="name" required placeholder="اسمك داخل اللعبة" className="bg-zinc-950 border border-white/20 rounded-2xl p-4 outline-none" />
+          <input name="age" required placeholder="عمرك" className="bg-zinc-950 border border-white/20 rounded-2xl p-4 outline-none" />
+          <input name="discord" required placeholder="Discord ID" className="bg-zinc-950 border border-white/20 rounded-2xl p-4 outline-none" />
+          <textarea name="experience" required placeholder="خبرتك في فايف إم" className="bg-zinc-950 border border-white/20 rounded-2xl p-4 h-32 outline-none" />
+          <textarea name="reason" required placeholder="ليش بدك تنضم؟" className="bg-zinc-950 border border-white/20 rounded-2xl p-4 h-32 outline-none" />
 
-    <button className="bg-white text-black rounded-2xl py-4 font-bold hover:bg-gray-300 transition">
-      إرسال الطلب
-    </button>
-  </form>
-</section>
+          <button className="bg-white text-black rounded-2xl py-4 font-bold hover:bg-gray-300 transition">
+            إرسال الطلب
+          </button>
+        </form>
+      </section>
 
       <footer className="py-10 text-center text-gray-500 bg-black border-t border-white/10">
-        TOKYO GANG © 2025
+        TOKYO GANG © 2026
       </footer>
     </main>
   );
