@@ -92,6 +92,35 @@ export default function Home() {
   return (
     <main dir="rtl" className="min-h-screen bg-black text-white overflow-hidden cursor-none">
       <SpeedInsights />
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+  <motion.div
+    animate={{
+      x: [0, 120, -120, 0],
+      y: [0, -60, 60, 0],
+      opacity: [0.08, 0.18, 0.08],
+    }}
+    transition={{
+      duration: 20,
+      repeat: Infinity,
+      ease: "easeInOut",
+    }}
+    className="absolute top-0 left-0 w-[900px] h-[900px] bg-white/10 blur-[180px] rounded-full"
+  />
+
+  <motion.div
+    animate={{
+      x: [0, -100, 100, 0],
+      y: [0, 80, -80, 0],
+      opacity: [0.05, 0.14, 0.05],
+    }}
+    transition={{
+      duration: 24,
+      repeat: Infinity,
+      ease: "easeInOut",
+    }}
+    className="absolute bottom-0 right-0 w-[1000px] h-[1000px] bg-white/10 blur-[200px] rounded-full"
+  />
+</div>
 
       <motion.div
         className="pointer-events-none fixed z-[9999] w-8 h-8 rounded-full border border-white/60 shadow-[0_0_18px_white]"
