@@ -117,7 +117,7 @@ export async function POST(req: Request) {
                   value: body.age,
                 },
                 {
-                  name: "Discord",
+                  name: "المدينة",
                   value: body.discord || user.discordId,
                 },
                 {
