@@ -78,6 +78,13 @@ export default async function AdminPage({
 
   return (
     <main dir="rtl" className="min-h-screen bg-black text-white p-6 md:p-10">
+      <Link
+        href="/"
+        className="fixed left-5 top-5 z-50 rounded-2xl border border-white/20 bg-white px-5 py-3 text-sm font-black text-black shadow-[0_0_28px_rgba(255,255,255,0.2)] transition hover:bg-gray-300"
+      >
+        الرئيسية
+      </Link>
+
       <div className="mx-auto max-w-7xl">
         <div className="mb-10 flex flex-col gap-4 border-b border-white/10 pb-8 md:flex-row md:items-end md:justify-between">
           <div>
