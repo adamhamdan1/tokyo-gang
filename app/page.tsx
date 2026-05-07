@@ -6,7 +6,6 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 
 const members = [
-  ["سنتياغو كروز", "العقل المدبر"],
   ["لومي المخفي", "الشبح"],
   ["أبو صقير كروز", "الدب المميز"],
   ["ريد كروز", "الزرقاوي الأصيل"],
@@ -387,6 +386,7 @@ export default function Home() {
             ["توتي كروز", "الزعيم"],
             ["حمدان كروز", "نائب القائد"],
             ["برلين كروز", "نائب القائد"],
+            ["سنتياغو كروز", "العقل المدبر"],
           ].map(([name, role], index) => (
             <motion.div
               key={name}
