@@ -258,11 +258,6 @@ export default function Home() {
                   transition={{ duration: 2.1, repeat: Infinity, ease: "easeInOut" }}
                   className="absolute inset-2 rounded-full bg-white/10 blur-3xl"
                 />
-                <motion.div
-                  animate={{ scale: [1, 1.03, 1], opacity: [0.5, 0.85, 0.5] }}
-                  transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
-                  className="absolute inset-0 shadow-[0_0_60px_rgba(255,255,255,0.16)]"
-                />
                 <motion.img
                   src="/tokyo-logo-clean.png"
                   alt="TOKYO GANG"
