@@ -249,21 +249,54 @@ export default function Home() {
             <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 py-20 text-center">
               <motion.div
                 initial={{ opacity: 0, scale: 0.86, y: 18 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
+                animate={{ opacity: 1, scale: [1, 1.015, 1], y: 0 }}
                 transition={{ duration: 0.8, ease: "easeOut" }}
                 className="relative flex h-44 w-44 items-center justify-center md:h-60 md:w-60"
               >
                 <motion.div
-                  animate={{ scale: [0.96, 1.08, 0.96], opacity: [0.28, 0.52, 0.28] }}
-                  transition={{ duration: 2.1, repeat: Infinity, ease: "easeInOut" }}
-                  className="absolute inset-2 rounded-full bg-white/10 blur-3xl"
+                  animate={{ scale: [0.82, 1.2, 0.82], opacity: [0.1, 0.35, 0.1] }}
+                  transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+                  className="absolute inset-1 rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.34),transparent_62%)] blur-2xl"
+                />
+                <motion.div
+                  animate={{ rotate: 360, opacity: [0.12, 0.34, 0.12] }}
+                  transition={{ rotate: { duration: 8, repeat: Infinity, ease: "linear" }, opacity: { duration: 1.8, repeat: Infinity } }}
+                  className="absolute inset-7 rounded-full border border-white/20 border-t-white/65"
+                />
+                <motion.div
+                  animate={{ rotate: -360, opacity: [0.18, 0.45, 0.18] }}
+                  transition={{ rotate: { duration: 12, repeat: Infinity, ease: "linear" }, opacity: { duration: 2.2, repeat: Infinity } }}
+                  className="absolute inset-11 rounded-full border border-dashed border-red-500/35"
+                />
+                <motion.div
+                  animate={{ x: ["-70%", "70%"], opacity: [0, 0.55, 0] }}
+                  transition={{ duration: 1.7, repeat: Infinity, repeatDelay: 0.75, ease: "easeInOut" }}
+                  className="absolute inset-8 rounded-full bg-gradient-to-r from-transparent via-white/35 to-transparent blur-sm [mask-image:radial-gradient(circle_at_center,black_0%,black_58%,transparent_76%)] [-webkit-mask-image:radial-gradient(circle_at_center,black_0%,black_58%,transparent_76%)]"
+                />
+                <motion.img
+                  src="/tokyo-logo-clean.png"
+                  alt=""
+                  aria-hidden="true"
+                  animate={{ x: [-1, 2, -2, 0], opacity: [0, 0.22, 0, 0] }}
+                  transition={{ duration: 0.24, repeat: Infinity, repeatDelay: 2.1 }}
+                  className="absolute z-10 h-36 w-36 object-contain [mask-image:radial-gradient(circle_at_center,black_0%,black_48%,transparent_76%)] [-webkit-mask-image:radial-gradient(circle_at_center,black_0%,black_48%,transparent_76%)] opacity-0 drop-shadow-[0_0_18px_rgba(239,68,68,0.8)] md:h-48 md:w-48"
                 />
                 <motion.img
                   src="/tokyo-logo-clean.png"
                   alt="TOKYO GANG"
                   initial={{ opacity: 0, filter: "blur(12px)" }}
-                  animate={{ opacity: 1, filter: "blur(0px)" }}
-                  transition={{ delay: 0.16, duration: 0.72 }}
+                  animate={{
+                    opacity: 1,
+                    scale: [1, 1.035, 1],
+                    rotate: [0, -0.4, 0.35, 0],
+                    filter: ["blur(0px) brightness(1)", "blur(0px) brightness(1.22)", "blur(0px) brightness(1)"],
+                  }}
+                  transition={{
+                    opacity: { delay: 0.16, duration: 0.72 },
+                    scale: { duration: 2.8, repeat: Infinity, ease: "easeInOut" },
+                    rotate: { duration: 3.6, repeat: Infinity, ease: "easeInOut" },
+                    filter: { duration: 2.2, repeat: Infinity, ease: "easeInOut" },
+                  }}
                   className="relative z-10 h-36 w-36 object-contain [mask-image:radial-gradient(circle_at_center,black_0%,black_48%,transparent_76%)] [-webkit-mask-image:radial-gradient(circle_at_center,black_0%,black_48%,transparent_76%)] drop-shadow-[0_0_38px_rgba(255,255,255,0.72)] md:h-48 md:w-48"
                 />
               </motion.div>
