@@ -309,6 +309,15 @@ export default function Home() {
           </div>
         </motion.div>
       </section>
+      <section className="relative overflow-hidden border-y border-white/10 bg-black py-4">
+  <motion.div
+    animate={{ x: ["100%", "-100%"] }}
+    transition={{ duration: 22, repeat: Infinity, ease: "linear" }}
+    className="whitespace-nowrap text-sm md:text-base font-bold tracking-[4px] text-white/80"
+  >
+    ⚠ TOKYO GANG سيطرت على المنطقة الشرقية — ⚠ تم القضاء على أحد الخونة — ⚠ النفوذ يزداد يومياً — ⚠ TOP 1 GANG داخل السيرفر — ⚠ لا مكان للضعفاء داخل TOKYO —
+  </motion.div>
+</section>
 
       <section id="server" className="py-24 px-6 bg-zinc-950 border-t border-white/10">
         <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center">
