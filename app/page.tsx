@@ -91,30 +91,13 @@ export default function Home() {
 
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         <motion.div
-          animate={{
-            x: [0, 120, -120, 0],
-            y: [0, -60, 60, 0],
-            opacity: [0.08, 0.18, 0.08],
-          }}
-          transition={{
-            duration: 20,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
+          animate={{ x: [0, 120, -120, 0], y: [0, -60, 60, 0], opacity: [0.08, 0.18, 0.08] }}
+          transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
           className="absolute top-0 left-0 w-[900px] h-[900px] bg-white/10 blur-[180px] rounded-full"
         />
-
         <motion.div
-          animate={{
-            x: [0, -100, 100, 0],
-            y: [0, 80, -80, 0],
-            opacity: [0.05, 0.14, 0.05],
-          }}
-          transition={{
-            duration: 24,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
+          animate={{ x: [0, -100, 100, 0], y: [0, 80, -80, 0], opacity: [0.05, 0.14, 0.05] }}
+          transition={{ duration: 24, repeat: Infinity, ease: "easeInOut" }}
           className="absolute bottom-0 right-0 w-[1000px] h-[1000px] bg-white/10 blur-[200px] rounded-full"
         />
       </div>
@@ -158,9 +141,7 @@ export default function Home() {
               TOKYO
             </motion.h1>
 
-            <p className="mt-4 tracking-[8px] text-gray-400">
-              UNDERGROUND DATABASE LOADING
-            </p>
+            <p className="mt-4 tracking-[8px] text-gray-400">UNDERGROUND DATABASE LOADING</p>
 
             <div className="mt-8 w-64 h-1 bg-white/20 overflow-hidden rounded-full">
               <motion.div
@@ -180,6 +161,7 @@ export default function Home() {
           <div className="hidden md:flex gap-8 text-sm text-gray-300">
             <a href="#home" className="hover:text-white">الرئيسية</a>
             <a href="#server" className="hover:text-white">السيرفر</a>
+            <a href="#command" className="hover:text-white">القيادة</a>
             <a href="#members" className="hover:text-white">الأعضاء</a>
             <a href="#database" className="hover:text-white">الملفات</a>
             <a href="#rules" className="hover:text-white">القوانين</a>
@@ -208,7 +190,7 @@ export default function Home() {
       </div>
 
       <section id="home" className="relative flex flex-col items-center justify-center h-screen text-center px-6 overflow-hidden">
-        <div className="absolute inset-0 bg-[url('/bg.jpg')] bg-cover bg-center opacity-20 grayscale" />
+        <div className="absolute inset-0 bg-[url('/bg.jpg')] bg-cover bg-center opacity-15 grayscale" />
 
         <motion.div
           initial={{ scale: 1.08 }}
@@ -216,27 +198,21 @@ export default function Home() {
           transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
           className="absolute inset-0 overflow-hidden"
         >
-          <video
-            autoPlay
-            muted
-            loop
-            playsInline
-            className="w-full h-full object-cover opacity-35 grayscale scale-110"
-          >
+          <video autoPlay muted loop playsInline className="w-full h-full object-cover opacity-60 grayscale scale-110">
             <source src="/bg.mp4" type="video/mp4" />
           </video>
         </motion.div>
 
-        <div className="absolute inset-0 bg-black/75" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/25 to-black/70" />
 
         <motion.div
-          animate={{ x: ["-20%", "20%"], opacity: [0.15, 0.35, 0.15] }}
+          animate={{ x: ["-20%", "20%"], opacity: [0.12, 0.28, 0.12] }}
           transition={{ duration: 10, repeat: Infinity }}
           className="absolute -bottom-20 left-0 w-[700px] h-[300px] bg-white/10 blur-3xl rounded-full"
         />
 
         <motion.div
-          animate={{ y: [40, -40, 40], opacity: [0.08, 0.22, 0.08] }}
+          animate={{ y: [40, -40, 40], opacity: [0.06, 0.18, 0.06] }}
           transition={{ duration: 9, repeat: Infinity }}
           className="absolute bottom-10 w-[900px] h-[180px] bg-white/10 blur-3xl rounded-full"
         />
@@ -265,12 +241,7 @@ export default function Home() {
 
           <motion.h1
             initial={{ opacity: 0, scale: 1.4, filter: "blur(14px)" }}
-            animate={{
-              opacity: 1,
-              scale: 1,
-              filter: "blur(0px)",
-              x: [0, -2, 2, 0],
-            }}
+            animate={{ opacity: 1, scale: 1, filter: "blur(0px)", x: [0, -2, 2, 0] }}
             transition={{
               opacity: { duration: 1 },
               scale: { duration: 1.3 },
@@ -297,7 +268,7 @@ export default function Home() {
             initial={{ opacity: 0, y: 35 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.1, duration: 1 }}
-            className="mt-6 text-gray-300 text-lg md:text-xl max-w-2xl mx-auto leading-9 bg-black/20 border border-white/10 rounded-3xl px-6 py-4 backdrop-blur-sm shadow-[0_0_30px_rgba(255,255,255,0.06)]"
+            className="mt-6 text-gray-200 text-lg md:text-xl max-w-2xl mx-auto leading-9 bg-black/25 border border-white/10 rounded-3xl px-6 py-4 backdrop-blur-sm shadow-[0_0_30px_rgba(255,255,255,0.06)]"
           >
             أهلاً بك في الموقع الرسمي لعصابة TOKYO GANG. هنا يجتمع الولاء، الاحترام، والقوة داخل عالم فايف إم.
           </motion.p>
@@ -322,15 +293,8 @@ export default function Home() {
                 className="relative overflow-hidden bg-black/50 border border-white/20 rounded-2xl p-4 backdrop-blur-md group shadow-[0_0_18px_rgba(255,255,255,0.08)]"
               >
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-500 bg-white/5" />
-
-                <p className="relative z-10 text-3xl font-black drop-shadow-[0_0_14px_white]">
-                  {num}
-                </p>
-
-                <p className="relative z-10 text-gray-400 text-sm mt-1">
-                  {label}
-                </p>
-
+                <p className="relative z-10 text-3xl font-black drop-shadow-[0_0_14px_white]">{num}</p>
+                <p className="relative z-10 text-gray-400 text-sm mt-1">{label}</p>
                 <div className="relative z-10 mt-3 h-[1px] bg-gradient-to-r from-transparent via-white/70 to-transparent opacity-60" />
               </motion.div>
             ))}
@@ -375,54 +339,49 @@ export default function Home() {
           </div>
         </div>
       </section>
+
       <section id="command" className="py-24 px-6 bg-black border-y border-white/10">
-  <h2 className="text-5xl font-black text-center mb-4">القيادة العليا</h2>
-  <p className="text-center text-gray-400 mb-14 tracking-[4px]">
-    HIGH COMMAND
-  </p>
+        <h2 className="text-5xl font-black text-center mb-4">القيادة العليا</h2>
+        <p className="text-center text-gray-400 mb-14 tracking-[4px]">HIGH COMMAND</p>
 
-  <div className="max-w-7xl mx-auto grid md:grid-cols-4 gap-8">
-    {[
-      ["سيلفادور كروز", "القائد الأعلى"],
-      ["توتي كروز", "الزعيم"],
-      ["حمدان كروز", "نائب القائد"],
-      ["برلين كروز", "نائب القائد"],
-    ].map(([name, role], index) => (
-      <motion.div
-        key={name}
-        initial={{ opacity: 0, y: 80, scale: 0.9 }}
-        whileInView={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ delay: index * 0.15, duration: 0.8 }}
-        whileHover={{ scale: 1.07, y: -10 }}
-        className="relative overflow-hidden bg-zinc-950 border border-white/20 rounded-[35px] p-8 text-center group shadow-[0_0_40px_rgba(255,255,255,0.08)]"
-      >
-        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-500 bg-gradient-to-br from-white/15 via-transparent to-white/5" />
+        <div className="max-w-7xl mx-auto grid md:grid-cols-4 gap-8">
+          {[
+            ["سيلفادور كروز", "القائد الأعلى"],
+            ["توتي كروز", "الزعيم"],
+            ["حمدان كروز", "نائب القائد"],
+            ["برلين كروز", "نائب القائد"],
+          ].map(([name, role], index) => (
+            <motion.div
+              key={name}
+              initial={{ opacity: 0, y: 80, scale: 0.9 }}
+              whileInView={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ delay: index * 0.15, duration: 0.8 }}
+              whileHover={{ scale: 1.07, y: -10 }}
+              className="relative overflow-hidden bg-zinc-950 border border-white/20 rounded-[35px] p-8 text-center group shadow-[0_0_40px_rgba(255,255,255,0.08)]"
+            >
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-500 bg-gradient-to-br from-white/15 via-transparent to-white/5" />
 
-        <div className="relative z-10">
-          <div className="mx-auto mb-6 w-28 h-28 rounded-full bg-white text-black flex items-center justify-center text-4xl font-black shadow-[0_0_35px_white]">
-            {name[0]}
-          </div>
+              <div className="relative z-10">
+                <div className="mx-auto mb-6 w-28 h-28 rounded-full bg-white text-black flex items-center justify-center text-4xl font-black shadow-[0_0_35px_white]">
+                  {name[0]}
+                </div>
 
-          <p className="text-xs tracking-[5px] text-gray-500 mb-3">
-            HIGH COMMAND
-          </p>
+                <p className="text-xs tracking-[5px] text-gray-500 mb-3">HIGH COMMAND</p>
 
-          <h3 className="text-3xl font-black text-white drop-shadow-[0_0_20px_white]">
-            {name}
-          </h3>
+                <h3 className="text-3xl font-black text-white drop-shadow-[0_0_20px_white]">{name}</h3>
 
-          <p className="mt-3 text-gray-400">{role}</p>
+                <p className="mt-3 text-gray-400">{role}</p>
 
-          <div className="mt-6 h-[2px] bg-gradient-to-r from-transparent via-white to-transparent" />
+                <div className="mt-6 h-[2px] bg-gradient-to-r from-transparent via-white to-transparent" />
 
-          <p className="mt-5 text-red-500 font-black tracking-[3px] drop-shadow-[0_0_12px_red]">
-            AUTHORITY LEVEL: MAX
-          </p>
+                <p className="mt-5 text-red-500 font-black tracking-[3px] drop-shadow-[0_0_12px_red]">
+                  AUTHORITY LEVEL: MAX
+                </p>
+              </div>
+            </motion.div>
+          ))}
         </div>
-      </motion.div>
-    ))}
-  </div>
-</section>
+      </section>
 
       <section id="members" className="py-24 px-6 bg-black">
         <h2 className="text-5xl font-black text-center mb-6">أعضاء TOKYO GANG</h2>
@@ -441,7 +400,7 @@ export default function Home() {
             onChange={(e) => setRank(e.target.value)}
             className="bg-zinc-950 border border-white/20 rounded-2xl p-4 outline-none"
           >
-            {["الكل", "القائد", "الزعيم", "نائب القائد", "العقل المدبر", "الشبح", "الدب المميز", "الزرقاوي الأصيل", "ابن القائد", "ستريمرنا", "مقاتل"].map((r) => (
+            {["الكل", "العقل المدبر", "الشبح", "الدب المميز", "الزرقاوي الأصيل", "ابن القائد", "ستريمرنا", "مقاتل"].map((r) => (
               <option key={r}>{r}</option>
             ))}
           </select>
@@ -471,13 +430,8 @@ export default function Home() {
 
                 <div className="mt-6 space-y-4">
                   <div className="flex justify-between items-center text-sm">
-                    <span className="text-green-400 font-bold drop-shadow-[0_0_8px_lime] animate-pulse">
-                      ● متواجد
-                    </span>
-
-                    <span className="text-red-500 font-black tracking-[2px] drop-shadow-[0_0_12px_red]">
-                      خطير جداً
-                    </span>
+                    <span className="text-green-400 font-bold drop-shadow-[0_0_8px_lime] animate-pulse">● متواجد</span>
+                    <span className="text-red-500 font-black tracking-[2px] drop-shadow-[0_0_12px_red]">خطير جداً</span>
                   </div>
 
                   <div className="relative h-2 bg-white/10 rounded-full overflow-hidden">
@@ -580,9 +534,7 @@ export default function Home() {
           <textarea name="experience" required placeholder="خبرتك في فايف إم" className="bg-zinc-950 border border-white/20 rounded-2xl p-4 h-32 outline-none" />
           <textarea name="reason" required placeholder="ليش بدك تنضم؟" className="bg-zinc-950 border border-white/20 rounded-2xl p-4 h-32 outline-none" />
 
-          <button className="bg-white text-black rounded-2xl py-4 font-bold hover:bg-gray-300 transition">
-            إرسال الطلب
-          </button>
+          <button className="bg-white text-black rounded-2xl py-4 font-bold hover:bg-gray-300 transition">إرسال الطلب</button>
         </form>
       </section>
 
