@@ -209,6 +209,9 @@ export default function Home() {
             <a href="#rules" className="hover:text-white">القوانين</a>
             <a href="#wars" className="hover:text-white">الحروب</a>
             <a href="#apply" className="hover:text-white">التقديم</a>
+            {session.data?.user && (
+              <a href="/admin" className="text-red-400 hover:text-red-300">الإدارة</a>
+            )}
           </div>
           {session.data?.user ? (
             <div className="flex items-center gap-3 rounded-full border border-white/15 bg-black/50 px-3 py-2 shadow-[0_0_20px_rgba(255,255,255,0.08)]">

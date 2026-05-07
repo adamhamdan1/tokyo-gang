@@ -1,35 +1,6 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { revalidatePath } from "next/cache";
-
-async function updateApplicationStatus(formData: FormData) {
-  "use server";
-
-  const session = await auth();
-  const adminIds = process.env.ADMIN_DISCORD_IDS?.split(",").map((id) => id.trim()) || [];
-
-  if (!session?.user?.id || !adminIds.includes(session.user.id)) {
-    return;
-  }
-
-  const id = formData.get("id");
-  const status = formData.get("status");
-
-  if (typeof id !== "string" || typeof status !== "string") {
-    return;
-  }
-
-  if (!["ACCEPTED", "REJECTED"].includes(status)) {
-    return;
-  }
-
-  await prisma.application.update({
-    where: { id },
-    data: { status },
-  });
-
-  revalidatePath("/admin");
-}
+import { AdminDecisionButtons } from "./AdminDecisionButtons";
 
 const statusStyles: Record<string, string> = {
   PENDING: "border-yellow-400/40 bg-yellow-400/10 text-yellow-300 shadow-[0_0_24px_rgba(250,204,21,0.12)]",
@@ -53,6 +24,9 @@ export default async function AdminPage() {
         <div className="rounded-3xl border border-red-500/30 bg-red-500/10 px-10 py-8 text-center shadow-[0_0_45px_rgba(239,68,68,0.16)]">
           <p className="text-sm font-black tracking-[6px] text-red-400">ACCESS DENIED</p>
           <h1 className="mt-4 text-5xl font-black">ممنوع الدخول</h1>
+          <p className="mt-5 text-sm text-gray-300">
+            Discord ID الحالي: {session?.user?.id ?? "غير مسجل دخول"}
+          </p>
         </div>
       </main>
     );
@@ -169,23 +143,7 @@ export default async function AdminPage() {
                   </div>
                 </div>
 
-                <div className="mt-6 flex flex-wrap gap-3">
-                  <form action={updateApplicationStatus}>
-                    <input type="hidden" name="id" value={app.id} />
-                    <input type="hidden" name="status" value="ACCEPTED" />
-                    <button className="rounded-2xl bg-green-400 px-7 py-3 font-black text-black transition hover:bg-green-300">
-                      قبول
-                    </button>
-                  </form>
-
-                  <form action={updateApplicationStatus}>
-                    <input type="hidden" name="id" value={app.id} />
-                    <input type="hidden" name="status" value="REJECTED" />
-                    <button className="rounded-2xl bg-red-500 px-7 py-3 font-black text-white transition hover:bg-red-400">
-                      رفض
-                    </button>
-                  </form>
-                </div>
+                <AdminDecisionButtons applicationId={app.id} />
               </article>
             );
           })}
