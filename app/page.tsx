@@ -94,16 +94,20 @@ export default function Home() {
       <SpeedInsights />
 
       <motion.div
-        className="pointer-events-none fixed z-[9999] w-8 h-8 rounded-full border border-white/60 shadow-[0_0_18px_white]"
-        animate={{ x: mouse.x - 16, y: mouse.y - 16 }}
-        transition={{ type: "spring", stiffness: 500, damping: 35 }}
-      />
+  className="pointer-events-none fixed z-[9999] w-8 h-8 rounded-full border border-white/60 shadow-[0_0_18px_white]"
+  style={{
+    left: mouse.x - 16,
+    top: mouse.y - 16,
+  }}
+/>
 
-      <motion.div
-        className="pointer-events-none fixed z-[9998] w-2 h-2 rounded-full bg-white shadow-[0_0_12px_white]"
-        animate={{ x: mouse.x - 4, y: mouse.y - 4 }}
-        transition={{ type: "spring", stiffness: 700, damping: 25 }}
-      />
+<motion.div
+  className="pointer-events-none fixed z-[9998] w-2 h-2 rounded-full bg-white shadow-[0_0_12px_white]"
+  style={{
+    left: mouse.x - 4,
+    top: mouse.y - 4,
+  }}
+/>
 
       <audio ref={audioRef} loop>
         <source src="/music.mp3" type="audio/mpeg" />
