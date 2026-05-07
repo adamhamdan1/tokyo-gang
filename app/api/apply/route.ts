@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { requireTokyoGuildMember } from "@/lib/discord";
 import { prisma } from "@/lib/prisma";
 
 type ApplyBody = {
@@ -25,6 +26,15 @@ export async function POST(req: Request) {
   if (!body.name || !body.age || !body.experience || !body.reason) {
     return NextResponse.json(
       { error: "بيانات التقديم ناقصة" },
+      { status: 400 }
+    );
+  }
+
+  try {
+    await requireTokyoGuildMember(session.user.id);
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "فشل التحقق من سيرفر TOKYO" },
       { status: 400 }
     );
   }
@@ -83,6 +93,10 @@ export async function POST(req: Request) {
                 {
                   name: "حساب الديسكورد",
                   value: `${user.username} (${user.discordId})`,
+                },
+                {
+                  name: "التحقق",
+                  value: "موجود داخل سيرفر TOKYO",
                 },
                 {
                   name: "الخبرة",

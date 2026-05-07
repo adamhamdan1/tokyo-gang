@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { giveAcceptedRole } from "@/lib/discord";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
@@ -35,6 +36,28 @@ export async function PATCH(req: Request, context: RouteContext) {
 
   if (!body.status || !["ACCEPTED", "REJECTED", "PENDING"].includes(body.status)) {
     return NextResponse.json({ error: "حالة غير صحيحة" }, { status: 400 });
+  }
+
+  const currentApplication = await prisma.application.findUnique({
+    where: { id },
+    include: {
+      user: true,
+    },
+  });
+
+  if (!currentApplication) {
+    return NextResponse.json({ error: "التقديم غير موجود" }, { status: 404 });
+  }
+
+  if (body.status === "ACCEPTED") {
+    try {
+      await giveAcceptedRole(currentApplication.user.discordId);
+    } catch (error) {
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : "فشل إعطاء الرتبة" },
+        { status: 400 }
+      );
+    }
   }
 
   const application = await prisma.application.update({
