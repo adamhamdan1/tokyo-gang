@@ -40,6 +40,21 @@ const members = [
   ["وليد كروز", "مقاتل"],
 ];
 
+const killfeed = [
+  "TOKYO secured North Side",
+  "Target neutralized",
+  "Territory updated",
+  "High command online",
+  "Recruit file encrypted",
+];
+
+const timeline = [
+  ["مرحلة التأسيس", "بداية TOKYO GANG وبناء القيادة الأساسية."],
+  ["أول سيطرة", "فرض الحضور داخل المدينة وإثبات الاسم."],
+  ["توسّع النفوذ", "تنظيم الأعضاء وتقوية الملفات الداخلية."],
+  ["نظام الإدارة", "تحويل العصابة لمنظومة تقديمات ورتب ومتابعة."],
+];
+
 type DiscordMember = {
   id: string;
   name: string;
@@ -148,6 +163,18 @@ export default function Home() {
 
       <div className="pointer-events-none fixed inset-0 z-[9997] opacity-[0.035] bg-[linear-gradient(to_bottom,white_1px,transparent_1px)] bg-[length:100%_4px]" />
       <div className="pointer-events-none fixed inset-0 z-[9996] bg-[radial-gradient(circle_at_center,transparent_45%,rgba(0,0,0,0.65)_100%)]" />
+      <div className="pointer-events-none fixed inset-0 z-[9995] opacity-20 mix-blend-screen">
+        <motion.div
+          animate={{ x: ["-20%", "20%", "-20%"], opacity: [0.08, 0.18, 0.08] }}
+          transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute top-24 h-48 w-[120vw] bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.20),transparent_65%)] blur-3xl"
+        />
+        <motion.div
+          animate={{ x: ["20%", "-15%", "20%"], y: [0, -40, 0], opacity: [0.06, 0.14, 0.06] }}
+          transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute bottom-32 h-56 w-[110vw] bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.16),transparent_70%)] blur-3xl"
+        />
+      </div>
 
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         <motion.div
@@ -287,6 +314,20 @@ export default function Home() {
         </div>
       </div>
 
+      <div className="fixed right-6 top-24 z-40 hidden w-72 border border-green-400/20 bg-black/70 p-4 text-left backdrop-blur-md lg:block">
+        <div className="mb-3 flex items-center justify-between">
+          <p className="text-xs font-black tracking-[3px] text-green-400">TOKYO NETWORK</p>
+          <span className="h-2 w-2 rounded-full bg-green-400 shadow-[0_0_12px_lime]" />
+        </div>
+        <p className="text-sm text-gray-300">STATUS: ONLINE</p>
+        <p className="text-sm text-gray-300">ACTIVE MEMBERS: {discordMembers.length || 24}</p>
+        <div className="mt-4 space-y-2 text-xs text-gray-400">
+          {killfeed.slice(0, 3).map((item) => (
+            <p key={item} className="border-t border-white/10 pt-2">{item}</p>
+          ))}
+        </div>
+      </div>
+
       <section id="home" className="relative flex flex-col items-center justify-center h-screen text-center px-6 overflow-hidden">
         <div className="absolute inset-0 bg-[url('/bg.jpg')] bg-cover bg-center opacity-15 grayscale" />
 
@@ -348,7 +389,20 @@ export default function Home() {
             }}
             className="relative text-7xl md:text-9xl font-black text-white tracking-[10px] drop-shadow-[0_0_40px_white]"
           >
-            <span className="absolute inset-0 text-white/20 translate-x-2 blur-[1px]">TOKYO</span>
+            <motion.span
+              animate={{ x: [2, -3, 1, 0], opacity: [0.16, 0.35, 0.12, 0.2] }}
+              transition={{ duration: 0.22, repeat: Infinity, repeatDelay: 3.6 }}
+              className="absolute inset-0 text-red-500/35 blur-[1px]"
+            >
+              TOKYO
+            </motion.span>
+            <motion.span
+              animate={{ x: [-2, 3, -1, 0], opacity: [0.12, 0.28, 0.1, 0.16] }}
+              transition={{ duration: 0.18, repeat: Infinity, repeatDelay: 4.2 }}
+              className="absolute inset-0 text-white/20 translate-x-2 blur-[1px]"
+            >
+              TOKYO
+            </motion.span>
             <span className="absolute inset-0 text-white/10 -translate-x-2">TOKYO</span>
             <span className="relative z-10">TOKYO</span>
           </motion.h1>
@@ -417,6 +471,16 @@ export default function Home() {
           className="whitespace-nowrap text-sm md:text-base font-bold tracking-[4px] text-white/80"
         >
           ⚠ TOKYO GANG سيطرت على المنطقة الشرقية — ⚠ تم القضاء على أحد الخونة — ⚠ النفوذ يزداد يومياً — ⚠ TOP 1 GANG داخل السيرفر — ⚠ لا مكان للضعفاء داخل TOKYO —
+        </motion.div>
+      </section>
+
+      <section className="relative overflow-hidden border-b border-white/10 bg-zinc-950 px-6 py-5">
+        <motion.div
+          animate={{ x: ["-100%", "100%"] }}
+          transition={{ duration: 28, repeat: Infinity, ease: "linear" }}
+          className="whitespace-nowrap text-left text-xs font-black tracking-[4px] text-green-400/80"
+        >
+          {killfeed.map((item) => `// ${item}`).join("   ")}
         </motion.div>
       </section>
 
@@ -696,6 +760,32 @@ export default function Home() {
               {rule}
             </div>
           ))}
+        </div>
+      </section>
+
+      <section id="timeline" className="py-24 px-6 bg-zinc-950 border-y border-white/10">
+        <h2 className="text-5xl font-black text-center mb-4">TOKYO TIMELINE</h2>
+        <p className="text-center text-gray-500 tracking-[4px] mb-14">سجل الهيبة والتطور</p>
+
+        <div className="mx-auto max-w-5xl">
+          <div className="relative grid gap-6 md:grid-cols-4">
+            <div className="absolute left-0 right-0 top-10 hidden h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent md:block" />
+            {timeline.map(([title, desc], index) => (
+              <motion.div
+                key={title}
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.12 }}
+                className="relative rounded-3xl border border-white/15 bg-black p-6 shadow-[0_0_35px_rgba(255,255,255,0.06)]"
+              >
+                <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-white text-xl font-black text-black shadow-[0_0_22px_rgba(255,255,255,0.35)]">
+                  {index + 1}
+                </div>
+                <h3 className="text-2xl font-black text-white">{title}</h3>
+                <p className="mt-4 leading-8 text-gray-400">{desc}</p>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </section>
 
