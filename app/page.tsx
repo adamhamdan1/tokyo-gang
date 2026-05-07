@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export default function Home() {
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -111,7 +112,7 @@ export default function Home() {
           </p>
           <div className="mt-10 flex gap-4 justify-center flex-wrap">
             <a href="#apply" className="px-8 py-4 bg-white text-black hover:bg-gray-300 rounded-2xl text-lg font-bold transition hover:scale-105">تقديم انضمام</a>
-            <a href="#" className="px-8 py-4 border border-white hover:bg-white hover:text-black rounded-2xl text-lg font-bold transition hover:scale-105">دخول الديسكورد</a>
+            <a href="discord.gg/tok" target="_blank" className="px-8 py-4 border border-white hover:bg-white hover:text-black rounded-2xl text-lg font-bold transition hover:scale-105">دخول الديسكورد</a>
           </div>
         </motion.div>
       </section>
@@ -166,14 +167,42 @@ export default function Home() {
       </section>
 
       <section id="apply" className="py-24 px-6 bg-black">
-        <h2 className="text-5xl font-black text-center mb-8">تقديم الانضمام</h2>
-        <p className="text-center text-gray-400 mb-10">اضغط الزر وعبّي نموذج التقديم.</p>
-        <div className="flex justify-center">
-          <a href="#" className="px-10 py-4 bg-white text-black rounded-2xl font-bold hover:bg-gray-300 transition">
-            فتح نموذج التقديم
-          </a>
-        </div>
-      </section>
+  <h2 className="text-5xl font-black text-center mb-8">تقديم الانضمام</h2>
+
+  <form
+    onSubmit={async (e) => {
+      e.preventDefault();
+
+      const form = e.currentTarget;
+      const formData = new FormData(form);
+
+      await fetch("/api/apply", {
+        method: "POST",
+        body: JSON.stringify({
+          name: formData.get("name"),
+          age: formData.get("age"),
+          discord: formData.get("discord"),
+          experience: formData.get("experience"),
+          reason: formData.get("reason"),
+        }),
+      });
+
+      alert("تم إرسال طلبك بنجاح");
+      form.reset();
+    }}
+    className="max-w-2xl mx-auto grid gap-4"
+  >
+    <input name="name" required placeholder="اسمك داخل اللعبة" className="bg-zinc-950 border border-white/20 rounded-2xl p-4" />
+    <input name="age" required placeholder="عمرك" className="bg-zinc-950 border border-white/20 rounded-2xl p-4" />
+    <input name="discord" required placeholder="Discord ID" className="bg-zinc-950 border border-white/20 rounded-2xl p-4" />
+    <textarea name="experience" required placeholder="خبرتك في فايف إم" className="bg-zinc-950 border border-white/20 rounded-2xl p-4 h-32" />
+    <textarea name="reason" required placeholder="ليش بدك تنضم؟" className="bg-zinc-950 border border-white/20 rounded-2xl p-4 h-32" />
+
+    <button className="bg-white text-black rounded-2xl py-4 font-bold hover:bg-gray-300 transition">
+      إرسال الطلب
+    </button>
+  </form>
+</section>
 
       <footer className="py-10 text-center text-gray-500 bg-black border-t border-white/10">
         TOKYO GANG © 2025
