@@ -5,10 +5,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const members = [
-  ["سيلفادور كروز", "القائد"],
-  ["توتي كروز", "الزعيم"],
-  ["حمدان كروز", "نائب القائد"],
-  ["برلين كروز", "نائب القائد"],
   ["سنتياغو كروز", "العقل المدبر"],
   ["لومي المخفي", "الشبح"],
   ["أبو صقير كروز", "الدب المميز"],
@@ -379,6 +375,54 @@ export default function Home() {
           </div>
         </div>
       </section>
+      <section id="command" className="py-24 px-6 bg-black border-y border-white/10">
+  <h2 className="text-5xl font-black text-center mb-4">القيادة العليا</h2>
+  <p className="text-center text-gray-400 mb-14 tracking-[4px]">
+    HIGH COMMAND
+  </p>
+
+  <div className="max-w-7xl mx-auto grid md:grid-cols-4 gap-8">
+    {[
+      ["سيلفادور كروز", "القائد الأعلى"],
+      ["توتي كروز", "الزعيم"],
+      ["حمدان كروز", "نائب القائد"],
+      ["برلين كروز", "نائب القائد"],
+    ].map(([name, role], index) => (
+      <motion.div
+        key={name}
+        initial={{ opacity: 0, y: 80, scale: 0.9 }}
+        whileInView={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ delay: index * 0.15, duration: 0.8 }}
+        whileHover={{ scale: 1.07, y: -10 }}
+        className="relative overflow-hidden bg-zinc-950 border border-white/20 rounded-[35px] p-8 text-center group shadow-[0_0_40px_rgba(255,255,255,0.08)]"
+      >
+        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-500 bg-gradient-to-br from-white/15 via-transparent to-white/5" />
+
+        <div className="relative z-10">
+          <div className="mx-auto mb-6 w-28 h-28 rounded-full bg-white text-black flex items-center justify-center text-4xl font-black shadow-[0_0_35px_white]">
+            {name[0]}
+          </div>
+
+          <p className="text-xs tracking-[5px] text-gray-500 mb-3">
+            HIGH COMMAND
+          </p>
+
+          <h3 className="text-3xl font-black text-white drop-shadow-[0_0_20px_white]">
+            {name}
+          </h3>
+
+          <p className="mt-3 text-gray-400">{role}</p>
+
+          <div className="mt-6 h-[2px] bg-gradient-to-r from-transparent via-white to-transparent" />
+
+          <p className="mt-5 text-red-500 font-black tracking-[3px] drop-shadow-[0_0_12px_red]">
+            AUTHORITY LEVEL: MAX
+          </p>
+        </div>
+      </motion.div>
+    ))}
+  </div>
+</section>
 
       <section id="members" className="py-24 px-6 bg-black">
         <h2 className="text-5xl font-black text-center mb-6">أعضاء TOKYO GANG</h2>
