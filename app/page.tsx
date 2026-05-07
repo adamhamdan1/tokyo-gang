@@ -94,20 +94,14 @@ export default function Home() {
       <SpeedInsights />
 
       <motion.div
-  className="pointer-events-none fixed z-[9999] w-8 h-8 rounded-full border border-white/60 shadow-[0_0_18px_white]"
-  style={{
-    left: mouse.x - 16,
-    top: mouse.y - 16,
-  }}
-/>
+        className="pointer-events-none fixed z-[9999] w-8 h-8 rounded-full border border-white/60 shadow-[0_0_18px_white]"
+        style={{ left: mouse.x - 16, top: mouse.y - 16 }}
+      />
 
-<motion.div
-  className="pointer-events-none fixed z-[9998] w-2 h-2 rounded-full bg-white shadow-[0_0_12px_white]"
-  style={{
-    left: mouse.x - 4,
-    top: mouse.y - 4,
-  }}
-/>
+      <motion.div
+        className="pointer-events-none fixed z-[9998] w-2 h-2 rounded-full bg-white shadow-[0_0_12px_white]"
+        style={{ left: mouse.x - 4, top: mouse.y - 4 }}
+      />
 
       <audio ref={audioRef} loop>
         <source src="/music.mp3" type="audio/mpeg" />
@@ -173,9 +167,17 @@ export default function Home() {
         <button onClick={toggleMusic} className="bg-white text-black font-bold rounded-xl py-3 hover:bg-gray-300 transition">
           {playing ? "إيقاف الموسيقى" : "تشغيل الموسيقى"}
         </button>
+
         <div>
           <p className="text-xs text-gray-400 mb-2">مستوى الصوت: {volume}%</p>
-          <input type="range" min="0" max="100" value={volume} onChange={(e) => changeVolume(Number(e.target.value))} className="w-full" />
+          <input
+            type="range"
+            min="0"
+            max="100"
+            value={volume}
+            onChange={(e) => changeVolume(Number(e.target.value))}
+            className="w-full"
+          />
         </div>
       </div>
 
@@ -186,28 +188,88 @@ export default function Home() {
           transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
           className="absolute inset-0 bg-[url('/bg.jpg')] bg-cover bg-center opacity-25 grayscale"
         />
+
         <div className="absolute inset-0 bg-black/75" />
 
-        <motion.div animate={{ x: ["-20%", "20%"], opacity: [0.15, 0.35, 0.15] }} transition={{ duration: 10, repeat: Infinity }} className="absolute -bottom-20 left-0 w-[700px] h-[300px] bg-white/10 blur-3xl rounded-full" />
-        <motion.div animate={{ y: [40, -40, 40], opacity: [0.08, 0.22, 0.08] }} transition={{ duration: 9, repeat: Infinity }} className="absolute bottom-10 w-[900px] h-[180px] bg-white/10 blur-3xl rounded-full" />
+        <motion.div
+          animate={{ x: ["-20%", "20%"], opacity: [0.15, 0.35, 0.15] }}
+          transition={{ duration: 10, repeat: Infinity }}
+          className="absolute -bottom-20 left-0 w-[700px] h-[300px] bg-white/10 blur-3xl rounded-full"
+        />
 
-        <motion.div initial={{ opacity: 0, scale: 0.7, y: 100 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ duration: 1.5 }} className="relative z-10">
-          <p className="mb-5 text-sm tracking-[8px] text-gray-300">نَحْنُ لا نَستَسلِم نَنْتَصِر او نَمْوتْ</p>
+        <motion.div
+          animate={{ y: [40, -40, 40], opacity: [0.08, 0.22, 0.08] }}
+          transition={{ duration: 9, repeat: Infinity }}
+          className="absolute bottom-10 w-[900px] h-[180px] bg-white/10 blur-3xl rounded-full"
+        />
+
+        <motion.div
+          initial={{ opacity: 0, scale: 0.75, y: 120, rotateX: 25 }}
+          animate={{ opacity: 1, scale: 1, y: 0, rotateX: 0 }}
+          transition={{ duration: 1.6, ease: "easeOut" }}
+          className="relative z-10"
+        >
+          <motion.div
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: "260px", opacity: 1 }}
+            transition={{ delay: 0.6, duration: 1.2 }}
+            className="mx-auto mb-6 h-[1px] bg-gradient-to-r from-transparent via-white to-transparent"
+          />
+
+          <motion.p
+            initial={{ opacity: 0, y: 25, letterSpacing: "0px" }}
+            animate={{ opacity: 1, y: 0, letterSpacing: "8px" }}
+            transition={{ delay: 0.7, duration: 1 }}
+            className="mb-5 text-sm text-gray-300 drop-shadow-[0_0_10px_white]"
+          >
+            نَحْنُ لا نَستَسلِم نَنْتَصِر او نَمْوتْ
+          </motion.p>
 
           <motion.h1
-            animate={{ x: [0, -2, 2, 0], opacity: [1, 0.86, 1] }}
-            transition={{ duration: 0.25, repeat: Infinity, repeatDelay: 3 }}
-            className="relative text-7xl md:text-9xl font-black text-white drop-shadow-[0_0_35px_white] tracking-[10px]"
+            initial={{ opacity: 0, scale: 1.4, filter: "blur(14px)" }}
+            animate={{
+              opacity: 1,
+              scale: 1,
+              filter: "blur(0px)",
+              x: [0, -2, 2, 0],
+            }}
+            transition={{
+              opacity: { duration: 1 },
+              scale: { duration: 1.3 },
+              filter: { duration: 1.1 },
+              x: { duration: 0.25, repeat: Infinity, repeatDelay: 3 },
+            }}
+            className="relative text-7xl md:text-9xl font-black text-white tracking-[10px] drop-shadow-[0_0_40px_white]"
           >
-            <span className="absolute inset-0 text-white/25 translate-x-1">TOKYO</span>
-            TOKYO
+            <span className="absolute inset-0 text-white/20 translate-x-2 blur-[1px]">TOKYO</span>
+            <span className="absolute inset-0 text-white/10 -translate-x-2">TOKYO</span>
+            <span className="relative z-10">TOKYO</span>
           </motion.h1>
 
-          <h2 className="text-5xl md:text-7xl font-bold text-gray-200 mt-2 tracking-[10px]">GANG</h2>
+          <motion.h2
+            initial={{ opacity: 0, y: 50, letterSpacing: "0px" }}
+            animate={{ opacity: 1, y: 0, letterSpacing: "10px" }}
+            transition={{ delay: 0.5, duration: 1.2 }}
+            className="text-5xl md:text-7xl font-bold text-gray-200 mt-2 drop-shadow-[0_0_20px_white]"
+          >
+            GANG
+          </motion.h2>
 
-          <p className="mt-6 text-gray-300 text-lg md:text-xl max-w-2xl mx-auto leading-9">
+          <motion.p
+            initial={{ opacity: 0, y: 35 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.1, duration: 1 }}
+            className="mt-6 text-gray-300 text-lg md:text-xl max-w-2xl mx-auto leading-9 bg-black/20 border border-white/10 rounded-3xl px-6 py-4 backdrop-blur-sm shadow-[0_0_30px_rgba(255,255,255,0.06)]"
+          >
             أهلاً بك في الموقع الرسمي لعصابة TOKYO GANG. هنا يجتمع الولاء، الاحترام، والقوة داخل عالم فايف إم.
-          </p>
+          </motion.p>
+
+          <motion.div
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: "340px", opacity: 1 }}
+            transition={{ delay: 1.4, duration: 1.2 }}
+            className="mx-auto mt-8 h-[1px] bg-gradient-to-r from-transparent via-white/70 to-transparent"
+          />
 
           <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
             {[
@@ -237,8 +299,13 @@ export default function Home() {
           </div>
 
           <div className="mt-10 flex gap-4 justify-center flex-wrap">
-            <a href="#apply" className="px-8 py-4 bg-white text-black hover:bg-gray-300 rounded-2xl text-lg font-bold transition hover:scale-105">تقديم انضمام</a>
-            <a href="https://discord.gg/tok" target="_blank" className="px-8 py-4 border border-white hover:bg-white hover:text-black rounded-2xl text-lg font-bold transition hover:scale-105">دخول الديسكورد</a>
+            <a href="#apply" className="px-8 py-4 bg-white text-black hover:bg-gray-300 rounded-2xl text-lg font-bold transition hover:scale-105">
+              تقديم انضمام
+            </a>
+
+            <a href="https://discord.gg/tok" target="_blank" className="px-8 py-4 border border-white hover:bg-white hover:text-black rounded-2xl text-lg font-bold transition hover:scale-105">
+              دخول الديسكورد
+            </a>
           </div>
         </motion.div>
       </section>
