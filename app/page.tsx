@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export default function Home() {
   const audioRef = useRef<HTMLAudioElement>(null);
