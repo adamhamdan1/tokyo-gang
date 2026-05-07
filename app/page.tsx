@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { signIn, useSession } from "next-auth/react";
+import { signIn, signOut, useSession } from "next-auth/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 
@@ -214,17 +214,26 @@ export default function Home() {
             )}
           </div>
           {session.data?.user ? (
-            <div className="flex items-center gap-3 rounded-full border border-white/15 bg-black/50 px-3 py-2 shadow-[0_0_20px_rgba(255,255,255,0.08)]">
-              {session.data.user.image && (
-                <img
-                  src={session.data.user.image}
-                  className="h-10 w-10 rounded-full border border-white/20 object-cover"
-                  alt={session.data.user.name ?? "Discord user"}
-                />
-              )}
-              <p className="hidden max-w-28 truncate text-sm font-bold text-white sm:block">
-                {session.data.user.name}
-              </p>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3 rounded-full border border-white/15 bg-black/50 px-3 py-2 shadow-[0_0_20px_rgba(255,255,255,0.08)]">
+                {session.data.user.image && (
+                  <img
+                    src={session.data.user.image}
+                    className="h-10 w-10 rounded-full border border-white/20 object-cover"
+                    alt={session.data.user.name ?? "Discord user"}
+                  />
+                )}
+                <p className="hidden max-w-28 truncate text-sm font-bold text-white sm:block">
+                  {session.data.user.name}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => signOut()}
+                className="rounded-full border border-white/15 bg-black/50 px-4 py-2 text-sm font-bold text-gray-300 transition hover:text-white"
+              >
+                خروج
+              </button>
             </div>
           ) : (
             <button

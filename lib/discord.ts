@@ -41,7 +41,15 @@ function getAcceptedRoleId() {
   return roleId;
 }
 
+export function isDiscordSnowflake(value: string) {
+  return /^\d{17,20}$/.test(value);
+}
+
 export async function getTokyoGuildMember(discordId: string) {
+  if (!isDiscordSnowflake(discordId)) {
+    throw new Error("هذا التقديم قديم وفيه Discord ID غير صحيح. ارفضه وخلي العضو يسجل خروج/دخول ثم يقدم من جديد");
+  }
+
   const response = await fetch(
     `${DISCORD_API_BASE}/guilds/${getGuildId()}/members/${discordId}`,
     {
@@ -52,6 +60,10 @@ export async function getTokyoGuildMember(discordId: string) {
 
   if (response.status === 404) {
     return null;
+  }
+
+  if (response.status === 400) {
+    throw new Error("Discord ID غير صحيح. خلي العضو يسجل خروج/دخول بالديسكورد ثم يقدم من جديد");
   }
 
   if (!response.ok) {

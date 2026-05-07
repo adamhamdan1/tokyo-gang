@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { requireTokyoGuildMember } from "@/lib/discord";
+import { isDiscordSnowflake, requireTokyoGuildMember } from "@/lib/discord";
 import { prisma } from "@/lib/prisma";
 
 type ApplyBody = {
@@ -27,6 +27,13 @@ export async function POST(req: Request) {
     return NextResponse.json(
       { error: "بيانات التقديم ناقصة" },
       { status: 400 }
+    );
+  }
+
+  if (!isDiscordSnowflake(session.user.id)) {
+    return NextResponse.json(
+      { error: "جلسة الديسكورد قديمة. سجل خروج من الموقع ثم سجل دخول بالديسكورد وقدم من جديد" },
+      { status: 401 }
     );
   }
 
