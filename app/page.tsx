@@ -39,6 +39,13 @@ const members = [
   ["وليد كروز", "مقاتل"],
 ];
 
+type DiscordMember = {
+  id: string;
+  name: string;
+  username: string;
+  image: string | null;
+};
+
 export default function Home() {
   const session = useSession();
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -49,6 +56,7 @@ export default function Home() {
   const [rank, setRank] = useState("الكل");
   const [mouse, setMouse] = useState({ x: 0, y: 0 });
   const [showBackToTop, setShowBackToTop] = useState(false);
+  const [discordMembers, setDiscordMembers] = useState<DiscordMember[]>([]);
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 3000);
@@ -96,6 +104,16 @@ export default function Home() {
       window.removeEventListener("click", startMusic);
     };
   }, [volume]);
+
+  useEffect(() => {
+    const loadDiscordMembers = async () => {
+      const response = await fetch("/api/discord-members");
+      const data = (await response.json().catch(() => null)) as { members?: DiscordMember[] } | null;
+      setDiscordMembers(data?.members ?? []);
+    };
+
+    loadDiscordMembers();
+  }, []);
 
   const filteredMembers = members.filter(([name, role]) => {
     const matchesSearch = name.toLowerCase().includes(search.toLowerCase());
@@ -210,7 +228,10 @@ export default function Home() {
             <a href="#wars" className="hover:text-white">الحروب</a>
             <a href="#apply" className="hover:text-white">التقديم</a>
             {session.data?.user && (
-              <a href="/admin" className="text-red-400 hover:text-red-300">الإدارة</a>
+              <>
+                <a href="/status" className="text-green-400 hover:text-green-300">طلبي</a>
+                <a href="/admin" className="text-red-400 hover:text-red-300">الإدارة</a>
+              </>
             )}
           </div>
           {session.data?.user ? (
@@ -534,6 +555,35 @@ export default function Home() {
       <section id="members" className="py-24 px-6 bg-black">
         <h2 className="text-5xl font-black text-center mb-6">أعضاء TOKYO GANG</h2>
         <p className="text-center text-gray-400 mb-10">قاعدة بيانات كاملة لأعضاء العصابة وعددهم 35 عضو</p>
+
+        {discordMembers.length > 0 && (
+          <div className="mx-auto mb-14 max-w-7xl">
+            <p className="mb-6 text-center text-sm font-black tracking-[5px] text-green-400">
+              LIVE DISCORD MEMBERS
+            </p>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {discordMembers.slice(0, 12).map((member) => (
+                <motion.div
+                  key={member.id}
+                  whileHover={{ scale: 1.04, y: -6 }}
+                  className="flex items-center gap-4 rounded-3xl border border-green-400/20 bg-green-400/5 p-4 shadow-[0_0_28px_rgba(74,222,128,0.08)]"
+                >
+                  {member.image ? (
+                    <img src={member.image} alt={member.name} className="h-14 w-14 rounded-full border border-white/20 object-cover" />
+                  ) : (
+                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-xl font-black text-black">
+                      {member.name[0]}
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <p className="truncate font-black text-white">{member.name}</p>
+                    <p className="truncate text-xs text-gray-500">@{member.username}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row gap-4 mb-10">
           <input

@@ -1,5 +1,5 @@
 import { auth } from "@/auth";
-import { giveAcceptedRole } from "@/lib/discord";
+import { giveAcceptedRole, sendAdminLog, sendDiscordDm } from "@/lib/discord";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
@@ -11,6 +11,7 @@ type RouteContext = {
 
 type UpdateBody = {
   status?: string;
+  decisionReason?: string;
 };
 
 function getAdminIds() {
@@ -62,6 +63,10 @@ export async function PATCH(req: Request, context: RouteContext) {
     return NextResponse.json({ error: "التقديم غير موجود" }, { status: 404 });
   }
 
+  if (currentApplication.status === "ACCEPTED" && body.status === "ACCEPTED") {
+    return NextResponse.json({ error: "هذا الطلب مقبول بالفعل" }, { status: 409 });
+  }
+
   if (body.status === "ACCEPTED") {
     try {
       await giveAcceptedRole(currentApplication.user.discordId);
@@ -73,10 +78,40 @@ export async function PATCH(req: Request, context: RouteContext) {
     }
   }
 
+  const decisionReason =
+    body.status === "REJECTED"
+      ? body.decisionReason?.trim() || "لم يتم ذكر سبب"
+      : null;
+
   const application = await prisma.application.update({
     where: { id },
-    data: { status: body.status },
+    data: {
+      status: body.status,
+      decisionReason,
+      decidedBy: admin.session.user.id,
+      decidedAt: new Date(),
+    },
   });
+
+  if (body.status === "ACCEPTED") {
+    await sendDiscordDm(
+      currentApplication.user.discordId,
+      `تم قبول طلبك في TOKYO GANG. مبروك، تم إعطاؤك الرتبة تلقائياً.`
+    ).catch((error) => console.error("Discord DM failed", error));
+  }
+
+  if (body.status === "REJECTED") {
+    await sendDiscordDm(
+      currentApplication.user.discordId,
+      `تم رفض طلبك في TOKYO GANG.\nالسبب: ${decisionReason}`
+    ).catch((error) => console.error("Discord DM failed", error));
+  }
+
+  await sendAdminLog(
+    `قرار إدارة TOKYO: ${body.status}\nالعضو: ${currentApplication.user.username} (${currentApplication.user.discordId})\nالأدمن: ${admin.session.user.name ?? admin.session.user.id}${
+      decisionReason ? `\nسبب الرفض: ${decisionReason}` : ""
+    }`
+  ).catch((error) => console.error("Admin log failed", error));
 
   return NextResponse.json({ success: true, application });
 }
@@ -89,10 +124,20 @@ export async function DELETE(_req: Request, context: RouteContext) {
   }
 
   const { id } = await context.params;
+  const application = await prisma.application.findUnique({
+    where: { id },
+    include: { user: true },
+  });
 
   await prisma.application.delete({
     where: { id },
   });
+
+  if (application) {
+    await sendAdminLog(
+      `حذف تقديم TOKYO\nالعضو: ${application.user.username} (${application.user.discordId})\nالأدمن: ${admin.session.user.name ?? admin.session.user.id}`
+    ).catch((error) => console.error("Admin log failed", error));
+  }
 
   return NextResponse.json({ success: true });
 }

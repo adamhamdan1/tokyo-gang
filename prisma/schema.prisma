@@ -22,6 +22,9 @@ model Application {
   experience  String
   reason      String
   status      String   @default("PENDING")
+  decisionReason String?
+  decidedBy   String?
+  decidedAt   DateTime?
 
   userId      String
   user        User     @relation(fields: [userId], references: [id])

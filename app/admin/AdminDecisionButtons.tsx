@@ -5,13 +5,22 @@ import { useState } from "react";
 
 type Props = {
   applicationId: string;
+  status: string;
 };
 
-export function AdminDecisionButtons({ applicationId }: Props) {
+export function AdminDecisionButtons({ applicationId, status }: Props) {
   const router = useRouter();
   const [loadingStatus, setLoadingStatus] = useState<string | null>(null);
 
   const updateStatus = async (status: "ACCEPTED" | "REJECTED") => {
+    const decisionReason =
+      status === "REJECTED" ? prompt("اكتب سبب الرفض")?.trim() : undefined;
+
+    if (status === "REJECTED" && !decisionReason) {
+      alert("لازم تكتب سبب الرفض");
+      return;
+    }
+
     setLoadingStatus(status);
 
     try {
@@ -20,7 +29,7 @@ export function AdminDecisionButtons({ applicationId }: Props) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ status, decisionReason }),
       });
 
       const result = await response.json().catch(() => null);
@@ -65,11 +74,11 @@ export function AdminDecisionButtons({ applicationId }: Props) {
     <div className="mt-6 flex flex-wrap gap-3">
       <button
         type="button"
-        disabled={loadingStatus !== null}
+        disabled={loadingStatus !== null || status === "ACCEPTED"}
         onClick={() => updateStatus("ACCEPTED")}
         className="rounded-2xl bg-green-400 px-7 py-3 font-black text-black transition hover:bg-green-300 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {loadingStatus === "ACCEPTED" ? "جاري القبول..." : "قبول"}
+        {status === "ACCEPTED" ? "مقبول بالفعل" : loadingStatus === "ACCEPTED" ? "جاري القبول..." : "قبول"}
       </button>
 
       <button

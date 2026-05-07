@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { AdminDecisionButtons } from "./AdminDecisionButtons";
+import { AdminSyncButton } from "./AdminSyncButton";
 import Link from "next/link";
 
 const statusStyles: Record<string, string> = {
@@ -85,6 +86,16 @@ export default async function AdminPage({
           <div className="rounded-2xl border border-white/15 bg-zinc-950 px-5 py-3 text-sm text-gray-300">
             {session.user.name}
           </div>
+        </div>
+
+        <div className="mb-8 flex flex-wrap gap-3">
+          <Link
+            href="/"
+            className="rounded-2xl border border-white/15 bg-zinc-950 px-5 py-3 text-sm font-black text-gray-300 transition hover:border-white/30 hover:text-white"
+          >
+            الرجوع للرئيسية
+          </Link>
+          <AdminSyncButton />
         </div>
 
         <section className="mb-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -179,9 +190,15 @@ export default async function AdminPage({
                     <p className="text-xs text-gray-500">سبب الانضمام</p>
                     <p className="mt-2 leading-8 text-white">{app.reason}</p>
                   </div>
+                  {app.decisionReason && (
+                    <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4 md:col-span-3">
+                      <p className="text-xs text-red-300">سبب الرفض</p>
+                      <p className="mt-2 leading-8 text-white">{app.decisionReason}</p>
+                    </div>
+                  )}
                 </div>
 
-                <AdminDecisionButtons applicationId={app.id} />
+                <AdminDecisionButtons applicationId={app.id} status={app.status} />
               </article>
             );
           })}
