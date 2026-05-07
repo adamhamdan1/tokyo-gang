@@ -137,6 +137,24 @@ export async function listAcceptedRoleMembers() {
     .filter((member) => member.id);
 }
 
+export async function getGuildOnlineCount() {
+  const response = await fetchDiscord(`/guilds/${getGuildId()}?with_counts=true`);
+
+  if (!response.ok) {
+    throw new Error(`فشل جلب عدد المتصلين من Discord (${response.status})`);
+  }
+
+  const guild = (await response.json()) as {
+    approximate_presence_count?: number;
+    approximate_member_count?: number;
+  };
+
+  return {
+    online: guild.approximate_presence_count ?? null,
+    total: guild.approximate_member_count ?? null,
+  };
+}
+
 export async function sendDiscordDm(discordId: string, content: string) {
   if (!isDiscordSnowflake(discordId)) {
     return;

@@ -73,6 +73,7 @@ export default function Home() {
   const [mouse, setMouse] = useState({ x: 0, y: 0 });
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [discordMembers, setDiscordMembers] = useState<DiscordMember[]>([]);
+  const [onlineCount, setOnlineCount] = useState<number | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 3000);
@@ -124,8 +125,12 @@ export default function Home() {
   useEffect(() => {
     const loadDiscordMembers = async () => {
       const response = await fetch("/api/discord-members");
-      const data = (await response.json().catch(() => null)) as { members?: DiscordMember[] } | null;
+      const data = (await response.json().catch(() => null)) as {
+        members?: DiscordMember[];
+        onlineCount?: number | null;
+      } | null;
       setDiscordMembers(data?.members ?? []);
+      setOnlineCount(data?.onlineCount ?? null);
     };
 
     loadDiscordMembers();
@@ -320,7 +325,7 @@ export default function Home() {
           <span className="h-2 w-2 rounded-full bg-green-400 shadow-[0_0_12px_lime]" />
         </div>
         <p className="text-sm text-gray-300">STATUS: ONLINE</p>
-        <p className="text-sm text-gray-300">ACTIVE MEMBERS: {discordMembers.length || 24}</p>
+        <p className="text-sm text-gray-300">ACTIVE MEMBERS: {onlineCount ?? "SYNCING"}</p>
         <div className="mt-4 space-y-2 text-xs text-gray-400">
           {killfeed.slice(0, 3).map((item) => (
             <p key={item} className="border-t border-white/10 pt-2">{item}</p>
