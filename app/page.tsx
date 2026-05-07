@@ -57,6 +57,13 @@ const timeline = [
   ["نظام الإدارة", "تحويل العصابة لمنظومة تقديمات ورتب ومتابعة."],
 ];
 
+const loadingSteps = [
+  "LINKING DISCORD IDENTITY",
+  "VERIFYING TOKYO CLEARANCE",
+  "SYNCING ACTIVE MEMBERS",
+  "ARMING ADMIN CONSOLE",
+];
+
 type DiscordMember = {
   id: string;
   name: string;
@@ -216,34 +223,116 @@ export default function Home() {
             initial={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.8 }}
-            className="fixed inset-0 z-[999] bg-black flex flex-col items-center justify-center"
+            className="fixed inset-0 z-[999] overflow-hidden bg-black text-white"
           >
-            <motion.p
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-5 text-green-400 tracking-[6px] font-bold drop-shadow-[0_0_12px_lime]"
-            >
-              ACCESS GRANTED
-            </motion.p>
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.13),transparent_34%),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(0deg,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[length:100%_100%,54px_54px,54px_54px]" />
+            <motion.div
+              initial={{ y: "-100%" }}
+              animate={{ y: "100%" }}
+              transition={{ duration: 2.4, repeat: Infinity, ease: "linear" }}
+              className="absolute left-0 right-0 top-0 h-32 bg-gradient-to-b from-transparent via-white/18 to-transparent"
+            />
+            <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent_0,transparent_48%,rgba(255,255,255,0.11)_50%,transparent_52%,transparent_100%)] bg-[length:100%_7px] opacity-40" />
+            <div className="absolute inset-x-6 top-6 flex items-center justify-between border-t border-white/25 pt-4 text-[10px] font-black tracking-[4px] text-white/55 md:text-xs">
+              <span>TOKYO SECURE BOOT</span>
+              <span>STATUS: ACCESS GRANTED</span>
+            </div>
+            <div className="absolute inset-x-6 bottom-6 flex items-center justify-between border-b border-white/25 pb-4 text-[10px] font-black tracking-[4px] text-white/55 md:text-xs">
+              <span>SERVER: TOKYO GANG</span>
+              <span>PROTOCOL 05.07</span>
+            </div>
 
-            <motion.h1
-              initial={{ scale: 0.7, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 1 }}
-              className="text-6xl md:text-9xl font-black tracking-[12px] drop-shadow-[0_0_35px_white]"
-            >
-              TOKYO
-            </motion.h1>
-
-            <p className="mt-4 tracking-[8px] text-gray-400">UNDERGROUND DATABASE LOADING</p>
-
-            <div className="mt-8 w-64 h-1 bg-white/20 overflow-hidden rounded-full">
+            <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 py-20 text-center">
               <motion.div
-                initial={{ x: "-100%" }}
-                animate={{ x: "100%" }}
-                transition={{ duration: 1.5, repeat: Infinity }}
-                className="h-full w-1/2 bg-white"
-              />
+                initial={{ opacity: 0, scale: 0.78, rotateX: 25 }}
+                animate={{ opacity: 1, scale: 1, rotateX: 0 }}
+                transition={{ duration: 0.85, ease: "easeOut" }}
+                className="relative flex h-56 w-56 items-center justify-center md:h-72 md:w-72"
+              >
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 7, repeat: Infinity, ease: "linear" }}
+                  className="absolute inset-0 rounded-full border border-white/15 border-t-white/80 shadow-[0_0_80px_rgba(255,255,255,0.16)]"
+                />
+                <motion.div
+                  animate={{ rotate: -360 }}
+                  transition={{ duration: 11, repeat: Infinity, ease: "linear" }}
+                  className="absolute inset-6 rounded-full border border-dashed border-white/30"
+                />
+                <motion.div
+                  animate={{ scale: [0.88, 1.04, 0.88], opacity: [0.25, 0.7, 0.25] }}
+                  transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+                  className="absolute inset-12 rounded-full border border-white/20"
+                />
+                <div className="absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-gradient-to-b from-transparent via-white/45 to-transparent" />
+                <div className="absolute left-0 top-1/2 h-px w-full -translate-y-1/2 bg-gradient-to-r from-transparent via-white/45 to-transparent" />
+                <motion.img
+                  src="/server-logo.png"
+                  alt="TOKYO GANG"
+                  initial={{ opacity: 0, filter: "blur(12px)" }}
+                  animate={{ opacity: 0.78, filter: "blur(0px)" }}
+                  transition={{ delay: 0.25, duration: 0.7 }}
+                  className="relative z-10 h-24 w-24 object-contain drop-shadow-[0_0_35px_rgba(255,255,255,0.8)] md:h-32 md:w-32"
+                />
+              </motion.div>
+
+              <motion.p
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25 }}
+                className="mt-8 text-xs font-black tracking-[7px] text-green-400 drop-shadow-[0_0_14px_lime] md:text-sm"
+              >
+                ACCESS GRANTED
+              </motion.p>
+
+              <motion.h1
+                initial={{ opacity: 0, y: 26, scale: 0.92 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ delay: 0.38, duration: 0.65 }}
+                className="mt-4 text-5xl font-black tracking-[8px] drop-shadow-[0_0_42px_rgba(255,255,255,0.95)] md:text-9xl"
+              >
+                TOKYO
+              </motion.h1>
+
+              <motion.div
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.62 }}
+                className="mt-6 w-full max-w-xl"
+              >
+                <div className="mb-3 flex items-center justify-between text-[10px] font-black tracking-[4px] text-white/55 md:text-xs">
+                  <span>UNDERGROUND DATABASE</span>
+                  <motion.span
+                    animate={{ opacity: [0.45, 1, 0.45] }}
+                    transition={{ duration: 0.9, repeat: Infinity }}
+                  >
+                    100%
+                  </motion.span>
+                </div>
+                <div className="h-2 overflow-hidden border border-white/20 bg-white/5">
+                  <motion.div
+                    initial={{ width: "0%" }}
+                    animate={{ width: "100%" }}
+                    transition={{ duration: 2.65, ease: "easeInOut" }}
+                    className="h-full bg-gradient-to-r from-white/40 via-white to-green-300 shadow-[0_0_25px_rgba(255,255,255,0.9)]"
+                  />
+                </div>
+              </motion.div>
+
+              <div className="mt-8 grid w-full max-w-2xl gap-2 text-left text-[10px] font-mono uppercase tracking-[2px] text-white/55 md:grid-cols-2 md:text-xs">
+                {loadingSteps.map((step, index) => (
+                  <motion.div
+                    key={step}
+                    initial={{ opacity: 0, x: -16 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.82 + index * 0.18 }}
+                    className="border border-white/10 bg-black/45 px-4 py-3"
+                  >
+                    <span className="mr-2 text-green-400">0{index + 1}</span>
+                    {step}
+                  </motion.div>
+                ))}
+              </div>
             </div>
           </motion.div>
         )}
