@@ -225,17 +225,7 @@ export default function Home() {
             transition={{ duration: 0.8 }}
             className="fixed inset-0 z-[999] overflow-hidden bg-black text-white"
           >
-            <video
-              autoPlay
-              muted
-              loop
-              playsInline
-              className="absolute inset-0 h-full w-full object-cover opacity-30 grayscale"
-            >
-              <source src="/bg.mp4" type="video/mp4" />
-            </video>
-            <div className="absolute inset-0 bg-black/70" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.18),transparent_32%),linear-gradient(90deg,rgba(255,255,255,0.035)_1px,transparent_1px)] bg-[length:100%_100%,72px_72px]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.16),transparent_31%),radial-gradient(circle_at_50%_62%,rgba(239,68,68,0.16),transparent_26%),linear-gradient(90deg,rgba(255,255,255,0.035)_1px,transparent_1px)] bg-[length:100%_100%,100%_100%,72px_72px]" />
             <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent_0,transparent_48%,rgba(255,255,255,0.10)_50%,transparent_52%,transparent_100%)] bg-[length:100%_8px] opacity-30" />
             <motion.div
               initial={{ x: "-100%" }}
@@ -274,7 +264,7 @@ export default function Home() {
                   className="absolute inset-0 shadow-[0_0_60px_rgba(255,255,255,0.16)]"
                 />
                 <motion.img
-                  src="/tokyo-logo-transparent.png"
+                  src="/tokyo-logo-clean.png"
                   alt="TOKYO GANG"
                   initial={{ opacity: 0, filter: "blur(12px)" }}
                   animate={{ opacity: 1, filter: "blur(0px)" }}
