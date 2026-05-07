@@ -188,7 +188,6 @@ export default function Home() {
             <a href="#command" className="hover:text-white">القيادة</a>
             <a href="#streamers" className="hover:text-white">الستريمرز</a>
             <a href="#members" className="hover:text-white">الأعضاء</a>
-            <a href="#database" className="hover:text-white">الملفات</a>
             <a href="#wanted" className="hover:text-white">المطلوبين</a>
             <a href="#rules" className="hover:text-white">القوانين</a>
             <a href="#wars" className="hover:text-white">الحروب</a>
@@ -547,25 +546,6 @@ export default function Home() {
                 </div>
               </div>
             </motion.div>
-          ))}
-        </div>
-      </section>
-
-      <section id="database" className="py-24 px-6 bg-zinc-950">
-        <h2 className="text-5xl font-black text-center mb-14">TOKYO DATABASE</h2>
-
-        <div className="max-w-6xl mx-auto grid md:grid-cols-4 gap-6">
-          {[
-            ["BLACKLIST", "قائمة الممنوعين"],
-            ["WANTED", "المطلوبين"],
-            ["OPERATIONS", "العمليات"],
-            ["TERRITORIES", "المناطق"],
-          ].map(([title, desc]) => (
-            <div key={title} className="bg-black border border-white/20 rounded-3xl p-8 hover:scale-105 hover:border-white transition">
-              <p className="text-3xl font-black tracking-[4px]">{title}</p>
-              <p className="text-gray-400 mt-4">{desc}</p>
-              <div className="mt-8 h-1 bg-white/20 rounded-full" />
-            </div>
           ))}
         </div>
       </section>
