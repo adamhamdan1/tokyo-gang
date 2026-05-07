@@ -327,7 +327,7 @@ export default function Home() {
           <p className="text-xs font-black tracking-[3px] text-green-400">TOKYO NETWORK</p>
           <span className="h-2 w-2 rounded-full bg-green-400 shadow-[0_0_12px_lime]" />
         </div>
-        <p className="text-sm text-gray-300">SERVER: INFINITE CITY CFW</p>
+        <p className="text-sm text-gray-300">SERVER: TOKYO GANG</p>
         <p className="text-sm text-gray-300">BOT: LINKED</p>
         <p className="text-sm text-gray-300">ACTIVE MEMBERS: {onlineCount ?? "SYNCING"}</p>
         <p className="text-sm text-gray-300">ROLE MEMBERS: {discordMembers.length || "SYNCING"}</p>
@@ -498,9 +498,9 @@ export default function Home() {
         <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center">
           <div>
             <p className="text-sm tracking-[6px] text-gray-400 mb-4">مكان تواجدنا حالياً</p>
-            <h2 className="text-5xl font-black mb-6">INFINITE CITY CFW</h2>
+            <h2 className="text-5xl font-black mb-6">TOKYO GANG</h2>
             <p className="text-gray-300 text-lg leading-9">
-              حالياً تتواجد عصابة TOKYO GANG داخل سيرفر INFINITE CITY CFW، حيث نفرض حضورنا وهيبتنا داخل عالم فايف إم.
+              حالياً تتواجد عصابة TOKYO GANG داخل سيرفر TOKYO GANG، حيث نفرض حضورنا وهيبتنا داخل عالم فايف إم.
             </p>
           </div>
 
