@@ -49,10 +49,20 @@ export default function Home() {
   const [volume, setVolume] = useState(40);
   const [search, setSearch] = useState("");
   const [rank, setRank] = useState("الكل");
+  const [mouse, setMouse] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 2600);
+    const timer = setTimeout(() => setLoading(false), 3000);
     return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    const move = (e: MouseEvent) => {
+      setMouse({ x: e.clientX, y: e.clientY });
+    };
+
+    window.addEventListener("mousemove", move);
+    return () => window.removeEventListener("mousemove", move);
   }, []);
 
   const filteredMembers = members.filter(([name, role]) => {
@@ -80,8 +90,20 @@ export default function Home() {
   };
 
   return (
-    <main dir="rtl" className="min-h-screen bg-black text-white overflow-hidden cursor-crosshair">
+    <main dir="rtl" className="min-h-screen bg-black text-white overflow-hidden cursor-none">
       <SpeedInsights />
+
+      <motion.div
+        className="pointer-events-none fixed z-[9999] w-8 h-8 rounded-full border border-white/60 shadow-[0_0_18px_white]"
+        animate={{ x: mouse.x - 16, y: mouse.y - 16 }}
+        transition={{ type: "spring", stiffness: 500, damping: 35 }}
+      />
+
+      <motion.div
+        className="pointer-events-none fixed z-[9998] w-2 h-2 rounded-full bg-white shadow-[0_0_12px_white]"
+        animate={{ x: mouse.x - 4, y: mouse.y - 4 }}
+        transition={{ type: "spring", stiffness: 700, damping: 25 }}
+      />
 
       <audio ref={audioRef} loop>
         <source src="/music.mp3" type="audio/mpeg" />
@@ -95,6 +117,14 @@ export default function Home() {
             transition={{ duration: 0.8 }}
             className="fixed inset-0 z-[999] bg-black flex flex-col items-center justify-center"
           >
+            <motion.p
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-5 text-green-400 tracking-[6px] font-bold drop-shadow-[0_0_12px_lime]"
+            >
+              ACCESS GRANTED
+            </motion.p>
+
             <motion.h1
               initial={{ scale: 0.7, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -103,9 +133,11 @@ export default function Home() {
             >
               TOKYO
             </motion.h1>
+
             <p className="mt-4 tracking-[8px] text-gray-400">
-              LOADING UNDERGROUND DATABASE
+              UNDERGROUND DATABASE LOADING
             </p>
+
             <div className="mt-8 w-64 h-1 bg-white/20 overflow-hidden rounded-full">
               <motion.div
                 initial={{ x: "-100%" }}
@@ -157,34 +189,46 @@ export default function Home() {
 
         <motion.div initial={{ opacity: 0, scale: 0.7, y: 100 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ duration: 1.5 }} className="relative z-10">
           <p className="mb-5 text-sm tracking-[8px] text-gray-300">نَحْنُ لا نَستَسلِم نَنْتَصِر او نَمْوتْ</p>
-          <h1 className="text-7xl md:text-9xl font-black text-white drop-shadow-[0_0_35px_white] tracking-[10px]">TOKYO</h1>
+
+          <motion.h1
+            animate={{ x: [0, -2, 2, 0], opacity: [1, 0.86, 1] }}
+            transition={{ duration: 0.25, repeat: Infinity, repeatDelay: 3 }}
+            className="relative text-7xl md:text-9xl font-black text-white drop-shadow-[0_0_35px_white] tracking-[10px]"
+          >
+            <span className="absolute inset-0 text-white/25 translate-x-1">TOKYO</span>
+            TOKYO
+          </motion.h1>
+
           <h2 className="text-5xl md:text-7xl font-bold text-gray-200 mt-2 tracking-[10px]">GANG</h2>
+
           <p className="mt-6 text-gray-300 text-lg md:text-xl max-w-2xl mx-auto leading-9">
             أهلاً بك في الموقع الرسمي لعصابة TOKYO GANG. هنا يجتمع الولاء، الاحترام، والقوة داخل عالم فايف إم.
           </p>
 
           <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
-            {[["35", "عضو"],
-  ["TOP 1", "GANG"],
-  ["24/7", "سيطرة"],
-  ["∞", "نفوذ"],].map(([num, label]) => (
+            {[
+              ["35", "عضو"],
+              ["TOP 1", "GANG"],
+              ["24/7", "سيطرة"],
+              ["∞", "نفوذ"],
+            ].map(([num, label]) => (
               <motion.div
-  key={label}
-  whileHover={{ scale: 1.05, y: -5 }}
-  className="relative overflow-hidden bg-black/50 border border-white/20 rounded-2xl p-4 backdrop-blur-md group shadow-[0_0_18px_rgba(255,255,255,0.08)]"
->
-  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-500 bg-white/5" />
+                key={label}
+                whileHover={{ scale: 1.05, y: -5 }}
+                className="relative overflow-hidden bg-black/50 border border-white/20 rounded-2xl p-4 backdrop-blur-md group shadow-[0_0_18px_rgba(255,255,255,0.08)]"
+              >
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-500 bg-white/5" />
 
-  <p className="relative z-10 text-3xl font-black drop-shadow-[0_0_14px_white]">
-    {num}
-  </p>
+                <p className="relative z-10 text-3xl font-black drop-shadow-[0_0_14px_white]">
+                  {num}
+                </p>
 
-  <p className="relative z-10 text-gray-400 text-sm mt-1">
-    {label}
-  </p>
+                <p className="relative z-10 text-gray-400 text-sm mt-1">
+                  {label}
+                </p>
 
-  <div className="relative z-10 mt-3 h-[1px] bg-gradient-to-r from-transparent via-white/70 to-transparent opacity-60" />
-</motion.div>
+                <div className="relative z-10 mt-3 h-[1px] bg-gradient-to-r from-transparent via-white/70 to-transparent opacity-60" />
+              </motion.div>
             ))}
           </div>
 
@@ -230,7 +274,7 @@ export default function Home() {
             onChange={(e) => setRank(e.target.value)}
             className="bg-zinc-950 border border-white/20 rounded-2xl p-4 outline-none"
           >
-            {["الكل", "القائد", "نائب القائد", "العقل المدبر", "الشبح", "الزرقاوي الأصيل", "ابن القائد", "مقاتل"].map((r) => (
+            {["الكل", "القائد", "الزعيم", "نائب القائد", "العقل المدبر", "الشبح", "الدب المميز", "الزرقاوي الأصيل", "ابن القائد", "ستريمرنا", "مقاتل"].map((r) => (
               <option key={r}>{r}</option>
             ))}
           </select>
