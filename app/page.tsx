@@ -164,7 +164,10 @@ export default function Home() {
           </p>
 
           <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
-            {[["40", "عضو"], ["12", "عملية"], ["3", "مناطق"], ["100%", "هيبة"]].map(([num, label]) => (
+            {[["35", "عضو"],
+  ["TOP 1", "CFW"],
+  ["24/7", "سيطرة"],
+  ["∞", "نفوذ"],].map(([num, label]) => (
               <div key={label} className="bg-black/50 border border-white/20 rounded-2xl p-4 backdrop-blur-md">
                 <p className="text-3xl font-black">{num}</p>
                 <p className="text-gray-400 text-sm">{label}</p>
@@ -199,7 +202,7 @@ export default function Home() {
 
       <section id="members" className="py-24 px-6 bg-black">
         <h2 className="text-5xl font-black text-center mb-6">أعضاء TOKYO GANG</h2>
-        <p className="text-center text-gray-400 mb-10">قاعدة بيانات كاملة لأعضاء العصابة وعددهم 40 عضو</p>
+        <p className="text-center text-gray-400 mb-10">قاعدة بيانات كاملة لأعضاء العصابة وعددهم 35 عضو</p>
 
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row gap-4 mb-10">
           <input
