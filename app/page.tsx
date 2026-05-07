@@ -271,7 +271,7 @@ export default function Home() {
                 <motion.div
                   animate={{ scale: [1, 1.03, 1], opacity: [0.5, 0.85, 0.5] }}
                   transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
-                  className="absolute inset-0 border border-white/15 shadow-[0_0_60px_rgba(255,255,255,0.16)]"
+                  className="absolute inset-0 shadow-[0_0_60px_rgba(255,255,255,0.16)]"
                 />
                 <motion.img
                   src="/tokyo-logo.png"
