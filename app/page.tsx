@@ -412,23 +412,26 @@ export default function Home() {
 
         <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
           {[
-            {
-              name: "بابلو كروز",
-              role: "ستريمر رسمي",
-              kick: "https://kick.com/pablo-jo",
-              tiktok: "https://www.tiktok.com/@m2muon?is_from_webapp=1&sender_device=pc",
-            },
-            {
-              name: "برلين كروز",
-              role: "ستريمر رسمي",
-              kick: "https://kick.com/br-berlin",
-            },
-            {
-              name: "أبو فايز كروز",
-              role: "ستريمر رسمي",
-              kick: "https://kick.com/1abufayez1",
-            },
-          ].map((streamer, index) => (
+  {
+    name: "بابلو كروز",
+    role: "ستريمر رسمي",
+    kick: "https://kick.com/pablo-jo",
+    tiktok: "https://tiktok.com/@pablo",
+    logo: "/pablo.webp",
+  },
+  {
+    name: "برلين كروز",
+    role: "ستريمر رسمي",
+    kick: "https://kick.com/br-berlin",
+    logo: "/berlin.webp",
+  },
+  {
+    name: "أبو فايز كروز",
+    role: "ستريمر رسمي",
+    kick: "https://kick.com/1abufayez1",
+    logo: "/abufayez.webp",
+  },
+].map((streamer, index) => (
             <motion.div
               key={streamer.name}
               initial={{ opacity: 0, y: 70 }}
@@ -440,9 +443,13 @@ export default function Home() {
               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-500 bg-gradient-to-br from-white/10 to-transparent" />
 
               <div className="relative z-10">
-                <div className="mx-auto mb-6 w-28 h-28 rounded-full bg-white text-black flex items-center justify-center text-4xl font-black shadow-[0_0_30px_white]">
-                  ▶
-                </div>
+                <div className="mx-auto mb-6 w-28 h-28 rounded-full bg-white/10 border border-white/20 overflow-hidden shadow-[0_0_30px_white]">
+  <img
+    src={streamer.logo}
+    alt={streamer.name}
+    className="w-full h-full object-cover"
+  />
+</div>
 
                 <p className="text-xs tracking-[5px] text-gray-500 mb-3">LIVE CREATOR</p>
                 <h3 className="text-3xl font-black text-white drop-shadow-[0_0_20px_white]">{streamer.name}</h3>
