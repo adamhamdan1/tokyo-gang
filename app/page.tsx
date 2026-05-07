@@ -158,12 +158,14 @@ export default function Home() {
       <nav className="fixed top-0 left-0 right-0 z-50 bg-black/50 backdrop-blur-md border-b border-white/10">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
           <h1 className="font-black tracking-[5px]">TOKYO GANG</h1>
-          <div className="hidden md:flex gap-8 text-sm text-gray-300">
+          <div className="hidden md:flex gap-6 text-sm text-gray-300">
             <a href="#home" className="hover:text-white">الرئيسية</a>
             <a href="#server" className="hover:text-white">السيرفر</a>
             <a href="#command" className="hover:text-white">القيادة</a>
+            <a href="#streamers" className="hover:text-white">الستريمرز</a>
             <a href="#members" className="hover:text-white">الأعضاء</a>
             <a href="#database" className="hover:text-white">الملفات</a>
+            <a href="#wanted" className="hover:text-white">المطلوبين</a>
             <a href="#rules" className="hover:text-white">القوانين</a>
             <a href="#wars" className="hover:text-white">الحروب</a>
             <a href="#apply" className="hover:text-white">التقديم</a>
@@ -367,16 +369,55 @@ export default function Home() {
                 </div>
 
                 <p className="text-xs tracking-[5px] text-gray-500 mb-3">HIGH COMMAND</p>
-
                 <h3 className="text-3xl font-black text-white drop-shadow-[0_0_20px_white]">{name}</h3>
-
                 <p className="mt-3 text-gray-400">{role}</p>
-
                 <div className="mt-6 h-[2px] bg-gradient-to-r from-transparent via-white to-transparent" />
 
                 <p className="mt-5 text-red-500 font-black tracking-[3px] drop-shadow-[0_0_12px_red]">
                   AUTHORITY LEVEL: MAX
                 </p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      <section id="streamers" className="py-24 px-6 bg-zinc-950 border-y border-white/10">
+        <h2 className="text-5xl font-black text-center mb-4">ستريمرز العصابة</h2>
+        <p className="text-center text-gray-400 mb-14 tracking-[4px]">TOKYO MEDIA UNIT</p>
+
+        <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+          {[
+            ["بابلو كروز", "ستريمر رسمي", "https://kick.com/pablo-jo"],
+            ["برلين كروز", "ستريمر رسمي", "https://kick.com/br-berlin"],
+            ["أبو فايز كروز", "ستريمر رسمي", "https://kick.com/1abufayez1"],
+          ].map(([name, role, link], index) => (
+            <motion.div
+              key={name}
+              initial={{ opacity: 0, y: 70 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.15 }}
+              whileHover={{ scale: 1.04, y: -8 }}
+              className="relative overflow-hidden rounded-[35px] bg-black border border-white/20 p-8 text-center group shadow-[0_0_45px_rgba(255,255,255,0.08)]"
+            >
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-500 bg-gradient-to-br from-white/10 to-transparent" />
+
+              <div className="relative z-10">
+                <div className="mx-auto mb-6 w-28 h-28 rounded-full bg-white text-black flex items-center justify-center text-4xl font-black shadow-[0_0_30px_white]">
+                  ▶
+                </div>
+
+                <p className="text-xs tracking-[5px] text-gray-500 mb-3">LIVE CREATOR</p>
+                <h3 className="text-3xl font-black text-white drop-shadow-[0_0_20px_white]">{name}</h3>
+                <p className="mt-3 text-gray-400">{role}</p>
+
+                <a
+                  href={link}
+                  target="_blank"
+                  className="inline-block mt-7 px-8 py-3 bg-white text-black rounded-2xl font-bold hover:bg-gray-300 transition"
+                >
+                  زيارة الصفحة
+                </a>
               </div>
             </motion.div>
           ))}
@@ -469,6 +510,45 @@ export default function Home() {
               <p className="text-gray-400 mt-4">{desc}</p>
               <div className="mt-8 h-1 bg-white/20 rounded-full" />
             </div>
+          ))}
+        </div>
+      </section>
+
+      <section id="wanted" className="py-24 px-6 bg-black border-y border-white/10">
+        <h2 className="text-5xl font-black text-center mb-4">MOST WANTED</h2>
+        <p className="text-center text-gray-500 tracking-[4px] mb-14">TOKYO TARGET DATABASE</p>
+
+        <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+          {[
+            ["C-1", "بلاك ليست ومطلوب", "BLACKLIST"],
+            ["F-0", "مطلوب", "WANTED"],
+          ].map(([name, type, status], index) => (
+            <motion.div
+              key={name}
+              initial={{ opacity: 0, y: 70 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.15 }}
+              whileHover={{ scale: 1.05, y: -8 }}
+              className="relative overflow-hidden rounded-[35px] bg-zinc-950 border border-red-500/35 p-8 text-center shadow-[0_0_40px_rgba(255,0,0,0.14)]"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 to-transparent" />
+
+              <div className="relative z-10">
+                <div className="mx-auto mb-6 w-28 h-28 rounded-full bg-red-950 border border-red-500/50 flex items-center justify-center text-red-500 text-4xl font-black drop-shadow-[0_0_15px_red]">
+                  !
+                </div>
+
+                <p className="text-xs tracking-[5px] text-red-500 mb-3">{status}</p>
+
+                <h3 className="text-5xl font-black text-white drop-shadow-[0_0_18px_white]">{name}</h3>
+
+                <p className="mt-3 text-gray-400">{type}</p>
+
+                <div className="mt-6 h-[2px] bg-gradient-to-r from-transparent via-red-500 to-transparent" />
+
+                <p className="mt-5 text-red-500 font-black tracking-[3px]">THREAT: MAXIMUM</p>
+              </div>
+            </motion.div>
           ))}
         </div>
       </section>
