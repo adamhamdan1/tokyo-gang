@@ -62,6 +62,27 @@ export async function POST(req: Request) {
     },
   });
 
+  const existingApplication = await prisma.application.findFirst({
+    where: {
+      userId: user.id,
+      status: {
+        in: ["PENDING", "ACCEPTED"],
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  if (existingApplication) {
+    const message =
+      existingApplication.status === "ACCEPTED"
+        ? "طلبك مقبول بالفعل، ما تحتاج تقدم مرة ثانية"
+        : "عندك طلب قيد المراجعة بالفعل";
+
+    return NextResponse.json({ error: message }, { status: 409 });
+  }
+
   const application = await prisma.application.create({
     data: {
       name: body.name,

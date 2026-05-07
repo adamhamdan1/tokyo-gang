@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { AdminDecisionButtons } from "./AdminDecisionButtons";
+import Link from "next/link";
 
 const statusStyles: Record<string, string> = {
   PENDING: "border-yellow-400/40 bg-yellow-400/10 text-yellow-300 shadow-[0_0_24px_rgba(250,204,21,0.12)]",
@@ -14,9 +15,24 @@ const statusLabels: Record<string, string> = {
   REJECTED: "مرفوض",
 };
 
-export default async function AdminPage() {
+const filterTabs = [
+  ["الكل", "ALL"],
+  ["قيد المراجعة", "PENDING"],
+  ["المقبولين", "ACCEPTED"],
+  ["المرفوضين", "REJECTED"],
+];
+
+export default async function AdminPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ status?: string }>;
+}) {
   const session = await auth();
   const adminIds = process.env.ADMIN_DISCORD_IDS?.split(",").map((id) => id.trim()) || [];
+  const params = await searchParams;
+  const activeStatus = ["PENDING", "ACCEPTED", "REJECTED"].includes(params?.status ?? "")
+    ? params?.status
+    : "ALL";
 
   if (!session?.user?.id || !adminIds.includes(session.user.id)) {
     return (
@@ -34,6 +50,7 @@ export default async function AdminPage() {
 
   const [applications, memberCount, totalApplications, acceptedApplications, rejectedApplications] = await Promise.all([
     prisma.application.findMany({
+      where: activeStatus === "ALL" ? undefined : { status: activeStatus },
       include: {
         user: true,
       },
@@ -82,6 +99,27 @@ export default async function AdminPage() {
               </p>
             </div>
           ))}
+        </section>
+
+        <section className="mb-8 flex flex-wrap gap-3">
+          {filterTabs.map(([label, status]) => {
+            const href = status === "ALL" ? "/admin" : `/admin?status=${status}`;
+            const active = activeStatus === status;
+
+            return (
+              <Link
+                key={status}
+                href={href}
+                className={`rounded-2xl border px-5 py-3 text-sm font-black transition ${
+                  active
+                    ? "border-white bg-white text-black"
+                    : "border-white/15 bg-zinc-950 text-gray-300 hover:border-white/30 hover:text-white"
+                }`}
+              >
+                {label}
+              </Link>
+            );
+          })}
         </section>
 
         <section className="grid gap-6">

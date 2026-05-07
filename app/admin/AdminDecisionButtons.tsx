@@ -36,6 +36,31 @@ export function AdminDecisionButtons({ applicationId }: Props) {
     }
   };
 
+  const deleteApplication = async () => {
+    if (!confirm("متأكد بدك تحذف هذا التقديم؟")) {
+      return;
+    }
+
+    setLoadingStatus("DELETE");
+
+    try {
+      const response = await fetch(`/api/admin/applications/${applicationId}`, {
+        method: "DELETE",
+      });
+
+      const result = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        alert(result?.error ?? "ما قدرنا نحذف التقديم");
+        return;
+      }
+
+      router.refresh();
+    } finally {
+      setLoadingStatus(null);
+    }
+  };
+
   return (
     <div className="mt-6 flex flex-wrap gap-3">
       <button
@@ -54,6 +79,15 @@ export function AdminDecisionButtons({ applicationId }: Props) {
         className="rounded-2xl bg-red-500 px-7 py-3 font-black text-white transition hover:bg-red-400 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {loadingStatus === "REJECTED" ? "جاري الرفض..." : "رفض"}
+      </button>
+
+      <button
+        type="button"
+        disabled={loadingStatus !== null}
+        onClick={deleteApplication}
+        className="rounded-2xl border border-white/15 bg-black/40 px-7 py-3 font-black text-gray-300 transition hover:border-white/30 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {loadingStatus === "DELETE" ? "جاري الحذف..." : "حذف"}
       </button>
     </div>
   );

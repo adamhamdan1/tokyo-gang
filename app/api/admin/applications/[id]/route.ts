@@ -17,18 +17,31 @@ function getAdminIds() {
   return process.env.ADMIN_DISCORD_IDS?.split(",").map((id) => id.trim()).filter(Boolean) || [];
 }
 
-export async function PATCH(req: Request, context: RouteContext) {
+async function requireAdmin() {
   const session = await auth();
   const adminIds = getAdminIds();
 
   if (!session?.user?.id || !adminIds.includes(session.user.id)) {
-    return NextResponse.json(
+    return {
+      authorized: false as const,
+      response: NextResponse.json(
       {
         error: "Access Denied",
         currentDiscordId: session?.user?.id ?? null,
       },
       { status: 403 }
-    );
+      ),
+    };
+  }
+
+  return { authorized: true as const, session };
+}
+
+export async function PATCH(req: Request, context: RouteContext) {
+  const admin = await requireAdmin();
+
+  if (!admin.authorized) {
+    return admin.response;
   }
 
   const { id } = await context.params;
@@ -66,4 +79,20 @@ export async function PATCH(req: Request, context: RouteContext) {
   });
 
   return NextResponse.json({ success: true, application });
+}
+
+export async function DELETE(_req: Request, context: RouteContext) {
+  const admin = await requireAdmin();
+
+  if (!admin.authorized) {
+    return admin.response;
+  }
+
+  const { id } = await context.params;
+
+  await prisma.application.delete({
+    where: { id },
+  });
+
+  return NextResponse.json({ success: true });
 }
