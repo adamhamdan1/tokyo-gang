@@ -10,34 +10,35 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
 
-  callbacks: {
-    async signIn({ profile }) {
-      if (!profile) return false;
+ callbacks: {
+  async signIn({ profile }) {
+    const p = profile as any;
+    if (!p?.id) return false;
 
-      await prisma.user.upsert({
-        where: {
-          discordId: profile.id as string,
-        },
-        update: {
-          username: profile.username as string,
-          image: profile.image as string | null,
-        },
-        create: {
-          discordId: profile.id as string,
-          username: profile.username as string,
-          image: profile.image as string | null,
-        },
-      });
+    await prisma.user.upsert({
+      where: {
+        discordId: p.id,
+      },
+      update: {
+        username: p.username,
+        image: p.image ?? null,
+      },
+      create: {
+        discordId: p.id,
+        username: p.username,
+        image: p.image ?? null,
+      },
+    });
 
-      return true;
-    },
-
-    async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.sub!;
-      }
-
-      return session;
-    },
+    return true;
   },
+
+  async session({ session, token }) {
+    if (session.user) {
+      (session.user as any).id = token.sub!;
+    }
+
+    return session;
+  },
+},
 });
