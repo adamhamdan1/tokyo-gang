@@ -269,7 +269,7 @@ export default function Home() {
                   initial={{ opacity: 0, filter: "blur(12px)" }}
                   animate={{ opacity: 1, filter: "blur(0px)" }}
                   transition={{ delay: 0.16, duration: 0.72 }}
-                  className="relative z-10 h-36 w-36 object-contain drop-shadow-[0_0_38px_rgba(255,255,255,0.72)] md:h-48 md:w-48"
+                  className="relative z-10 h-36 w-36 object-contain [mask-image:radial-gradient(circle_at_center,black_0%,black_48%,transparent_76%)] [-webkit-mask-image:radial-gradient(circle_at_center,black_0%,black_48%,transparent_76%)] drop-shadow-[0_0_38px_rgba(255,255,255,0.72)] md:h-48 md:w-48"
                 />
               </motion.div>
 
