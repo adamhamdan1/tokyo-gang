@@ -1,6 +1,8 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { AdminDecisionButtons } from "./AdminDecisionButtons";
+import { AdminAnnouncementDeleteButton } from "./AdminAnnouncementDeleteButton";
+import { AdminAnnouncementForm } from "./AdminAnnouncementForm";
 import { AdminDiscordTestButton } from "./AdminDiscordTestButton";
 import { AdminSignOutButton } from "./AdminSignOutButton";
 import { AdminSyncButton } from "./AdminSyncButton";
@@ -79,6 +81,7 @@ export default async function AdminPage({
     acceptedApplications,
     rejectedApplications,
     newPendingApplications,
+    announcements,
   ] = await Promise.all([
     prisma.application.findMany({
       where: {
@@ -108,6 +111,7 @@ export default async function AdminPage({
     prisma.application.count({ where: { status: "ACCEPTED" } }),
     prisma.application.count({ where: { status: "REJECTED" } }),
     prisma.application.count({ where: { status: "PENDING", createdAt: { gte: dayAgo } } }),
+    prisma.announcement.findMany({ orderBy: { createdAt: "desc" }, take: 10 }),
   ]);
 
   const stats = [
@@ -165,6 +169,21 @@ export default async function AdminPage({
             </div>
           ))}
         </section>
+
+        <AdminAnnouncementForm />
+
+        {announcements.length > 0 && (
+          <section className="mb-10 grid gap-4 md:grid-cols-2">
+            {announcements.map((announcement) => (
+              <article key={announcement.id} className="rounded-3xl border border-white/15 bg-zinc-950 p-6">
+                <p className="text-xs font-black tracking-[4px] text-red-500">TOKYO NOTICE</p>
+                <h3 className="mt-3 text-2xl font-black">{announcement.title}</h3>
+                <p className="mt-3 leading-8 text-gray-400">{announcement.message}</p>
+                <AdminAnnouncementDeleteButton id={announcement.id} />
+              </article>
+            ))}
+          </section>
+        )}
 
         <section className="sticky top-0 z-40 mb-8 rounded-3xl border border-white/10 bg-black/80 p-4 backdrop-blur-xl">
           <form className="mb-4 flex flex-col gap-3 md:flex-row" action="/admin">

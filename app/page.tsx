@@ -6,6 +6,8 @@ import { signIn, signOut, useSession } from "next-auth/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 import { ApplicationForm } from "./ApplicationForm";
+import { AnnouncementsFeed } from "./AnnouncementsFeed";
+import { MobileMenu } from "./MobileMenu";
 
 const members = [
   ["لومي المخفي", "الشبح"],
@@ -250,6 +252,7 @@ export default function Home() {
       <nav className="fixed top-0 left-0 right-0 z-50 bg-black/50 backdrop-blur-md border-b border-white/10">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center gap-5">
           <h1 className="font-black tracking-[5px]">TOKYO GANG</h1>
+          <MobileMenu />
           <div className="hidden md:flex gap-6 text-sm text-gray-300">
             <a href="#home" className="hover:text-white">الرئيسية</a>
             <a href="#server" className="hover:text-white">السيرفر</a>
@@ -324,8 +327,10 @@ export default function Home() {
           <p className="text-xs font-black tracking-[3px] text-green-400">TOKYO NETWORK</p>
           <span className="h-2 w-2 rounded-full bg-green-400 shadow-[0_0_12px_lime]" />
         </div>
-        <p className="text-sm text-gray-300">STATUS: ONLINE</p>
+        <p className="text-sm text-gray-300">SERVER: INFINITE CITY CFW</p>
+        <p className="text-sm text-gray-300">BOT: LINKED</p>
         <p className="text-sm text-gray-300">ACTIVE MEMBERS: {onlineCount ?? "SYNCING"}</p>
+        <p className="text-sm text-gray-300">ROLE MEMBERS: {discordMembers.length || "SYNCING"}</p>
         <div className="mt-4 space-y-2 text-xs text-gray-400">
           {killfeed.slice(0, 3).map((item) => (
             <p key={item} className="border-t border-white/10 pt-2">{item}</p>
@@ -506,6 +511,8 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <AnnouncementsFeed />
 
       <section id="command" className="py-24 px-6 bg-black border-y border-white/10">
         <h2 className="text-5xl font-black text-center mb-4">القيادة العليا</h2>

@@ -39,3 +39,12 @@ model Application {
 
   createdAt   DateTime @default(now())
 }
+
+model Announcement {
+  id        String   @id @default(cuid())
+  title     String
+  message   String
+  active    Boolean  @default(true)
+  createdBy String?
+  createdAt DateTime @default(now())
+}
