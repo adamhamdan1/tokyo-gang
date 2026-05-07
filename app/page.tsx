@@ -170,24 +170,20 @@ export default function Home() {
   ["∞", "نفوذ"],].map(([num, label]) => (
               <motion.div
   key={label}
-  whileHover={{ scale: 1.08 }}
-  className="relative overflow-hidden bg-black/60 border border-white/20 rounded-3xl p-6 backdrop-blur-md shadow-[0_0_25px_rgba(255,255,255,0.08)] group"
+  whileHover={{ scale: 1.05, y: -5 }}
+  className="relative overflow-hidden bg-black/50 border border-white/20 rounded-2xl p-4 backdrop-blur-md group shadow-[0_0_18px_rgba(255,255,255,0.08)]"
 >
-  {/* Glow */}
-  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-500 bg-gradient-to-br from-white/10 to-transparent" />
+  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-500 bg-white/5" />
 
-  {/* Number */}
-  <h3 className="relative z-10 text-4xl md:text-5xl font-black text-white drop-shadow-[0_0_15px_white] tracking-[3px]">
+  <p className="relative z-10 text-3xl font-black drop-shadow-[0_0_14px_white]">
     {num}
-  </h3>
+  </p>
 
-  {/* Label */}
-  <p className="relative z-10 mt-3 text-sm md:text-base tracking-[3px] text-gray-300 uppercase">
+  <p className="relative z-10 text-gray-400 text-sm mt-1">
     {label}
   </p>
 
-  {/* Bottom line */}
-  <div className="relative z-10 mt-5 h-[2px] bg-gradient-to-r from-transparent via-white to-transparent opacity-60" />
+  <div className="relative z-10 mt-3 h-[1px] bg-gradient-to-r from-transparent via-white/70 to-transparent opacity-60" />
 </motion.div>
             ))}
           </div>
