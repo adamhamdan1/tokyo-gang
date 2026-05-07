@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
+import { ApplicationForm } from "./ApplicationForm";
 
 const members = [
   ["لومي المخفي", "الشبح"],
@@ -730,46 +731,7 @@ export default function Home() {
             </button>
           </div>
         ) : (
-          <form
-            onSubmit={async (e) => {
-              e.preventDefault();
-
-              const form = e.currentTarget;
-              const formData = new FormData(form);
-
-              const response = await fetch("/api/apply", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  name: formData.get("name"),
-                  age: formData.get("age"),
-                  discord: formData.get("discord"),
-                  experience: formData.get("experience"),
-                  reason: formData.get("reason"),
-                }),
-              });
-
-              if (!response.ok) {
-                const result = await response.json().catch(() => null);
-                alert(result?.error ?? "صار خطأ أثناء إرسال الطلب");
-                return;
-              }
-
-              alert("تم إرسال طلبك بنجاح");
-              form.reset();
-            }}
-            className="max-w-2xl mx-auto grid gap-4"
-          >
-            <input name="name" required placeholder="اسمك داخل اللعبة" className="bg-zinc-950 border border-white/20 rounded-2xl p-4 outline-none" />
-            <input name="age" required placeholder="عمرك" className="bg-zinc-950 border border-white/20 rounded-2xl p-4 outline-none" />
-            <input name="discord" required placeholder="في اي مدينة؟" className="bg-zinc-950 border border-white/20 rounded-2xl p-4 outline-none" />
-            <textarea name="experience" required placeholder="خبرتك في فايف إم" className="bg-zinc-950 border border-white/20 rounded-2xl p-4 h-32 outline-none" />
-            <textarea name="reason" required placeholder="ليش بدك تنضم؟" className="bg-zinc-950 border border-white/20 rounded-2xl p-4 h-32 outline-none" />
-
-            <button className="bg-white text-black rounded-2xl py-4 font-bold hover:bg-gray-300 transition">إرسال الطلب</button>
-          </form>
+          <ApplicationForm />
         )}
       </section>
 

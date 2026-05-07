@@ -6,9 +6,12 @@ import { prisma } from "@/lib/prisma";
 type ApplyBody = {
   name?: string;
   age?: string;
-  discord?: string;
+  city?: string;
   experience?: string;
   reason?: string;
+  dailyHours?: string;
+  hasMic?: boolean;
+  acceptedRules?: boolean;
 };
 
 export async function POST(req: Request) {
@@ -23,9 +26,25 @@ export async function POST(req: Request) {
 
   const body = (await req.json()) as ApplyBody;
 
-  if (!body.name || !body.age || !body.experience || !body.reason) {
+  if (!body.name || !body.age || !body.city || !body.experience || !body.reason || !body.dailyHours) {
     return NextResponse.json(
       { error: "بيانات التقديم ناقصة" },
+      { status: 400 }
+    );
+  }
+
+  const age = Number(body.age);
+
+  if (!Number.isFinite(age) || age < 16) {
+    return NextResponse.json(
+      { error: "الحد الأدنى للعمر هو 16" },
+      { status: 400 }
+    );
+  }
+
+  if (!body.acceptedRules) {
+    return NextResponse.json(
+      { error: "لازم توافق على قوانين العصابة قبل إرسال الطلب" },
       { status: 400 }
     );
   }
@@ -46,7 +65,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const username = session.user.name ?? body.discord ?? "Discord User";
+  const username = session.user.name ?? "Discord User";
   const user = await prisma.user.upsert({
     where: {
       discordId: session.user.id,
@@ -89,8 +108,13 @@ export async function POST(req: Request) {
     data: {
       name: body.name,
       age: body.age,
+      city: body.city,
       experience: body.experience,
       reason: body.reason,
+      dailyHours: body.dailyHours,
+      hasMic: body.hasMic ?? false,
+      acceptedRules: body.acceptedRules,
+      reviewFlag: age < 18 || !body.hasMic ? "Needs Review" : null,
       userId: user.id,
     },
   });
@@ -118,7 +142,7 @@ export async function POST(req: Request) {
                 },
                 {
                   name: "المدينة",
-                  value: body.discord || user.discordId,
+                  value: body.city,
                 },
                 {
                   name: "حساب الديسكورد",
@@ -131,6 +155,14 @@ export async function POST(req: Request) {
                 {
                   name: "الخبرة",
                   value: body.experience,
+                },
+                {
+                  name: "ساعات اللعب اليومية",
+                  value: body.dailyHours,
+                },
+                {
+                  name: "المايك",
+                  value: body.hasMic ? "نعم" : "لا",
                 },
                 {
                   name: "السبب",

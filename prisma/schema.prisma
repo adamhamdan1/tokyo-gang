@@ -19,8 +19,13 @@ model Application {
   id          String   @id @default(cuid())
   name        String
   age         String
+  city        String?
   experience  String
   reason      String
+  dailyHours  String?
+  hasMic      Boolean  @default(false)
+  acceptedRules Boolean @default(false)
+  reviewFlag  String?
   status      String   @default("PENDING")
   decisionReason String?
   decidedBy   String?

@@ -72,6 +72,16 @@ export default async function StatusPage() {
                   <p className="text-xs text-gray-500">تاريخ التقديم</p>
                   <p className="mt-2 font-bold">{application.createdAt.toLocaleString("ar")}</p>
                 </div>
+                <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
+                  <p className="text-xs text-gray-500">المدينة</p>
+                  <p className="mt-2 font-bold">{application.city ?? "غير محدد"}</p>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
+                  <p className="text-xs text-gray-500">ساعات اللعب / المايك</p>
+                  <p className="mt-2 font-bold">
+                    {application.dailyHours ?? "غير محدد"} - {application.hasMic ? "معه مايك" : "بدون مايك"}
+                  </p>
+                </div>
               </div>
 
               {application.decisionReason && (

@@ -260,6 +260,22 @@ export default async function AdminPage({
                     <p className="text-xs text-gray-500">العمر</p>
                     <p className="mt-2 font-bold text-white">{app.age}</p>
                   </div>
+                  <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
+                    <p className="text-xs text-gray-500">المدينة</p>
+                    <p className="mt-2 font-bold text-white">{app.city ?? "غير محدد"}</p>
+                  </div>
+                  <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
+                    <p className="text-xs text-gray-500">ساعات اللعب / المايك</p>
+                    <p className="mt-2 font-bold text-white">
+                      {app.dailyHours ?? "غير محدد"} - {app.hasMic ? "معه مايك" : "بدون مايك"}
+                    </p>
+                  </div>
+                  {app.reviewFlag && (
+                    <div className="rounded-2xl border border-yellow-400/20 bg-yellow-400/10 p-4 md:col-span-3">
+                      <p className="text-xs text-yellow-300">تنبيه مراجعة</p>
+                      <p className="mt-2 leading-8 text-white">{app.reviewFlag}</p>
+                    </div>
+                  )}
                   <div className="rounded-2xl border border-white/10 bg-black/30 p-4 md:col-span-2">
                     <p className="text-xs text-gray-500">الخبرة</p>
                     <p className="mt-2 leading-8 text-white">{app.experience}</p>
