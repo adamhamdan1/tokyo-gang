@@ -244,21 +244,38 @@ export default function Home() {
                   {name[0]}
                 </div>
 
-                <h3 className="text-2xl font-black text-center tracking-[3px]">{name}</h3>
+                <h3 className="text-3xl md:text-4xl font-black text-center tracking-[6px] uppercase text-white drop-shadow-[0_0_18px_white] group-hover:scale-110 transition duration-300">
+  {name}
+</h3>
                 <p className="text-center text-gray-400 mt-1">{role}</p>
 
-                <div className="mt-5 flex justify-between text-sm">
-                  <span className={status === "ONLINE" ? "text-green-400" : "text-gray-500"}>{status}</span>
-                  <span className="text-gray-300">خطورة {danger}</span>
-                </div>
+                <div className="mt-6 space-y-4">
 
-                <div className="mt-4 h-1 bg-white/10 rounded-full overflow-hidden">
-                  <div className="h-full bg-white rounded-full" style={{ width: danger }} />
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+  <div className="flex justify-between items-center text-sm">
+    <span className="text-green-400 font-bold drop-shadow-[0_0_8px_lime] animate-pulse">
+      ● متواجد
+    </span>
+
+    <span className="text-red-500 font-black tracking-[2px] drop-shadow-[0_0_12px_red]">
+      خطير جداً
+    </span>
+  </div>
+
+  <div className="relative h-2 bg-white/10 rounded-full overflow-hidden">
+    <motion.div
+      initial={{ width: "0%" }}
+      whileInView={{ width: "100%" }}
+      transition={{ duration: 2 }}
+      className="absolute inset-0 bg-gradient-to-r from-red-700 via-red-500 to-white shadow-[0_0_20px_red]"
+    />
+  </div>
+
+  <div className="flex justify-between text-xs text-gray-500 tracking-[2px]">
+    <span>THREAT LEVEL</span>
+    <span>MAXIMUM</span>
+  </div>
+
+</div>
       </section>
 
       <section id="database" className="py-24 px-6 bg-zinc-950">
