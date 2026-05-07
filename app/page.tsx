@@ -267,7 +267,7 @@ export default function Home() {
                 <div className="absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-gradient-to-b from-transparent via-white/45 to-transparent" />
                 <div className="absolute left-0 top-1/2 h-px w-full -translate-y-1/2 bg-gradient-to-r from-transparent via-white/45 to-transparent" />
                 <motion.img
-                  src="/server-logo.png"
+                  src="/tokyo-logo.png"
                   alt="TOKYO GANG"
                   initial={{ opacity: 0, filter: "blur(12px)" }}
                   animate={{ opacity: 0.78, filter: "blur(0px)" }}
