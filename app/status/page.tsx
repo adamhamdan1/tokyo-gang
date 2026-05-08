@@ -7,6 +7,7 @@ const statusLabels: Record<string, string> = {
   ACCEPTED: "مقبول",
   REJECTED: "مرفوض",
   INTERVIEW: "مقابلة",
+  TRIAL: "فترة تجربة",
 };
 
 const statusClasses: Record<string, string> = {
@@ -14,6 +15,7 @@ const statusClasses: Record<string, string> = {
   ACCEPTED: "border-green-400/40 bg-green-400/10 text-green-300",
   REJECTED: "border-red-500/40 bg-red-500/10 text-red-300",
   INTERVIEW: "border-cyan-400/40 bg-cyan-400/10 text-cyan-300",
+  TRIAL: "border-cyan-400/40 bg-cyan-400/10 text-cyan-300",
 };
 
 export default async function StatusPage() {

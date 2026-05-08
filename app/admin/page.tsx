@@ -13,6 +13,7 @@ const statusStyles: Record<string, string> = {
   ACCEPTED: "border-green-400/40 bg-green-400/10 text-green-300 shadow-[0_0_24px_rgba(74,222,128,0.12)]",
   REJECTED: "border-red-500/40 bg-red-500/10 text-red-300 shadow-[0_0_24px_rgba(239,68,68,0.14)]",
   INTERVIEW: "border-yellow-400/40 bg-yellow-400/10 text-yellow-300 shadow-[0_0_24px_rgba(250,204,21,0.12)]",
+  TRIAL: "border-cyan-400/40 bg-cyan-400/10 text-cyan-300 shadow-[0_0_24px_rgba(34,211,238,0.12)]",
 };
 
 const statusLabels: Record<string, string> = {
@@ -20,6 +21,7 @@ const statusLabels: Record<string, string> = {
   ACCEPTED: "مقبول",
   REJECTED: "مرفوض",
   INTERVIEW: "مقابلة",
+  TRIAL: "فترة تجربة",
 };
 
 const filterTabs = [
@@ -28,6 +30,7 @@ const filterTabs = [
   ["المقبولين", "ACCEPTED"],
   ["المرفوضين", "REJECTED"],
   ["المقابلات", "INTERVIEW"],
+  ["فترة التجربة", "TRIAL"],
 ];
 
 function buildAdminHref(status: string, query: string) {
@@ -53,7 +56,7 @@ export default async function AdminPage({
   const session = await auth();
   const adminIds = process.env.ADMIN_DISCORD_IDS?.split(",").map((id) => id.trim()) || [];
   const params = await searchParams;
-  const activeStatus = ["PENDING", "ACCEPTED", "REJECTED", "INTERVIEW"].includes(params?.status ?? "")
+  const activeStatus = ["PENDING", "ACCEPTED", "REJECTED", "INTERVIEW", "TRIAL"].includes(params?.status ?? "")
     ? params?.status
     : "ALL";
   const query = params?.q?.trim() ?? "";
@@ -80,6 +83,7 @@ export default async function AdminPage({
     totalApplications,
     acceptedApplications,
     rejectedApplications,
+    trialApplications,
     newPendingApplications,
     announcements,
   ] = await Promise.all([
@@ -110,6 +114,7 @@ export default async function AdminPage({
     prisma.application.count(),
     prisma.application.count({ where: { status: "ACCEPTED" } }),
     prisma.application.count({ where: { status: "REJECTED" } }),
+    prisma.application.count({ where: { status: "TRIAL" } }),
     prisma.application.count({ where: { status: "PENDING", createdAt: { gte: dayAgo } } }),
     prisma.announcement.findMany({ orderBy: { createdAt: "desc" }, take: 10 }),
   ]);
@@ -118,6 +123,7 @@ export default async function AdminPage({
     ["عدد الأعضاء", memberCount],
     ["عدد التقديمات", totalApplications],
     ["عدد المقبولين", acceptedApplications],
+    ["فترة التجربة", trialApplications],
     ["عدد المرفوضين", rejectedApplications],
   ];
 

@@ -1,5 +1,5 @@
 import { auth } from "@/auth";
-import { giveAcceptedRole, sendAdminLog, sendDiscordDm } from "@/lib/discord";
+import { giveAcceptedRole, giveTrialRole, sendAdminLog, sendDiscordDm } from "@/lib/discord";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
@@ -51,7 +51,7 @@ export async function PATCH(req: Request, context: RouteContext) {
   const { id } = await context.params;
   const body = (await req.json()) as UpdateBody;
 
-  if (!body.status || !["ACCEPTED", "REJECTED", "PENDING", "INTERVIEW"].includes(body.status)) {
+  if (!body.status || !["ACCEPTED", "REJECTED", "PENDING", "INTERVIEW", "TRIAL"].includes(body.status)) {
     return NextResponse.json({ error: "حالة غير صحيحة" }, { status: 400 });
   }
 
@@ -76,6 +76,17 @@ export async function PATCH(req: Request, context: RouteContext) {
     } catch (error) {
       return NextResponse.json(
         { error: error instanceof Error ? error.message : "فشل إعطاء الرتبة" },
+        { status: 400 }
+      );
+    }
+  }
+
+  if (body.status === "TRIAL") {
+    try {
+      await giveTrialRole(currentApplication.user.discordId);
+    } catch (error) {
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : "فشل إعطاء رتبة فترة التجربة" },
         { status: 400 }
       );
     }
@@ -107,6 +118,13 @@ export async function PATCH(req: Request, context: RouteContext) {
     await sendDiscordDm(
       currentApplication.user.discordId,
       `تم قبول طلبك في TOKYO GANG. مبروك، تم إعطاؤك الرتبة تلقائياً.`
+    ).catch((error) => console.error("Discord DM failed", error));
+  }
+
+  if (body.status === "TRIAL") {
+    await sendDiscordDm(
+      currentApplication.user.discordId,
+      `تم وضع طلبك في TOKYO GANG على فترة تجربة. تم إعطاؤك رتبة التجربة تلقائياً، أثبت نفسك.`
     ).catch((error) => console.error("Discord DM failed", error));
   }
 

@@ -69,6 +69,10 @@ function getTokyoOnlineRoleId() {
   return process.env.DISCORD_TOKYO_ONLINE_ROLE_ID ?? "1490246428218494976";
 }
 
+function getTrialRoleId() {
+  return process.env.DISCORD_TRIAL_ROLE_ID ?? "1490418431344906320";
+}
+
 async function fetchDiscord(path: string, init?: RequestInit) {
   return fetch(`${DISCORD_API_BASE}${path}`, {
     ...init,
@@ -125,18 +129,23 @@ export async function requireTokyoGuildMember(discordId: string) {
 }
 
 export async function giveAcceptedRole(discordId: string) {
+  await giveRole(discordId, getAcceptedRoleId(), "القبول");
+}
+
+export async function giveTrialRole(discordId: string) {
+  await giveRole(discordId, getTrialRoleId(), "فترة التجربة");
+}
+
+async function giveRole(discordId: string, roleId: string, roleLabel: string) {
   await requireTokyoGuildMember(discordId);
 
-  const response = await fetchDiscord(
-    `/guilds/${getGuildId()}/members/${discordId}/roles/${getAcceptedRoleId()}`,
-    {
-      method: "PUT",
-    }
-  );
+  const response = await fetchDiscord(`/guilds/${getGuildId()}/members/${discordId}/roles/${roleId}`, {
+    method: "PUT",
+  });
 
   if (!response.ok) {
     throw new Error(
-      `فشل إعطاء الرتبة. تأكد أن البوت عنده Manage Roles وأن رتبته أعلى من رتبة القبول (${response.status})`
+      `فشل إعطاء رتبة ${roleLabel}. تأكد أن البوت عنده Manage Roles وأن رتبته أعلى من الرتبة (${response.status})`
     );
   }
 }

@@ -12,7 +12,7 @@ export function AdminDecisionButtons({ applicationId, status }: Props) {
   const router = useRouter();
   const [loadingStatus, setLoadingStatus] = useState<string | null>(null);
 
-  const updateStatus = async (status: "ACCEPTED" | "REJECTED" | "INTERVIEW") => {
+  const updateStatus = async (status: "ACCEPTED" | "REJECTED" | "INTERVIEW" | "TRIAL") => {
     const decisionReason =
       status === "REJECTED" ? prompt("اكتب سبب الرفض")?.trim() : undefined;
     const interviewAt =
@@ -84,6 +84,15 @@ export function AdminDecisionButtons({ applicationId, status }: Props) {
         className="rounded-2xl bg-green-400 px-7 py-3 font-black text-black transition hover:bg-green-300 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {status === "ACCEPTED" ? "مقبول بالفعل" : loadingStatus === "ACCEPTED" ? "جاري القبول..." : "قبول"}
+      </button>
+
+      <button
+        type="button"
+        disabled={loadingStatus !== null || status === "TRIAL"}
+        onClick={() => updateStatus("TRIAL")}
+        className="rounded-2xl bg-cyan-400 px-7 py-3 font-black text-black transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {status === "TRIAL" ? "في التجربة" : loadingStatus === "TRIAL" ? "جاري التجربة..." : "فترة تجربة"}
       </button>
 
       <button
