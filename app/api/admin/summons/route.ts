@@ -7,6 +7,7 @@ import {
   sendSummonChannelMessage,
 } from "@/lib/discord";
 import { prisma } from "@/lib/prisma";
+import { syncTokyoMembersSafely } from "@/lib/tokyo-member-sync";
 import { NextResponse } from "next/server";
 
 type SummonBody = {
@@ -48,11 +49,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "اختار العضو واكتب سبب الاستدعاء" }, { status: 400 });
   }
 
+  await syncTokyoMembersSafely();
+
   const member = await prisma.tokyoMember.findUnique({
     where: { id: body.memberId },
   });
 
-  if (!member) {
+  if (!member?.inTokyoRole) {
     return NextResponse.json({ error: "العضو غير موجود في قاعدة TOKYO" }, { status: 404 });
   }
 

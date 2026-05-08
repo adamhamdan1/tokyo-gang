@@ -32,6 +32,8 @@ let roleMembersCache: {
   expiresAt: number;
 } | null = null;
 
+const ROLE_MEMBERS_CACHE_MS = 30 * 1000;
+
 function getBotHeaders() {
   const token = process.env.DISCORD_BOT_TOKEN;
 
@@ -259,7 +261,7 @@ async function listCachedRoleMembers(roleId: string) {
   roleMembersCache = {
     roleId,
     members,
-    expiresAt: now + 5 * 60 * 1000,
+    expiresAt: now + ROLE_MEMBERS_CACHE_MS,
   };
 
   return members;

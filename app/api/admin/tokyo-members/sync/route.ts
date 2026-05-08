@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
-import { listTokyoRoleMembers, sendAdminLog } from "@/lib/discord";
-import { prisma } from "@/lib/prisma";
+import { sendAdminLog } from "@/lib/discord";
+import { syncTokyoMembers } from "@/lib/tokyo-member-sync";
 import { NextResponse } from "next/server";
 
 function getAdminIds() {
@@ -28,47 +28,11 @@ export async function POST() {
     return admin.response;
   }
 
-  const members = await listTokyoRoleMembers();
-  const now = new Date();
-  const discordIds = members.map((member) => member.id);
-
-  await prisma.$transaction([
-    ...members.map((member) =>
-      prisma.tokyoMember.upsert({
-        where: { discordId: member.id },
-        update: {
-          username: member.username,
-          displayName: member.name,
-          image: member.image,
-          inTokyoRole: true,
-          lastSyncedAt: now,
-        },
-        create: {
-          discordId: member.id,
-          username: member.username,
-          displayName: member.name,
-          image: member.image,
-          inTokyoRole: true,
-          lastSyncedAt: now,
-        },
-      })
-    ),
-    prisma.tokyoMember.updateMany({
-      where: {
-        discordId: {
-          notIn: discordIds,
-        },
-      },
-      data: {
-        inTokyoRole: false,
-        lastSyncedAt: now,
-      },
-    }),
-  ]);
+  const result = await syncTokyoMembers({ force: true });
 
   await sendAdminLog(
-    `مزامنة أعضاء TOKYO\nعدد الأعضاء: ${members.length}\nالأدمن: ${admin.session.user.name ?? admin.session.user.id}`
+    `مزامنة أعضاء TOKYO\nعدد الأعضاء: ${result.count}\nالأدمن: ${admin.session.user.name ?? admin.session.user.id}`
   ).catch((error) => console.error("Admin log failed", error));
 
-  return NextResponse.json({ success: true, count: members.length });
+  return NextResponse.json({ success: true, count: result.count, syncedAt: result.syncedAt });
 }

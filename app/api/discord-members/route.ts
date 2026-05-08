@@ -1,10 +1,13 @@
 import { getGuildOnlineCount, listOnlineAcceptedRoleMembers } from "@/lib/discord";
+import { syncTokyoMembersSafely } from "@/lib/tokyo-member-sync";
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
+    await syncTokyoMembersSafely();
+
     const [{ members, roleMemberCount }, counts] = await Promise.all([
       listOnlineAcceptedRoleMembers(),
       getGuildOnlineCount(),

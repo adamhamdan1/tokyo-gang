@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { syncTokyoMembersSafely } from "@/lib/tokyo-member-sync";
 import { AdminDecisionButtons } from "./AdminDecisionButtons";
 import { AdminAnnouncementDeleteButton } from "./AdminAnnouncementDeleteButton";
 import { AdminAnnouncementForm } from "./AdminAnnouncementForm";
@@ -8,7 +9,6 @@ import { AdminDiscordTestButton } from "./AdminDiscordTestButton";
 import { AdminSignOutButton } from "./AdminSignOutButton";
 import { AdminSyncButton } from "./AdminSyncButton";
 import { AdminSummonForm } from "./AdminSummonForm";
-import { AdminTokyoMemberSyncButton } from "./AdminTokyoMemberSyncButton";
 import Link from "next/link";
 
 const statusStyles: Record<string, string> = {
@@ -79,6 +79,8 @@ export default async function AdminPage({
       </main>
     );
   }
+
+  const tokyoSync = await syncTokyoMembersSafely();
 
   const [
     applications,
@@ -191,8 +193,10 @@ export default async function AdminPage({
           </Link>
           <AdminDiscordTestButton />
           <AdminSyncButton />
-          <AdminTokyoMemberSyncButton />
           <AdminSignOutButton />
+          <div className="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-5 py-3 text-sm font-black text-cyan-300">
+            مزامنة TOKYO تلقائية{tokyoSync ? `: ${tokyoSync.count} عضو` : ""}
+          </div>
         </div>
 
         <section className="mb-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

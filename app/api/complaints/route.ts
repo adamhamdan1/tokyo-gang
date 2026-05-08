@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { sendAdminLog, sendComplaintLogMessage } from "@/lib/discord";
 import { prisma } from "@/lib/prisma";
+import { syncTokyoMembersSafely } from "@/lib/tokyo-member-sync";
 import { NextResponse } from "next/server";
 
 type ComplaintBody = {
@@ -17,6 +18,8 @@ export async function POST(req: Request) {
   if (!session?.user?.id) {
     return NextResponse.json({ error: "لازم تسجل دخول بالديسكورد" }, { status: 401 });
   }
+
+  await syncTokyoMembersSafely();
 
   const reporter = await prisma.tokyoMember.findUnique({
     where: { discordId: session.user.id },

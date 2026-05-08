@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { syncTokyoMembersSafely } from "@/lib/tokyo-member-sync";
 import Link from "next/link";
 import { ComplaintForm } from "./ComplaintForm";
 
@@ -20,6 +21,8 @@ export default async function ComplaintsPage() {
     );
   }
 
+  await syncTokyoMembersSafely();
+
   const reporter = await prisma.tokyoMember.findUnique({
     where: { discordId: session.user.id },
   });
@@ -30,7 +33,7 @@ export default async function ComplaintsPage() {
         <div className="mx-auto max-w-2xl rounded-3xl border border-red-500/25 bg-red-500/10 p-8 text-center">
           <p className="text-sm font-black tracking-[5px] text-red-300">ACCESS DENIED</p>
           <h1 className="mt-3 text-4xl font-black">النظام مخصص لأعضاء TOKYO فقط</h1>
-          <p className="mt-4 text-gray-400">إذا كنت عضو، اطلب من الإدارة تعمل مزامنة لأعضاء TOKYO.</p>
+          <p className="mt-4 text-gray-400">إذا أخذت الرتبة الآن، انتظر أقل من دقيقة وجرب تحدث الصفحة.</p>
           <Link href="/" className="mt-6 inline-block rounded-2xl bg-white px-6 py-3 font-black text-black">
             رجوع
           </Link>

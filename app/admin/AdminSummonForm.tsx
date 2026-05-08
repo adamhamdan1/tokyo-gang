@@ -99,7 +99,7 @@ export function AdminSummonForm({ members }: Props) {
 
       {members.length === 0 && (
         <p className="mt-4 rounded-2xl border border-yellow-400/20 bg-yellow-400/10 p-4 text-sm font-bold text-yellow-200">
-          لا يوجد أعضاء في قاعدة TOKYO حالياً. اضغط مزامنة أعضاء TOKYO أولاً.
+          لا يوجد أعضاء في قاعدة TOKYO حالياً. المزامنة تلقائية، جرب تحديث الصفحة بعد لحظات.
         </p>
       )}
 
