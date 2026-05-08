@@ -57,6 +57,10 @@ function getAcceptedRoleId() {
   return roleId;
 }
 
+function getTokyoOnlineRoleId() {
+  return process.env.DISCORD_TOKYO_ONLINE_ROLE_ID ?? "1490246428218494976";
+}
+
 async function fetchDiscord(path: string, init?: RequestInit) {
   return fetch(`${DISCORD_API_BASE}${path}`, {
     ...init,
@@ -152,7 +156,7 @@ export async function listAcceptedRoleMembers() {
 
 export async function listOnlineAcceptedRoleMembers() {
   const [roleMembers, widgetResponse] = await Promise.all([
-    listAcceptedRoleMembers(),
+    listRoleMembers(getTokyoOnlineRoleId()),
     fetch(`${DISCORD_API_BASE}/guilds/${getGuildId()}/widget.json`, {
       cache: "no-store",
     }),
@@ -177,6 +181,26 @@ export async function listOnlineAcceptedRoleMembers() {
       .sort((first, second) => first.name.localeCompare(second.name)),
     roleMemberCount: roleMembers.length,
   };
+}
+
+async function listRoleMembers(roleId: string) {
+  const response = await fetchDiscord(`/guilds/${getGuildId()}/members?limit=1000`);
+
+  if (!response.ok) {
+    throw new Error(`فشل جلب أعضاء السيرفر من Discord (${response.status})`);
+  }
+
+  const members = (await response.json()) as DiscordMember[];
+
+  return members
+    .filter((member) => member.roles?.includes(roleId))
+    .map((member) => ({
+      id: member.user?.id ?? "",
+      name: member.nick ?? member.user?.global_name ?? member.user?.username ?? "TOKYO Member",
+      username: member.user?.username ?? "unknown",
+      image: getAvatarUrl(member.user),
+    }))
+    .filter((member) => member.id) satisfies TokyoRoleMember[];
 }
 
 export async function getGuildOnlineCount() {

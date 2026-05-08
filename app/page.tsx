@@ -83,6 +83,7 @@ export default function Home() {
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [discordMembers, setDiscordMembers] = useState<DiscordMember[]>([]);
   const [onlineCount, setOnlineCount] = useState<number | null>(null);
+  const [tokyoOnlineCount, setTokyoOnlineCount] = useState<number | null>(null);
   const [roleMemberCount, setRoleMemberCount] = useState<number | null>(null);
 
   useEffect(() => {
@@ -142,6 +143,7 @@ export default function Home() {
       const data = (await response.json().catch(() => null)) as {
         members?: DiscordMember[] | null;
         onlineCount?: number | null;
+        tokyoOnlineCount?: number | null;
         roleMemberCount?: number | null;
       } | null;
 
@@ -155,6 +157,7 @@ export default function Home() {
         return currentIds === nextIds ? currentMembers : nextMembers;
       });
       setOnlineCount(data?.onlineCount ?? null);
+      setTokyoOnlineCount(data?.tokyoOnlineCount ?? nextMembers.length);
       setRoleMemberCount(data?.roleMemberCount ?? null);
     };
 
@@ -465,7 +468,7 @@ export default function Home() {
         </div>
         <p className="text-sm text-gray-300">SERVER: TOKYO GANG</p>
         <p className="text-sm text-gray-300">BOT: LINKED</p>
-        <p className="text-sm text-gray-300">ONLINE TOKYO: {onlineCount ?? "SYNCING"}</p>
+        <p className="text-sm text-gray-300">ONLINE SERVER: {onlineCount ?? "SYNCING"}</p>
         <p className="text-sm text-gray-300">ROLE MEMBERS: {roleMemberCount ?? "SYNCING"}</p>
         <div className="mt-4 space-y-2 text-xs text-gray-400">
           {killfeed.slice(0, 3).map((item) => (
@@ -771,7 +774,7 @@ export default function Home() {
 
         <div className="mx-auto mb-14 max-w-7xl">
           <p className="mb-6 text-center text-sm font-black tracking-[5px] text-green-400">
-            TOKYO ONLINE NOW
+            TOKYO ROLE ONLINE: {tokyoOnlineCount ?? "SYNCING"}
           </p>
           {discordMembers.length > 0 ? (
             <motion.div layout className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

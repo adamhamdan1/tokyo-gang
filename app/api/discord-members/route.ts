@@ -1,15 +1,19 @@
-import { listOnlineAcceptedRoleMembers } from "@/lib/discord";
+import { getGuildOnlineCount, listOnlineAcceptedRoleMembers } from "@/lib/discord";
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const { members, roleMemberCount } = await listOnlineAcceptedRoleMembers();
+    const [{ members, roleMemberCount }, counts] = await Promise.all([
+      listOnlineAcceptedRoleMembers(),
+      getGuildOnlineCount(),
+    ]);
 
     return NextResponse.json({
       members,
-      onlineCount: members.length,
+      onlineCount: counts.online,
+      tokyoOnlineCount: members.length,
       roleMemberCount,
     }, {
       headers: {
@@ -23,6 +27,7 @@ export async function GET() {
         error: error instanceof Error ? error.message : "Discord members failed",
         members: null,
         onlineCount: null,
+        tokyoOnlineCount: null,
         roleMemberCount: null,
       },
       {
