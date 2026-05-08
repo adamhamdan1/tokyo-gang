@@ -97,6 +97,10 @@ function getSummonChannelId() {
   return channelId;
 }
 
+function getComplaintLogChannelId() {
+  return process.env.DISCORD_COMPLAINT_LOG_CHANNEL_ID;
+}
+
 async function fetchDiscord(path: string, init?: RequestInit) {
   return fetch(`${DISCORD_API_BASE}${path}`, {
     ...init,
@@ -386,6 +390,28 @@ export async function sendSummonChannelMessage(content: string) {
 
   if (!response.ok) {
     throw new Error(`فشل إرسال رسالة في روم الاستدعاء (${response.status})`);
+  }
+}
+
+export async function sendComplaintLogMessage(content: string) {
+  const channelId = getComplaintLogChannelId();
+
+  if (!channelId) {
+    return;
+  }
+
+  const response = await fetchDiscord(`/channels/${channelId}/messages`, {
+    method: "POST",
+    body: JSON.stringify({
+      content,
+      allowed_mentions: {
+        parse: ["users"],
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`فشل إرسال لوق الشكوى في الديسكورد (${response.status})`);
   }
 }
 

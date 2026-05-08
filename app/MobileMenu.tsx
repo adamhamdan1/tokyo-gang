@@ -37,6 +37,7 @@ export function MobileMenu() {
             {session.data?.user && (
               <>
                 <a href="/status" className="rounded-2xl border border-green-400/20 px-4 py-3 text-sm font-bold text-green-300">طلبي</a>
+                <a href="/complaints" className="rounded-2xl border border-cyan-400/20 px-4 py-3 text-sm font-bold text-cyan-300">الشكاوي</a>
                 <a href="/admin" className="rounded-2xl border border-red-500/20 px-4 py-3 text-sm font-bold text-red-300">الإدارة</a>
               </>
             )}

@@ -60,6 +60,8 @@ model TokyoMember {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   summons      Summon[]
+  complaintsFiled Complaint[] @relation("ComplaintReporter")
+  complaintsAgainst Complaint[] @relation("ComplaintAccused")
 }
 
 model Summon {
@@ -71,4 +73,21 @@ model Summon {
   summonedBy  String
   status      String      @default("ACTIVE")
   createdAt   DateTime    @default(now())
+}
+
+model Complaint {
+  id          String      @id @default(cuid())
+  reporterId  String
+  reporter    TokyoMember @relation("ComplaintReporter", fields: [reporterId], references: [id])
+  accusedId   String
+  accused     TokyoMember @relation("ComplaintAccused", fields: [accusedId], references: [id])
+  category    String
+  reason      String
+  evidenceUrl String?
+  details     String?
+  status      String      @default("OPEN")
+  reviewedBy  String?
+  adminNote   String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 }

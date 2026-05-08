@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { AdminDecisionButtons } from "./AdminDecisionButtons";
 import { AdminAnnouncementDeleteButton } from "./AdminAnnouncementDeleteButton";
 import { AdminAnnouncementForm } from "./AdminAnnouncementForm";
+import { AdminComplaintActions } from "./AdminComplaintActions";
 import { AdminDiscordTestButton } from "./AdminDiscordTestButton";
 import { AdminSignOutButton } from "./AdminSignOutButton";
 import { AdminSyncButton } from "./AdminSyncButton";
@@ -90,6 +91,7 @@ export default async function AdminPage({
     announcements,
     tokyoMembers,
     activeSummons,
+    complaints,
   ] = await Promise.all([
     prisma.application.findMany({
       where: {
@@ -136,6 +138,14 @@ export default async function AdminPage({
       take: 6,
       include: {
         member: true,
+      },
+    }),
+    prisma.complaint.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 8,
+      include: {
+        reporter: true,
+        accused: true,
       },
     }),
   ]);
@@ -202,6 +212,41 @@ export default async function AdminPage({
         <AdminAnnouncementForm />
 
         <AdminSummonForm members={tokyoMembers} />
+
+        {complaints.length > 0 && (
+          <section className="mb-10 rounded-3xl border border-red-500/20 bg-zinc-950 p-6">
+            <p className="text-xs font-black tracking-[5px] text-red-400">MEMBER COMPLAINTS</p>
+            <div className="mt-5 grid gap-4 lg:grid-cols-2">
+              {complaints.map((complaint) => (
+                <article key={complaint.id} className="rounded-2xl border border-white/10 bg-black/40 p-5">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs text-gray-500">المشتكي</p>
+                      <p className="font-black text-white">{complaint.reporter.displayName}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">المشكو عليه</p>
+                      <p className="font-black text-white">{complaint.accused.displayName}</p>
+                    </div>
+                    <span className="rounded-full border border-red-400/30 px-3 py-1 text-xs font-black text-red-300">
+                      {complaint.status}
+                    </span>
+                  </div>
+                  <p className="mt-4 text-xs font-black tracking-[3px] text-red-300">{complaint.category}</p>
+                  <p className="mt-2 leading-7 text-gray-300">{complaint.reason}</p>
+                  {complaint.details && <p className="mt-2 text-sm text-gray-500">{complaint.details}</p>}
+                  {complaint.evidenceUrl && (
+                    <a href={complaint.evidenceUrl} target="_blank" className="mt-3 inline-block text-sm font-black text-cyan-300">
+                      فتح الدليل
+                    </a>
+                  )}
+                  {complaint.adminNote && <p className="mt-3 rounded-xl bg-white/5 p-3 text-xs text-gray-400">{complaint.adminNote}</p>}
+                  <AdminComplaintActions complaintId={complaint.id} status={complaint.status} />
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
 
         {activeSummons.length > 0 && (
           <section className="mb-10 rounded-3xl border border-cyan-400/20 bg-zinc-950 p-6">
