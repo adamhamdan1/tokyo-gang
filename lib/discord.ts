@@ -69,8 +69,32 @@ function getTokyoOnlineRoleId() {
   return process.env.DISCORD_TOKYO_ONLINE_ROLE_ID ?? "1490246428218494976";
 }
 
+function getTokyoRoleId() {
+  return process.env.DISCORD_TOKYO_ROLE_ID ?? getTokyoOnlineRoleId();
+}
+
 function getTrialRoleId() {
   return process.env.DISCORD_TRIAL_ROLE_ID ?? "1490418431344906320";
+}
+
+function getSummonRoleId() {
+  const roleId = process.env.DISCORD_SUMMON_ROLE_ID;
+
+  if (!roleId) {
+    throw new Error("DISCORD_SUMMON_ROLE_ID غير موجود في Vercel Environment Variables");
+  }
+
+  return roleId;
+}
+
+function getSummonChannelId() {
+  const channelId = process.env.DISCORD_SUMMON_CHANNEL_ID;
+
+  if (!channelId) {
+    throw new Error("DISCORD_SUMMON_CHANNEL_ID غير موجود في Vercel Environment Variables");
+  }
+
+  return channelId;
 }
 
 async function fetchDiscord(path: string, init?: RequestInit) {
@@ -136,6 +160,14 @@ export async function giveTrialRole(discordId: string) {
   await giveRole(discordId, getTrialRoleId(), "فترة التجربة");
 }
 
+export async function giveSummonRole(discordId: string) {
+  await giveRole(discordId, getSummonRoleId(), "الاستدعاء");
+}
+
+export async function removeTokyoRole(discordId: string) {
+  await removeRole(discordId, getTokyoRoleId(), "TOKYO");
+}
+
 async function giveRole(discordId: string, roleId: string, roleLabel: string) {
   await requireTokyoGuildMember(discordId);
 
@@ -146,6 +178,20 @@ async function giveRole(discordId: string, roleId: string, roleLabel: string) {
   if (!response.ok) {
     throw new Error(
       `فشل إعطاء رتبة ${roleLabel}. تأكد أن البوت عنده Manage Roles وأن رتبته أعلى من الرتبة (${response.status})`
+    );
+  }
+}
+
+async function removeRole(discordId: string, roleId: string, roleLabel: string) {
+  await requireTokyoGuildMember(discordId);
+
+  const response = await fetchDiscord(`/guilds/${getGuildId()}/members/${discordId}/roles/${roleId}`, {
+    method: "DELETE",
+  });
+
+  if (!response.ok && response.status !== 404) {
+    throw new Error(
+      `فشل سحب رتبة ${roleLabel}. تأكد أن البوت عنده Manage Roles وأن رتبته أعلى من الرتبة (${response.status})`
     );
   }
 }
@@ -169,6 +215,10 @@ export async function listAcceptedRoleMembers() {
       image: getAvatarUrl(member.user),
     }))
     .filter((member) => member.id) satisfies TokyoRoleMember[];
+}
+
+export async function listTokyoRoleMembers() {
+  return listRoleMembers(getTokyoRoleId());
 }
 
 export async function listOnlineAcceptedRoleMembers() {
@@ -320,6 +370,22 @@ export async function sendDiscordDm(discordId: string, content: string) {
 
   if (!messageResponse.ok) {
     throw new Error(`فشل إرسال رسالة خاصة للعضو (${messageResponse.status})`);
+  }
+}
+
+export async function sendSummonChannelMessage(content: string) {
+  const response = await fetchDiscord(`/channels/${getSummonChannelId()}/messages`, {
+    method: "POST",
+    body: JSON.stringify({
+      content,
+      allowed_mentions: {
+        parse: ["users"],
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`فشل إرسال رسالة في روم الاستدعاء (${response.status})`);
   }
 }
 

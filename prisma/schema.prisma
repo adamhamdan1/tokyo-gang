@@ -48,3 +48,27 @@ model Announcement {
   createdBy String?
   createdAt DateTime @default(now())
 }
+
+model TokyoMember {
+  id           String   @id @default(cuid())
+  discordId    String   @unique
+  username     String
+  displayName  String
+  image        String?
+  inTokyoRole  Boolean  @default(true)
+  lastSyncedAt DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  summons      Summon[]
+}
+
+model Summon {
+  id          String      @id @default(cuid())
+  memberId    String
+  member      TokyoMember @relation(fields: [memberId], references: [id])
+  reason      String
+  details     String?
+  summonedBy  String
+  status      String      @default("ACTIVE")
+  createdAt   DateTime    @default(now())
+}

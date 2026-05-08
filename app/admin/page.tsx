@@ -6,6 +6,8 @@ import { AdminAnnouncementForm } from "./AdminAnnouncementForm";
 import { AdminDiscordTestButton } from "./AdminDiscordTestButton";
 import { AdminSignOutButton } from "./AdminSignOutButton";
 import { AdminSyncButton } from "./AdminSyncButton";
+import { AdminSummonForm } from "./AdminSummonForm";
+import { AdminTokyoMemberSyncButton } from "./AdminTokyoMemberSyncButton";
 import Link from "next/link";
 
 const statusStyles: Record<string, string> = {
@@ -86,6 +88,8 @@ export default async function AdminPage({
     trialApplications,
     newPendingApplications,
     announcements,
+    tokyoMembers,
+    activeSummons,
   ] = await Promise.all([
     prisma.application.findMany({
       where: {
@@ -117,6 +121,23 @@ export default async function AdminPage({
     prisma.application.count({ where: { status: "TRIAL" } }),
     prisma.application.count({ where: { status: "PENDING", createdAt: { gte: dayAgo } } }),
     prisma.announcement.findMany({ orderBy: { createdAt: "desc" }, take: 10 }),
+    prisma.tokyoMember.findMany({
+      where: { inTokyoRole: true },
+      orderBy: { displayName: "asc" },
+      select: {
+        id: true,
+        displayName: true,
+        username: true,
+        discordId: true,
+      },
+    }),
+    prisma.summon.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 6,
+      include: {
+        member: true,
+      },
+    }),
   ]);
 
   const stats = [
@@ -124,6 +145,7 @@ export default async function AdminPage({
     ["عدد التقديمات", totalApplications],
     ["عدد المقبولين", acceptedApplications],
     ["فترة التجربة", trialApplications],
+    ["أعضاء TOKYO", tokyoMembers.length],
     ["عدد المرفوضين", rejectedApplications],
   ];
 
@@ -159,6 +181,7 @@ export default async function AdminPage({
           </Link>
           <AdminDiscordTestButton />
           <AdminSyncButton />
+          <AdminTokyoMemberSyncButton />
           <AdminSignOutButton />
         </div>
 
@@ -177,6 +200,28 @@ export default async function AdminPage({
         </section>
 
         <AdminAnnouncementForm />
+
+        <AdminSummonForm members={tokyoMembers} />
+
+        {activeSummons.length > 0 && (
+          <section className="mb-10 rounded-3xl border border-cyan-400/20 bg-zinc-950 p-6">
+            <p className="text-xs font-black tracking-[5px] text-cyan-300">RECENT SUMMONS</p>
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
+              {activeSummons.map((summon) => (
+                <article key={summon.id} className="rounded-2xl border border-white/10 bg-black/40 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="font-black text-white">{summon.member.displayName}</p>
+                    <span className="rounded-full border border-cyan-400/30 px-3 py-1 text-xs font-black text-cyan-300">
+                      {summon.status}
+                    </span>
+                  </div>
+                  <p className="mt-3 text-sm text-gray-400">{summon.reason}</p>
+                  {summon.details && <p className="mt-2 text-xs text-gray-500">{summon.details}</p>}
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
 
         {announcements.length > 0 && (
           <section className="mb-10 grid gap-4 md:grid-cols-2">
