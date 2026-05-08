@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { giveAcceptedRole, giveTrialRole, sendAdminLog, sendDiscordDm } from "@/lib/discord";
+import { createAdminLog } from "@/lib/admin-log";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
@@ -152,6 +153,19 @@ export async function PATCH(req: Request, context: RouteContext) {
     }`
   ).catch((error) => console.error("Admin log failed", error));
 
+  await createAdminLog({
+    action: "APPLICATION_DECISION",
+    title: `قرار تقديم: ${body.status}`,
+    details: `العضو: ${currentApplication.user.username} (${currentApplication.user.discordId})${
+      decisionReason ? `\nسبب الرفض: ${decisionReason}` : ""
+    }${interviewNote ? `\nملاحظة المقابلة: ${interviewNote}` : ""}${
+      body.internalNote ? `\nملاحظة داخلية: ${body.internalNote}` : ""
+    }`,
+    adminDiscordId: admin.session.user.id,
+    targetType: "APPLICATION",
+    targetId: application.id,
+  }).catch((error) => console.error("Admin db log failed", error));
+
   return NextResponse.json({ success: true, application });
 }
 
@@ -176,6 +190,14 @@ export async function DELETE(_req: Request, context: RouteContext) {
     await sendAdminLog(
       `حذف تقديم TOKYO\nالعضو: ${application.user.username} (${application.user.discordId})\nالأدمن: ${admin.session.user.name ?? admin.session.user.id}`
     ).catch((error) => console.error("Admin log failed", error));
+    await createAdminLog({
+      action: "APPLICATION_DELETE",
+      title: "حذف تقديم",
+      details: `العضو: ${application.user.username} (${application.user.discordId})`,
+      adminDiscordId: admin.session.user.id,
+      targetType: "APPLICATION",
+      targetId: application.id,
+    }).catch((error) => console.error("Admin db log failed", error));
   }
 
   return NextResponse.json({ success: true });

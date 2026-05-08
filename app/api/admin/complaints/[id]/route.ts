@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { createAdminLog } from "@/lib/admin-log";
 import { sendAdminLog } from "@/lib/discord";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
@@ -64,6 +65,18 @@ export async function PATCH(req: Request, context: RouteContext) {
       body.adminNote ? `\nملاحظة: ${body.adminNote}` : ""
     }`
   ).catch((error) => console.error("Complaint update log failed", error));
+
+  await createAdminLog({
+    action: "COMPLAINT_UPDATE",
+    title: `تحديث شكوى: ${body.status}`,
+    details: `المشتكي: ${complaint.reporter.displayName}\nالمشكو عليه: ${complaint.accused.displayName}${
+      body.adminNote ? `\nملاحظة: ${body.adminNote}` : ""
+    }`,
+    adminDiscordId: admin.session.user.id,
+    targetType: "COMPLAINT",
+    targetId: complaint.id,
+    targetMemberId: complaint.accused.id,
+  }).catch((error) => console.error("Complaint db log failed", error));
 
   return NextResponse.json({ success: true, complaint });
 }

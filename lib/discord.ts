@@ -435,6 +435,40 @@ export async function sendAdminLog(content: string) {
   });
 }
 
+export async function sendAdminEmbed(input: {
+  title: string;
+  description?: string;
+  color?: number;
+  fields?: Array<{ name: string; value: string; inline?: boolean }>;
+}) {
+  const webhookUrl = process.env.DISCORD_ADMIN_LOG_WEBHOOK_URL;
+
+  if (!webhookUrl) {
+    return;
+  }
+
+  await fetch(webhookUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      embeds: [
+        {
+          title: input.title,
+          description: input.description,
+          color: input.color ?? 15_116_280,
+          fields: input.fields,
+          timestamp: new Date().toISOString(),
+          footer: {
+            text: "TOKYO GANG Admin System",
+          },
+        },
+      ],
+    }),
+  });
+}
+
 export async function testDiscordSetup() {
   const guildResponse = await fetchDiscord(`/guilds/${getGuildId()}`);
 

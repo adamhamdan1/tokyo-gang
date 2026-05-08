@@ -56,10 +56,13 @@ model TokyoMember {
   displayName  String
   image        String?
   inTokyoRole  Boolean  @default(true)
+  status       String   @default("ACTIVE")
   lastSyncedAt DateTime @default(now())
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   summons      Summon[]
+  warnings     MemberWarning[]
+  adminLogs    AdminLog[]
   complaintsFiled Complaint[] @relation("ComplaintReporter")
   complaintsAgainst Complaint[] @relation("ComplaintAccused")
 }
@@ -90,4 +93,28 @@ model Complaint {
   adminNote   String?
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
+}
+
+model MemberWarning {
+  id          String      @id @default(cuid())
+  memberId    String
+  member      TokyoMember @relation(fields: [memberId], references: [id])
+  reason      String
+  severity    String      @default("NORMAL")
+  details     String?
+  issuedBy    String
+  createdAt   DateTime    @default(now())
+}
+
+model AdminLog {
+  id             String       @id @default(cuid())
+  action         String
+  title          String
+  details        String?
+  adminDiscordId String?
+  targetType     String?
+  targetId       String?
+  targetMemberId String?
+  targetMember   TokyoMember? @relation(fields: [targetMemberId], references: [id])
+  createdAt      DateTime     @default(now())
 }

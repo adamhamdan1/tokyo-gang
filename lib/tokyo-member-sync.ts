@@ -46,6 +46,7 @@ async function runTokyoMemberSync() {
           displayName: member.name,
           image: member.image,
           inTokyoRole: true,
+          status: "ACTIVE",
           lastSyncedAt: now,
         },
       })

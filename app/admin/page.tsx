@@ -29,6 +29,7 @@ const statusLabels: Record<string, string> = {
 
 const filterTabs = [
   ["الكل", "ALL"],
+  ["الأولوية", "PRIORITY"],
   ["قيد المراجعة", "PENDING"],
   ["المقبولين", "ACCEPTED"],
   ["المرفوضين", "REJECTED"],
@@ -59,7 +60,7 @@ export default async function AdminPage({
   const session = await auth();
   const adminIds = process.env.ADMIN_DISCORD_IDS?.split(",").map((id) => id.trim()) || [];
   const params = await searchParams;
-  const activeStatus = ["PENDING", "ACCEPTED", "REJECTED", "INTERVIEW", "TRIAL"].includes(params?.status ?? "")
+  const activeStatus = ["PRIORITY", "PENDING", "ACCEPTED", "REJECTED", "INTERVIEW", "TRIAL"].includes(params?.status ?? "")
     ? params?.status
     : "ALL";
   const query = params?.q?.trim() ?? "";
@@ -94,10 +95,18 @@ export default async function AdminPage({
     tokyoMembers,
     activeSummons,
     complaints,
+    recentLogs,
+    warningCount,
   ] = await Promise.all([
     prisma.application.findMany({
       where: {
-        ...(activeStatus === "ALL" ? {} : { status: activeStatus }),
+        ...(activeStatus === "ALL" || activeStatus === "PRIORITY" ? {} : { status: activeStatus }),
+        ...(activeStatus === "PRIORITY"
+          ? {
+              status: "PENDING",
+              hasMic: true,
+            }
+          : {}),
         ...(query
           ? {
               OR: [
@@ -133,6 +142,10 @@ export default async function AdminPage({
         displayName: true,
         username: true,
         discordId: true,
+        status: true,
+        warnings: {
+          select: { id: true },
+        },
       },
     }),
     prisma.summon.findMany({
@@ -150,6 +163,8 @@ export default async function AdminPage({
         accused: true,
       },
     }),
+    prisma.adminLog.findMany({ orderBy: { createdAt: "desc" }, take: 8 }),
+    prisma.memberWarning.count(),
   ]);
 
   const stats = [
@@ -158,6 +173,7 @@ export default async function AdminPage({
     ["عدد المقبولين", acceptedApplications],
     ["فترة التجربة", trialApplications],
     ["أعضاء TOKYO", tokyoMembers.length],
+    ["التحذيرات", warningCount],
     ["عدد المرفوضين", rejectedApplications],
   ];
 
@@ -217,6 +233,63 @@ export default async function AdminPage({
 
         <AdminSummonForm members={tokyoMembers} />
 
+        <section className="mb-10 grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+          <div className="rounded-3xl border border-green-400/20 bg-green-400/10 p-6">
+            <p className="text-xs font-black tracking-[5px] text-green-300">ADMIN NOTIFICATIONS</p>
+            <div className="mt-5 grid gap-3 text-sm">
+              <p className="rounded-2xl border border-white/10 bg-black/30 p-4">
+                تقديمات جديدة آخر 24 ساعة: <span className="font-black text-white">{newPendingApplications}</span>
+              </p>
+              <p className="rounded-2xl border border-white/10 bg-black/30 p-4">
+                شكاوي مفتوحة: <span className="font-black text-white">{complaints.filter((item) => item.status !== "RESOLVED" && item.status !== "DISMISSED").length}</span>
+              </p>
+              <p className="rounded-2xl border border-white/10 bg-black/30 p-4">
+                أعضاء تحت الاستدعاء: <span className="font-black text-white">{activeSummons.filter((item) => item.status === "ACTIVE").length}</span>
+              </p>
+            </div>
+          </div>
+          <div className="rounded-3xl border border-white/10 bg-zinc-950 p-6">
+            <p className="text-xs font-black tracking-[5px] text-cyan-300">ADMIN LOG</p>
+            <div className="mt-5 grid gap-3">
+              {recentLogs.map((log) => (
+                <article key={log.id} className="rounded-2xl border border-white/10 bg-black/40 p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="font-black text-white">{log.title}</p>
+                    <span className="text-xs text-gray-600">{log.createdAt.toLocaleString("ar")}</span>
+                  </div>
+                  <p className="mt-1 text-xs font-black tracking-[2px] text-cyan-300">{log.action}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="mb-10 rounded-3xl border border-white/10 bg-zinc-950 p-6">
+          <p className="text-xs font-black tracking-[5px] text-red-400">TOKYO MEMBER DIRECTORY</p>
+          <div className="mt-5 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+            {tokyoMembers.slice(0, 12).map((member) => (
+              <Link
+                key={member.id}
+                href={`/admin/members/${member.id}`}
+                className="rounded-2xl border border-white/10 bg-black/40 p-4 transition hover:border-cyan-400/30 hover:bg-cyan-400/10"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="font-black text-white">{member.displayName}</p>
+                    <p className="mt-1 text-xs text-gray-500">@{member.username}</p>
+                  </div>
+                  <div className="text-left">
+                    <p className="text-xs font-black text-cyan-300">{member.status}</p>
+                    {member.warnings.length > 0 && (
+                      <p className="mt-1 text-xs text-yellow-300">{member.warnings.length} تحذير</p>
+                    )}
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+
         {complaints.length > 0 && (
           <section className="mb-10 rounded-3xl border border-red-500/20 bg-zinc-950 p-6">
             <p className="text-xs font-black tracking-[5px] text-red-400">MEMBER COMPLAINTS</p>
@@ -226,11 +299,15 @@ export default async function AdminPage({
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <p className="text-xs text-gray-500">المشتكي</p>
-                      <p className="font-black text-white">{complaint.reporter.displayName}</p>
+                      <Link href={`/admin/members/${complaint.reporter.id}`} className="font-black text-white hover:text-cyan-300">
+                        {complaint.reporter.displayName}
+                      </Link>
                     </div>
                     <div>
                       <p className="text-xs text-gray-500">المشكو عليه</p>
-                      <p className="font-black text-white">{complaint.accused.displayName}</p>
+                      <Link href={`/admin/members/${complaint.accused.id}`} className="font-black text-white hover:text-cyan-300">
+                        {complaint.accused.displayName}
+                      </Link>
                     </div>
                     <span className="rounded-full border border-red-400/30 px-3 py-1 text-xs font-black text-red-300">
                       {complaint.status}
@@ -259,7 +336,9 @@ export default async function AdminPage({
               {activeSummons.map((summon) => (
                 <article key={summon.id} className="rounded-2xl border border-white/10 bg-black/40 p-4">
                   <div className="flex items-center justify-between gap-3">
-                    <p className="font-black text-white">{summon.member.displayName}</p>
+                    <Link href={`/admin/members/${summon.member.id}`} className="font-black text-white hover:text-cyan-300">
+                      {summon.member.displayName}
+                    </Link>
                     <span className="rounded-full border border-cyan-400/30 px-3 py-1 text-xs font-black text-cyan-300">
                       {summon.status}
                     </span>

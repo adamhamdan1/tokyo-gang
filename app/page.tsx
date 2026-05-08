@@ -446,6 +446,7 @@ export default function Home() {
               <>
                 <a href="/status" className="text-green-400 hover:text-green-300">طلبي</a>
                 <a href="/complaints" className="text-cyan-300 hover:text-cyan-200">الشكاوي</a>
+                <a href="/rules-internal" className="text-yellow-300 hover:text-yellow-200">القوانين الداخلية</a>
                 <a href="/admin" className="text-red-400 hover:text-red-300">الإدارة</a>
               </>
             )}
