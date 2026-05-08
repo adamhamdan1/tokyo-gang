@@ -11,6 +11,19 @@ type DiscordMember = {
   roles?: string[];
 };
 
+type TokyoRoleMember = {
+  id: string;
+  name: string;
+  username: string;
+  image: string | null;
+};
+
+type DiscordWidgetMember = {
+  id?: string;
+  username?: string;
+  status?: "online" | "idle" | "dnd" | "offline";
+};
+
 function getBotHeaders() {
   const token = process.env.DISCORD_BOT_TOKEN;
 
@@ -134,7 +147,36 @@ export async function listAcceptedRoleMembers() {
       username: member.user?.username ?? "unknown",
       image: getAvatarUrl(member.user),
     }))
-    .filter((member) => member.id);
+    .filter((member) => member.id) satisfies TokyoRoleMember[];
+}
+
+export async function listOnlineAcceptedRoleMembers() {
+  const [roleMembers, widgetResponse] = await Promise.all([
+    listAcceptedRoleMembers(),
+    fetch(`${DISCORD_API_BASE}/guilds/${getGuildId()}/widget.json`, {
+      cache: "no-store",
+    }),
+  ]);
+
+  if (!widgetResponse.ok) {
+    throw new Error(`فشل جلب أعضاء الديسكورد الأونلاين. فعل Server Widget من إعدادات السيرفر (${widgetResponse.status})`);
+  }
+
+  const widget = (await widgetResponse.json()) as {
+    members?: DiscordWidgetMember[];
+  };
+  const onlineIds = new Set(
+    (widget.members ?? [])
+      .filter((member) => member.id && member.status !== "offline")
+      .map((member) => member.id!)
+  );
+
+  return {
+    members: roleMembers
+      .filter((member) => onlineIds.has(member.id))
+      .sort((first, second) => first.name.localeCompare(second.name)),
+    roleMemberCount: roleMembers.length,
+  };
 }
 
 export async function getGuildOnlineCount() {

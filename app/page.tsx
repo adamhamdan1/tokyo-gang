@@ -83,6 +83,7 @@ export default function Home() {
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [discordMembers, setDiscordMembers] = useState<DiscordMember[]>([]);
   const [onlineCount, setOnlineCount] = useState<number | null>(null);
+  const [roleMemberCount, setRoleMemberCount] = useState<number | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 3000);
@@ -139,14 +140,22 @@ export default function Home() {
         cache: "no-store",
       });
       const data = (await response.json().catch(() => null)) as {
-        members?: DiscordMember[];
+        members?: DiscordMember[] | null;
         onlineCount?: number | null;
+        roleMemberCount?: number | null;
       } | null;
 
-      if (!active) return;
+      if (!active || !response.ok || !Array.isArray(data?.members)) return;
 
-      setDiscordMembers(data?.members ?? []);
+      const nextMembers = data.members;
+
+      setDiscordMembers((currentMembers) => {
+        const currentIds = currentMembers.map((member) => member.id).join(",");
+        const nextIds = nextMembers.map((member) => member.id).join(",");
+        return currentIds === nextIds ? currentMembers : nextMembers;
+      });
       setOnlineCount(data?.onlineCount ?? null);
+      setRoleMemberCount(data?.roleMemberCount ?? null);
     };
 
     loadDiscordMembers();
@@ -456,8 +465,8 @@ export default function Home() {
         </div>
         <p className="text-sm text-gray-300">SERVER: TOKYO GANG</p>
         <p className="text-sm text-gray-300">BOT: LINKED</p>
-        <p className="text-sm text-gray-300">ACTIVE MEMBERS: {onlineCount ?? "SYNCING"}</p>
-        <p className="text-sm text-gray-300">ROLE MEMBERS: {discordMembers.length || "SYNCING"}</p>
+        <p className="text-sm text-gray-300">ONLINE TOKYO: {onlineCount ?? "SYNCING"}</p>
+        <p className="text-sm text-gray-300">ROLE MEMBERS: {roleMemberCount ?? "SYNCING"}</p>
         <div className="mt-4 space-y-2 text-xs text-gray-400">
           {killfeed.slice(0, 3).map((item) => (
             <p key={item} className="border-t border-white/10 pt-2">{item}</p>
@@ -760,15 +769,21 @@ export default function Home() {
         <h2 className="text-5xl font-black text-center mb-6">أعضاء TOKYO GANG</h2>
         <p className="text-center text-gray-400 mb-10">قاعدة بيانات كاملة لأعضاء العصابة وعددهم 35 عضو</p>
 
-        {discordMembers.length > 0 && (
-          <div className="mx-auto mb-14 max-w-7xl">
-            <p className="mb-6 text-center text-sm font-black tracking-[5px] text-green-400">
-              LIVE DISCORD MEMBERS
-            </p>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {discordMembers.slice(0, 12).map((member) => (
+        <div className="mx-auto mb-14 max-w-7xl">
+          <p className="mb-6 text-center text-sm font-black tracking-[5px] text-green-400">
+            TOKYO ONLINE NOW
+          </p>
+          {discordMembers.length > 0 ? (
+            <motion.div layout className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <AnimatePresence mode="popLayout">
+                {discordMembers.slice(0, 12).map((member) => (
                 <motion.div
                   key={member.id}
+                  layout
+                  initial={{ opacity: 0, y: 14, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.96 }}
+                  transition={{ duration: 0.25, ease: "easeOut" }}
                   whileHover={{ scale: 1.04, y: -6 }}
                   className="flex items-center gap-4 rounded-3xl border border-green-400/20 bg-green-400/5 p-4 shadow-[0_0_28px_rgba(74,222,128,0.08)]"
                 >
@@ -784,10 +799,15 @@ export default function Home() {
                     <p className="truncate text-xs text-gray-500">@{member.username}</p>
                   </div>
                 </motion.div>
-              ))}
+                ))}
+              </AnimatePresence>
+            </motion.div>
+          ) : (
+            <div className="rounded-3xl border border-white/10 bg-white/[0.03] px-6 py-8 text-center text-sm font-bold text-gray-500">
+              لا يوجد أعضاء TOKYO أونلاين حالياً
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row gap-4 mb-10">
           <input
