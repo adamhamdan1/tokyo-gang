@@ -132,17 +132,30 @@ export default function Home() {
   }, [volume]);
 
   useEffect(() => {
+    let active = true;
+
     const loadDiscordMembers = async () => {
-      const response = await fetch("/api/discord-members");
+      const response = await fetch(`/api/discord-members?t=${Date.now()}`, {
+        cache: "no-store",
+      });
       const data = (await response.json().catch(() => null)) as {
         members?: DiscordMember[];
         onlineCount?: number | null;
       } | null;
+
+      if (!active) return;
+
       setDiscordMembers(data?.members ?? []);
       setOnlineCount(data?.onlineCount ?? null);
     };
 
     loadDiscordMembers();
+    const interval = window.setInterval(loadDiscordMembers, 1000);
+
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
   }, []);
 
   const filteredMembers = members.filter(([name, role]) => {
