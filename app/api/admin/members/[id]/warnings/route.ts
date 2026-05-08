@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { createAdminLog } from "@/lib/admin-log";
-import { sendAdminEmbed, sendAdminLog, sendDiscordDm } from "@/lib/discord";
+import { applyWarningRole, sendAdminEmbed, sendAdminLog, sendDiscordDm } from "@/lib/discord";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
@@ -45,7 +45,9 @@ export async function POST(req: Request, context: RouteContext) {
   const body = (await req.json()) as WarningBody;
   const reason = body.reason?.trim();
   const details = body.details?.trim();
-  const severity = ["NORMAL", "HIGH", "FINAL"].includes(body.severity ?? "") ? body.severity! : "NORMAL";
+  const severity = ["NORMAL", "HIGH", "DISMISSAL"].includes(body.severity ?? "")
+    ? (body.severity as "NORMAL" | "HIGH" | "DISMISSAL")
+    : "NORMAL";
 
   if (!reason) {
     return NextResponse.json({ error: "اكتب سبب التحذير" }, { status: 400 });
@@ -57,6 +59,15 @@ export async function POST(req: Request, context: RouteContext) {
 
   if (!member) {
     return NextResponse.json({ error: "العضو غير موجود" }, { status: 404 });
+  }
+
+  try {
+    await applyWarningRole(member.discordId, severity);
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "فشل إعطاء رتبة التحذير" },
+      { status: 400 }
+    );
   }
 
   const warning = await prisma.memberWarning.create({
@@ -72,12 +83,13 @@ export async function POST(req: Request, context: RouteContext) {
   await prisma.tokyoMember.update({
     where: { id: member.id },
     data: {
-      status: severity === "FINAL" ? "FINAL_WARNING" : "WARNED",
+      status: severity === "DISMISSAL" ? "DISMISSED" : "WARNED",
+      inTokyoRole: severity === "DISMISSAL" ? false : member.inTokyoRole,
     },
   });
 
   const message =
-    `**تحذير إداري - TOKYO GANG**\n` +
+    `**${severity === "DISMISSAL" ? "فصل إداري" : "تحذير إداري"} - TOKYO GANG**\n` +
     `العضو: <@${member.discordId}>\n` +
     `القوة: ${severity}\n` +
     `السبب: ${reason}` +
@@ -85,8 +97,8 @@ export async function POST(req: Request, context: RouteContext) {
     `الأدمن: ${admin.session.user.name ?? admin.session.user.id}`;
 
   await sendAdminEmbed({
-    title: "تحذير إداري",
-    color: severity === "FINAL" ? 15_116_280 : 16_776_960,
+    title: severity === "DISMISSAL" ? "فصل عضو TOKYO" : "تحذير إداري",
+    color: severity === "DISMISSAL" ? 15_116_280 : 16_776_960,
     fields: [
       { name: "العضو", value: `${member.displayName} (<@${member.discordId}>)`, inline: true },
       { name: "القوة", value: severity, inline: true },
@@ -100,7 +112,9 @@ export async function POST(req: Request, context: RouteContext) {
   });
   await sendDiscordDm(
     member.discordId,
-    `وصلك تحذير من إدارة TOKYO GANG.\nالقوة: ${severity}\nالسبب: ${reason}${details ? `\nالتفاصيل: ${details}` : ""}`
+    severity === "DISMISSAL"
+      ? `تم فصلك من TOKYO GANG.\nالسبب: ${reason}${details ? `\nالتفاصيل: ${details}` : ""}`
+      : `وصلك تحذير من إدارة TOKYO GANG.\nالقوة: ${severity}\nالسبب: ${reason}${details ? `\nالتفاصيل: ${details}` : ""}`
   ).catch((error) => console.error("Warning DM failed", error));
   await createAdminLog({
     action: "MEMBER_WARNING",

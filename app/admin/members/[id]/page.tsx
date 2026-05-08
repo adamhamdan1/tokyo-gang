@@ -15,7 +15,15 @@ const memberStatusStyles: Record<string, string> = {
   WARNED: "border-yellow-400/30 bg-yellow-400/10 text-yellow-300",
   FINAL_WARNING: "border-red-500/30 bg-red-500/10 text-red-300",
   SUMMONED: "border-cyan-400/30 bg-cyan-400/10 text-cyan-300",
+  DISMISSED: "border-red-600/40 bg-red-600/10 text-red-300",
   SUSPENDED: "border-red-600/40 bg-red-600/10 text-red-300",
+};
+
+const warningLabels: Record<string, string> = {
+  NORMAL: "تحذير عادي",
+  HIGH: "تحذير قوي",
+  DISMISSAL: "فصل",
+  FINAL: "تحذير نهائي",
 };
 
 function getAdminIds() {
@@ -136,7 +144,7 @@ export default async function AdminMemberPage({ params }: Props) {
                   <div className="flex items-center justify-between gap-3">
                     <p className="font-black text-white">{warning.reason}</p>
                     <span className="rounded-full border border-yellow-400/30 px-3 py-1 text-xs font-black text-yellow-300">
-                      {warning.severity}
+                      {warningLabels[warning.severity] ?? warning.severity}
                     </span>
                   </div>
                   {warning.details && <p className="mt-2 text-sm text-gray-400">{warning.details}</p>}

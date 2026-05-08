@@ -215,6 +215,7 @@ export default function Home() {
     const matchesRank = rank === "الكل" || role === rank;
     return matchesSearch && matchesRank;
   });
+  const syncedTokyoMemberCount = roleMemberCount ?? null;
 
   const toggleMusic = () => {
     if (!audioRef.current) return;
@@ -648,7 +649,7 @@ export default function Home() {
 
           <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
             {[
-              ["35", "عضو"],
+              [syncedTokyoMemberCount === null ? "SYNC" : String(syncedTokyoMemberCount), "عضو"],
               ["TOP 1", "GANG"],
               ["24/7", "سيطرة"],
               ["∞", "نفوذ"],
@@ -845,7 +846,9 @@ export default function Home() {
 
       <RevealSection id="members" className="py-24 px-6 bg-black">
         <h2 className="text-5xl font-black text-center mb-6">أعضاء TOKYO GANG</h2>
-        <p className="text-center text-gray-400 mb-10">قاعدة بيانات كاملة لأعضاء العصابة وعددهم 35 عضو</p>
+        <p className="text-center text-gray-400 mb-10">
+          قاعدة بيانات كاملة لأعضاء العصابة وعددهم {syncedTokyoMemberCount === null ? "جاري المزامنة" : `${syncedTokyoMemberCount} عضو`}
+        </p>
 
         <div className="mx-auto mb-14 max-w-7xl">
           <p className="mb-6 text-center text-sm font-black tracking-[5px] text-green-400">

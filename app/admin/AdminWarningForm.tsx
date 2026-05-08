@@ -56,7 +56,7 @@ export function AdminWarningForm({ memberId }: Props) {
         >
           <option value="NORMAL">تحذير عادي</option>
           <option value="HIGH">تحذير قوي</option>
-          <option value="FINAL">تحذير نهائي</option>
+          <option value="DISMISSAL">فصل</option>
         </select>
         <input
           name="reason"

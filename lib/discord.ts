@@ -89,6 +89,40 @@ function getSummonRoleId() {
   return roleId;
 }
 
+function getWarningRoleId() {
+  const roleId = process.env.DISCORD_WARNING_ROLE_ID;
+
+  if (!roleId) {
+    throw new Error("DISCORD_WARNING_ROLE_ID غير موجود في Vercel Environment Variables");
+  }
+
+  return roleId;
+}
+
+function getStrongWarningRoleId() {
+  const roleId = process.env.DISCORD_STRONG_WARNING_ROLE_ID;
+
+  if (!roleId) {
+    throw new Error("DISCORD_STRONG_WARNING_ROLE_ID غير موجود في Vercel Environment Variables");
+  }
+
+  return roleId;
+}
+
+function getDismissalRoleId() {
+  const roleId = process.env.DISCORD_DISMISSAL_ROLE_ID;
+
+  if (!roleId) {
+    throw new Error("DISCORD_DISMISSAL_ROLE_ID غير موجود في Vercel Environment Variables");
+  }
+
+  return roleId;
+}
+
+function getOptionalRoleId(key: string) {
+  return process.env[key];
+}
+
 function getSummonChannelId() {
   const channelId = process.env.DISCORD_SUMMON_CHANNEL_ID;
 
@@ -168,6 +202,37 @@ export async function giveTrialRole(discordId: string) {
 
 export async function giveSummonRole(discordId: string) {
   await giveRole(discordId, getSummonRoleId(), "الاستدعاء");
+}
+
+export async function applyWarningRole(discordId: string, severity: "NORMAL" | "HIGH" | "DISMISSAL") {
+  if (severity === "NORMAL") {
+    await giveRole(discordId, getWarningRoleId(), "التحذير العادي");
+    return;
+  }
+
+  const warningRoleId = getOptionalRoleId("DISCORD_WARNING_ROLE_ID");
+
+  if (severity === "HIGH") {
+    if (warningRoleId) {
+      await removeRole(discordId, warningRoleId, "التحذير العادي");
+    }
+
+    await giveRole(discordId, getStrongWarningRoleId(), "التحذير القوي");
+    return;
+  }
+
+  const strongWarningRoleId = getOptionalRoleId("DISCORD_STRONG_WARNING_ROLE_ID");
+
+  if (warningRoleId) {
+    await removeRole(discordId, warningRoleId, "التحذير العادي");
+  }
+
+  if (strongWarningRoleId) {
+    await removeRole(discordId, strongWarningRoleId, "التحذير القوي");
+  }
+
+  await removeTokyoRole(discordId);
+  await giveRole(discordId, getDismissalRoleId(), "الفصل");
 }
 
 export async function removeTokyoRole(discordId: string) {
