@@ -22,7 +22,14 @@ type DiscordWidgetMember = {
   id?: string;
   username?: string;
   status?: "online" | "idle" | "dnd" | "offline";
+  avatar_url?: string;
 };
+
+let roleMembersCache: {
+  roleId: string;
+  members: TokyoRoleMember[];
+  expiresAt: number;
+} | null = null;
 
 function getBotHeaders() {
   const token = process.env.DISCORD_BOT_TOKEN;
@@ -156,7 +163,7 @@ export async function listAcceptedRoleMembers() {
 
 export async function listOnlineAcceptedRoleMembers() {
   const [roleMembers, widgetResponse] = await Promise.all([
-    listRoleMembers(getTokyoOnlineRoleId()),
+    listCachedRoleMembers(getTokyoOnlineRoleId()),
     fetch(`${DISCORD_API_BASE}/guilds/${getGuildId()}/widget.json`, {
       cache: "no-store",
     }),
@@ -169,18 +176,29 @@ export async function listOnlineAcceptedRoleMembers() {
   const widget = (await widgetResponse.json()) as {
     members?: DiscordWidgetMember[];
   };
-  const onlineIds = new Set(
-    (widget.members ?? [])
-      .filter((member) => member.id && member.status !== "offline")
-      .map((member) => member.id!)
-  );
+  const onlineMembers = matchWidgetMembersToRoleMembers(widget.members ?? [], roleMembers);
 
   return {
-    members: roleMembers
-      .filter((member) => onlineIds.has(member.id))
-      .sort((first, second) => first.name.localeCompare(second.name)),
+    members: onlineMembers.sort((first, second) => first.name.localeCompare(second.name)),
     roleMemberCount: roleMembers.length,
   };
+}
+
+async function listCachedRoleMembers(roleId: string) {
+  const now = Date.now();
+
+  if (roleMembersCache?.roleId === roleId && roleMembersCache.expiresAt > now) {
+    return roleMembersCache.members;
+  }
+
+  const members = await listRoleMembers(roleId);
+  roleMembersCache = {
+    roleId,
+    members,
+    expiresAt: now + 5 * 60 * 1000,
+  };
+
+  return members;
 }
 
 async function listRoleMembers(roleId: string) {
@@ -201,6 +219,47 @@ async function listRoleMembers(roleId: string) {
       image: getAvatarUrl(member.user),
     }))
     .filter((member) => member.id) satisfies TokyoRoleMember[];
+}
+
+function normalizeDiscordName(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/tokyo|tok|gang|كروز/gi, "")
+    .replace(/[^\p{L}\p{N}]+/gu, "");
+}
+
+function matchWidgetMembersToRoleMembers(
+  widgetMembers: DiscordWidgetMember[],
+  roleMembers: TokyoRoleMember[]
+) {
+  const roleCandidates = roleMembers.map((member) => ({
+    member,
+    keys: [member.name, member.username].map(normalizeDiscordName).filter(Boolean),
+  }));
+  const matchedIds = new Set<string>();
+  const matchedMembers: TokyoRoleMember[] = [];
+
+  for (const widgetMember of widgetMembers) {
+    if (!widgetMember.username || widgetMember.status === "offline") continue;
+
+    const widgetKey = normalizeDiscordName(widgetMember.username);
+    if (!widgetKey) continue;
+
+    const match = roleCandidates.find(({ member, keys }) => {
+      if (matchedIds.has(member.id)) return false;
+      return keys.some((key) => key === widgetKey || key.includes(widgetKey) || widgetKey.includes(key));
+    });
+
+    if (match) {
+      matchedIds.add(match.member.id);
+      matchedMembers.push({
+        ...match.member,
+        image: match.member.image ?? widgetMember.avatar_url ?? null,
+      });
+    }
+  }
+
+  return matchedMembers;
 }
 
 export async function getGuildOnlineCount() {
