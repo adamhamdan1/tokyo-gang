@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -69,7 +70,43 @@ type DiscordMember = {
   name: string;
   username: string;
   image: string | null;
+  status?: "online" | "idle" | "dnd";
 };
+
+const memberStatusStyles = {
+  online: "border-green-400/40 bg-green-400/10 text-green-300",
+  idle: "border-yellow-400/40 bg-yellow-400/10 text-yellow-200",
+  dnd: "border-red-500/40 bg-red-500/10 text-red-300",
+};
+
+const memberStatusLabels = {
+  online: "ONLINE",
+  idle: "IDLE",
+  dnd: "DND",
+};
+
+function RevealSection({
+  id,
+  className,
+  children,
+}: {
+  id?: string;
+  className: string;
+  children: ReactNode;
+}) {
+  return (
+    <motion.section
+      id={id}
+      initial={{ opacity: 0, y: 42, filter: "blur(10px)" }}
+      whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+      viewport={{ once: true, amount: 0.16 }}
+      transition={{ duration: 0.75, ease: "easeOut" }}
+      className={className}
+    >
+      {children}
+    </motion.section>
+  );
+}
 
 export default function Home() {
   const session = useSession();
@@ -85,6 +122,7 @@ export default function Home() {
   const [onlineCount, setOnlineCount] = useState<number | null>(null);
   const [tokyoOnlineCount, setTokyoOnlineCount] = useState<number | null>(null);
   const [roleMemberCount, setRoleMemberCount] = useState<number | null>(null);
+  const [lastDiscordSync, setLastDiscordSync] = useState<Date | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 3000);
@@ -159,6 +197,7 @@ export default function Home() {
       setOnlineCount(data?.onlineCount ?? null);
       setTokyoOnlineCount(data?.tokyoOnlineCount ?? nextMembers.length);
       setRoleMemberCount(data?.roleMemberCount ?? null);
+      setLastDiscordSync(new Date());
     };
 
     loadDiscordMembers();
@@ -443,13 +482,18 @@ export default function Home() {
         </div>
       </nav>
 
-      <div className="fixed bottom-6 left-6 z-50 bg-black/70 border border-white/20 backdrop-blur-md rounded-2xl p-4 flex flex-col gap-3 w-52">
-        <button onClick={toggleMusic} className="bg-white text-black font-bold rounded-xl py-3 hover:bg-gray-300 transition">
-          {playing ? "إيقاف الموسيقى" : "تشغيل الموسيقى"}
+      <div className="group fixed bottom-6 left-6 z-50 flex items-center gap-3 rounded-full border border-white/15 bg-black/70 p-3 backdrop-blur-md shadow-[0_0_28px_rgba(255,255,255,0.08)] transition hover:rounded-2xl">
+        <button
+          type="button"
+          onClick={toggleMusic}
+          aria-label={playing ? "إيقاف الموسيقى" : "تشغيل الموسيقى"}
+          className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-xl font-black text-black transition hover:bg-gray-300"
+        >
+          {playing ? "Ⅱ" : "▶"}
         </button>
 
-        <div>
-          <p className="text-xs text-gray-400 mb-2">مستوى الصوت: {volume}%</p>
+        <div className="grid w-0 overflow-hidden opacity-0 transition-all duration-300 group-hover:w-44 group-hover:opacity-100">
+          <p className="mb-2 text-xs font-bold text-gray-400">الصوت {volume}%</p>
           <input
             type="range"
             min="0"
@@ -461,6 +505,18 @@ export default function Home() {
         </div>
       </div>
 
+      {session.data?.user && (
+        <motion.a
+          href="/admin"
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          whileHover={{ scale: 1.04, x: -4 }}
+          className="fixed right-6 top-1/2 z-50 hidden -translate-y-1/2 rounded-full border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs font-black tracking-[3px] text-red-300 shadow-[0_0_24px_rgba(239,68,68,0.18)] backdrop-blur-md lg:block"
+        >
+          ADMIN CONSOLE
+        </motion.a>
+      )}
+
       <div className="fixed right-6 top-24 z-40 hidden w-72 border border-green-400/20 bg-black/70 p-4 text-left backdrop-blur-md lg:block">
         <div className="mb-3 flex items-center justify-between">
           <p className="text-xs font-black tracking-[3px] text-green-400">TOKYO NETWORK</p>
@@ -468,8 +524,14 @@ export default function Home() {
         </div>
         <p className="text-sm text-gray-300">SERVER: TOKYO GANG</p>
         <p className="text-sm text-gray-300">BOT: LINKED</p>
-        <p className="text-sm text-gray-300">ONLINE SERVER: {onlineCount ?? "SYNCING"}</p>
+        <p className="flex items-center gap-2 text-sm text-gray-300">
+          <span className="h-2 w-2 rounded-full bg-green-400 shadow-[0_0_12px_lime]" />
+          ONLINE SERVER: {onlineCount ?? "SYNCING"}
+        </p>
         <p className="text-sm text-gray-300">ROLE MEMBERS: {roleMemberCount ?? "SYNCING"}</p>
+        <p className="text-xs text-green-400/70">
+          LAST SYNC: {lastDiscordSync ? lastDiscordSync.toLocaleTimeString("en-GB") : "WAITING"}
+        </p>
         <div className="mt-4 space-y-2 text-xs text-gray-400">
           {killfeed.slice(0, 3).map((item) => (
             <p key={item} className="border-t border-white/10 pt-2">{item}</p>
@@ -613,6 +675,16 @@ export default function Home() {
         </motion.div>
       </section>
 
+      <section className="relative overflow-hidden border-y border-red-500/20 bg-red-950/10 py-4">
+        <motion.div
+          animate={{ x: ["-100%", "100%"] }}
+          transition={{ duration: 26, repeat: Infinity, ease: "linear" }}
+          className="whitespace-nowrap text-sm font-black tracking-[8px] text-red-300/90"
+        >
+          POWER / LOYALTY / RESPECT / CONTROL / TOKYO GANG / POWER / LOYALTY / RESPECT / CONTROL / TOKYO GANG
+        </motion.div>
+      </section>
+
       <section className="relative overflow-hidden border-y border-white/10 bg-black py-4">
         <motion.div
           animate={{ x: ["100%", "-100%"] }}
@@ -633,7 +705,7 @@ export default function Home() {
         </motion.div>
       </section>
 
-      <section id="server" className="py-24 px-6 bg-zinc-950 border-t border-white/10">
+      <RevealSection id="server" className="py-24 px-6 bg-zinc-950 border-t border-white/10">
         <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center">
           <div>
             <p className="text-sm tracking-[6px] text-gray-400 mb-4">مكان تواجدنا حالياً</p>
@@ -649,11 +721,11 @@ export default function Home() {
             </div>
           </div>
         </div>
-      </section>
+      </RevealSection>
 
       <AnnouncementsFeed />
 
-      <section id="command" className="py-24 px-6 bg-black border-y border-white/10">
+      <RevealSection id="command" className="py-24 px-6 bg-black border-y border-white/10">
         <h2 className="text-5xl font-black text-center mb-4">القيادة العليا</h2>
         <p className="text-center text-gray-400 mb-14 tracking-[4px]">HIGH COMMAND</p>
 
@@ -692,9 +764,9 @@ export default function Home() {
             </motion.div>
           ))}
         </div>
-      </section>
+      </RevealSection>
 
-      <section id="streamers" className="py-24 px-6 bg-zinc-950 border-y border-white/10">
+      <RevealSection id="streamers" className="py-24 px-6 bg-zinc-950 border-y border-white/10">
         <h2 className="text-5xl font-black text-center mb-4">ستريمرز العصابة</h2>
         <p className="text-center text-gray-400 mb-14 tracking-[4px]">TOKYO MEDIA UNIT</p>
 
@@ -766,15 +838,18 @@ export default function Home() {
             </motion.div>
           ))}
         </div>
-      </section>
+      </RevealSection>
 
-      <section id="members" className="py-24 px-6 bg-black">
+      <RevealSection id="members" className="py-24 px-6 bg-black">
         <h2 className="text-5xl font-black text-center mb-6">أعضاء TOKYO GANG</h2>
         <p className="text-center text-gray-400 mb-10">قاعدة بيانات كاملة لأعضاء العصابة وعددهم 35 عضو</p>
 
         <div className="mx-auto mb-14 max-w-7xl">
           <p className="mb-6 text-center text-sm font-black tracking-[5px] text-green-400">
-            TOKYO ROLE ONLINE: {tokyoOnlineCount ?? "SYNCING"}
+            <span className="inline-flex items-center gap-3">
+              <span className="h-2 w-2 rounded-full bg-green-400 shadow-[0_0_14px_lime]" />
+              TOKYO ROLE ONLINE: {tokyoOnlineCount ?? "SYNCING"}
+            </span>
           </p>
           {discordMembers.length > 0 ? (
             <motion.div layout className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -798,7 +873,14 @@ export default function Home() {
                     </div>
                   )}
                   <div className="min-w-0">
-                    <p className="truncate font-black text-white">{member.name}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="truncate font-black text-white">{member.name}</p>
+                      {member.status && (
+                        <span className={`rounded-full border px-2 py-0.5 text-[10px] font-black ${memberStatusStyles[member.status]}`}>
+                          {memberStatusLabels[member.status]}
+                        </span>
+                      )}
+                    </div>
                     <p className="truncate text-xs text-gray-500">@{member.username}</p>
                   </div>
                 </motion.div>
@@ -806,8 +888,17 @@ export default function Home() {
               </AnimatePresence>
             </motion.div>
           ) : (
-            <div className="rounded-3xl border border-white/10 bg-white/[0.03] px-6 py-8 text-center text-sm font-bold text-gray-500">
-              لا يوجد أعضاء TOKYO أونلاين حالياً
+            <div className="relative overflow-hidden rounded-3xl border border-green-400/10 bg-white/[0.03] px-6 py-10 text-center">
+              <motion.div
+                animate={{ x: ["-100%", "100%"] }}
+                transition={{ duration: 2.8, repeat: Infinity, ease: "linear" }}
+                className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-green-400/10 to-transparent"
+              />
+              <div className="relative z-10">
+                <div className="mx-auto mb-4 h-3 w-3 rounded-full bg-green-400 shadow-[0_0_18px_lime]" />
+                <p className="text-sm font-black tracking-[5px] text-green-400">TOKYO CHANNEL QUIET</p>
+                <p className="mt-3 text-sm font-bold text-gray-500">لا يوجد أعضاء TOKYO أونلاين حالياً</p>
+              </div>
             </div>
           )}
         </div>
@@ -877,9 +968,9 @@ export default function Home() {
             </motion.div>
           ))}
         </div>
-      </section>
+      </RevealSection>
 
-      <section id="wanted" className="py-24 px-6 bg-black border-y border-white/10">
+      <RevealSection id="wanted" className="py-24 px-6 bg-black border-y border-white/10">
         <h2 className="text-5xl font-black text-center mb-4">MOST WANTED</h2>
         <p className="text-center text-gray-500 tracking-[4px] mb-14">TOKYO TARGET DATABASE</p>
 
@@ -912,9 +1003,9 @@ export default function Home() {
             </motion.div>
           ))}
         </div>
-      </section>
+      </RevealSection>
 
-      <section id="rules" className="py-24 px-6 bg-black">
+      <RevealSection id="rules" className="py-24 px-6 bg-black">
         <h2 className="text-5xl font-black text-center mb-14">قوانين العصابة</h2>
         <div className="max-w-5xl mx-auto grid md:grid-cols-3 gap-6">
           {["الاحترام بين الأعضاء خط أحمر", "ممنوع الخيانة أو تسريب معلومات", "الالتزام بأوامر القيادة", "ممنوع التخريب بدون سبب", "الحضور وقت الاجتماعات مهم", "الهيبة قبل كل شيء"].map((rule, i) => (
@@ -923,9 +1014,9 @@ export default function Home() {
             </div>
           ))}
         </div>
-      </section>
+      </RevealSection>
 
-      <section id="timeline" className="py-24 px-6 bg-zinc-950 border-y border-white/10">
+      <RevealSection id="timeline" className="py-24 px-6 bg-zinc-950 border-y border-white/10">
         <h2 className="text-5xl font-black text-center mb-4">TOKYO TIMELINE</h2>
         <p className="text-center text-gray-500 tracking-[4px] mb-14">سجل الهيبة والتطور</p>
 
@@ -949,9 +1040,9 @@ export default function Home() {
             ))}
           </div>
         </div>
-      </section>
+      </RevealSection>
 
-      <section id="wars" className="py-24 px-6 bg-zinc-950">
+      <RevealSection id="wars" className="py-24 px-6 bg-zinc-950">
         <h2 className="text-5xl font-black text-center mb-14">سجل الحروب</h2>
 
         <div className="max-w-4xl mx-auto space-y-4">
@@ -967,9 +1058,9 @@ export default function Home() {
             </motion.div>
           ))}
         </div>
-      </section>
+      </RevealSection>
 
-      <section id="apply" className="py-24 px-6 bg-black">
+      <RevealSection id="apply" className="py-24 px-6 bg-black">
         <h2 className="text-5xl font-black text-center mb-8">تقديم الانضمام</h2>
 
         {!session.data ? (
@@ -985,7 +1076,7 @@ export default function Home() {
         ) : (
           <ApplicationForm />
         )}
-      </section>
+      </RevealSection>
 
       <footer className="py-10 text-center text-gray-500 bg-black border-t border-white/10">
         Dev by Hamdan | TOKYO GANG © 2026

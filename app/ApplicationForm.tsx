@@ -6,6 +6,7 @@ export function ApplicationForm() {
   const [experience, setExperience] = useState("");
   const [reason, setReason] = useState("");
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const steps = ["Discord Login", "Rules", "Info", "Submit"];
 
   return (
     <form
@@ -53,6 +54,28 @@ export function ApplicationForm() {
       }}
       className="max-w-2xl mx-auto grid gap-5"
     >
+      <div className="rounded-3xl border border-white/10 bg-zinc-950/80 p-5 shadow-[0_0_35px_rgba(255,255,255,0.05)]">
+        <div className="grid grid-cols-4 gap-2">
+          {steps.map((step, index) => (
+            <div key={step} className="relative text-center">
+              <div
+                className={`mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-full border text-sm font-black ${
+                  index === 0
+                    ? "border-green-400 bg-green-400 text-black shadow-[0_0_18px_rgba(74,222,128,0.5)]"
+                    : "border-white/20 bg-black text-gray-400"
+                }`}
+              >
+                {index + 1}
+              </div>
+              <p className="text-[10px] font-black uppercase tracking-[2px] text-gray-500">{step}</p>
+            </div>
+          ))}
+        </div>
+        <div className="mt-5 h-1 overflow-hidden rounded-full bg-white/10">
+          <div className="h-full w-full bg-gradient-to-r from-green-400 via-white to-red-500 shadow-[0_0_20px_rgba(74,222,128,0.35)]" />
+        </div>
+      </div>
+
       {message && (
         <div
           className={`rounded-3xl border p-5 text-center font-black ${

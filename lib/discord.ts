@@ -16,6 +16,7 @@ type TokyoRoleMember = {
   name: string;
   username: string;
   image: string | null;
+  status?: "online" | "idle" | "dnd";
 };
 
 type DiscordWidgetMember = {
@@ -255,6 +256,7 @@ function matchWidgetMembersToRoleMembers(
       matchedMembers.push({
         ...match.member,
         image: match.member.image ?? widgetMember.avatar_url ?? null,
+        status: widgetMember.status,
       });
     }
   }
