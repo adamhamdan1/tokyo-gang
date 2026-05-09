@@ -186,7 +186,9 @@ export default async function AdminPage({
   ];
 
   return (
-    <main dir="rtl" className="min-h-screen bg-black text-white p-6 md:p-10">
+    <main dir="rtl" className="relative min-h-screen overflow-hidden bg-black text-white p-6 md:p-10">
+      <div className="pointer-events-none fixed inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(to_right,rgba(255,255,255,0.035)_1px,transparent_1px)] bg-[length:100%_6px,80px_80px] opacity-55" />
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(239,68,68,0.16),transparent_28%),radial-gradient(circle_at_80%_20%,rgba(34,211,238,0.10),transparent_26%),radial-gradient(circle_at_center,transparent_42%,rgba(0,0,0,0.72)_100%)]" />
       <Link
         href="/"
         className="fixed left-5 top-5 z-50 rounded-2xl border border-white/20 bg-white px-5 py-3 text-sm font-black text-black shadow-[0_0_28px_rgba(255,255,255,0.2)] transition hover:bg-gray-300"
@@ -194,8 +196,16 @@ export default async function AdminPage({
         الرئيسية
       </Link>
 
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-10 flex flex-col gap-4 border-b border-white/10 pb-8 md:flex-row md:items-end md:justify-between">
+      <div className="relative z-10 mx-auto max-w-7xl">
+        <div className="mb-10 overflow-hidden rounded-3xl border border-white/10 bg-zinc-950/80 p-6 shadow-[0_0_50px_rgba(255,255,255,0.05)] backdrop-blur-xl md:p-8">
+          <div className="mb-6 flex items-center justify-between border-b border-white/10 pb-4 text-xs font-black tracking-[4px] text-gray-500">
+            <span>TOKYO COMMAND CENTER</span>
+            <span className="flex items-center gap-2 text-green-400">
+              <span className="h-2 w-2 rounded-full bg-green-400 shadow-[0_0_14px_lime]" />
+              SYSTEM ARMED
+            </span>
+          </div>
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="text-sm font-black tracking-[6px] text-red-500">TOKYO ADMIN</p>
             <h1 className="mt-3 text-5xl font-black drop-shadow-[0_0_28px_rgba(255,255,255,0.35)]">
@@ -205,6 +215,7 @@ export default async function AdminPage({
 
           <div className="rounded-2xl border border-white/15 bg-zinc-950 px-5 py-3 text-sm text-gray-300">
             {session.user.name}
+          </div>
           </div>
         </div>
 
@@ -227,10 +238,12 @@ export default async function AdminPage({
           {stats.map(([label, value]) => (
             <div
               key={label}
-              className="rounded-3xl border border-white/15 bg-zinc-950 p-6 shadow-[0_0_40px_rgba(255,255,255,0.06)]"
+              className="group relative overflow-hidden rounded-3xl border border-white/15 bg-zinc-950/85 p-6 shadow-[0_0_40px_rgba(255,255,255,0.06)]"
             >
-              <p className="text-sm text-gray-400">{label}</p>
-              <p className="mt-3 text-5xl font-black text-white drop-shadow-[0_0_18px_rgba(255,255,255,0.35)]">
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/45 to-transparent opacity-60" />
+              <div className="absolute inset-0 opacity-0 transition group-hover:opacity-100 bg-[linear-gradient(110deg,transparent,rgba(255,255,255,0.08),transparent)]" />
+              <p className="relative z-10 text-sm text-gray-400">{label}</p>
+              <p className="relative z-10 mt-3 text-5xl font-black text-white drop-shadow-[0_0_18px_rgba(255,255,255,0.35)]">
                 {value}
               </p>
             </div>

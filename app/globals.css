@@ -24,3 +24,41 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.tokyo-glitch::before,
+.tokyo-glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.tokyo-glitch::before {
+  color: #ef4444;
+  transform: translate(2px, 0);
+  text-shadow: -2px 0 rgba(239, 68, 68, 0.7);
+  animation: tokyo-glitch-before 3.8s infinite;
+}
+
+.tokyo-glitch::after {
+  color: #ffffff;
+  transform: translate(-2px, 0);
+  text-shadow: 2px 0 rgba(255, 255, 255, 0.35);
+  animation: tokyo-glitch-after 4.6s infinite;
+}
+
+@keyframes tokyo-glitch-before {
+  0%, 91%, 100% { opacity: 0; clip-path: inset(0 0 0 0); }
+  92% { opacity: 0.7; clip-path: inset(12% 0 64% 0); }
+  93% { opacity: 0.35; clip-path: inset(72% 0 8% 0); }
+  94% { opacity: 0.6; clip-path: inset(34% 0 42% 0); }
+  95% { opacity: 0; }
+}
+
+@keyframes tokyo-glitch-after {
+  0%, 86%, 100% { opacity: 0; clip-path: inset(0 0 0 0); }
+  87% { opacity: 0.45; clip-path: inset(55% 0 22% 0); }
+  88% { opacity: 0.65; clip-path: inset(18% 0 58% 0); }
+  89% { opacity: 0; }
+}

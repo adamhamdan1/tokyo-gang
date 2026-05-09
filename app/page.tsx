@@ -109,6 +109,74 @@ function RevealSection({
   );
 }
 
+function CountUpValue({ value }: { value: string | number }) {
+  const numeric = typeof value === "number" ? value : Number(value);
+  const [display, setDisplay] = useState(0);
+
+  useEffect(() => {
+    if (!Number.isFinite(numeric)) {
+      return;
+    }
+
+    let frame = 0;
+    const totalFrames = 42;
+    const timer = window.setInterval(() => {
+      frame += 1;
+      const progress = 1 - Math.pow(1 - frame / totalFrames, 3);
+      setDisplay(Math.round(numeric * progress));
+
+      if (frame >= totalFrames) {
+        window.clearInterval(timer);
+        setDisplay(numeric);
+      }
+    }, 22);
+
+    return () => window.clearInterval(timer);
+  }, [numeric]);
+
+  if (!Number.isFinite(numeric)) {
+    return <>{value}</>;
+  }
+
+  return <>{display}</>;
+}
+
+function GlitchTitle({ children, className = "" }: { children: string; className?: string }) {
+  return (
+    <span className={`tokyo-glitch relative inline-block ${className}`} data-text={children}>
+      {children}
+    </span>
+  );
+}
+
+function AmbientParticles() {
+  return (
+    <div className="pointer-events-none fixed inset-0 z-[2] overflow-hidden opacity-50">
+      {Array.from({ length: 18 }).map((_, index) => (
+        <motion.span
+          key={index}
+          animate={{
+            x: [0, index % 2 === 0 ? 42 : -38, 0],
+            y: [0, -80 - index * 4, 0],
+            opacity: [0.08, 0.32, 0.08],
+          }}
+          transition={{
+            duration: 7 + (index % 6),
+            repeat: Infinity,
+            delay: index * 0.35,
+            ease: "easeInOut",
+          }}
+          className="absolute h-1 w-1 rounded-full bg-white shadow-[0_0_14px_rgba(255,255,255,0.9)]"
+          style={{
+            left: `${(index * 17) % 100}%`,
+            top: `${12 + ((index * 23) % 80)}%`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
 export default function Home() {
   const session = useSession();
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -240,9 +308,22 @@ export default function Home() {
     <main dir="rtl" className="min-h-screen bg-black text-white overflow-hidden cursor-none">
       <SpeedInsights />
       <Analytics />
+      <AmbientParticles />
 
       <div className="pointer-events-none fixed inset-0 z-[9997] opacity-[0.035] bg-[linear-gradient(to_bottom,white_1px,transparent_1px)] bg-[length:100%_4px]" />
       <div className="pointer-events-none fixed inset-0 z-[9996] bg-[radial-gradient(circle_at_center,transparent_45%,rgba(0,0,0,0.65)_100%)]" />
+      <motion.div
+        className="pointer-events-none fixed inset-0 z-[1] opacity-35"
+        animate={{
+          backgroundPosition: [`${mouse.x * 0.01}px ${mouse.y * 0.01}px`, `${mouse.x * 0.015}px ${mouse.y * 0.015}px`],
+        }}
+        transition={{ duration: 0.4 }}
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at 18% 24%, rgba(239,68,68,0.18), transparent 28%), radial-gradient(circle at 78% 18%, rgba(255,255,255,0.10), transparent 24%), linear-gradient(135deg, rgba(255,255,255,0.06) 1px, transparent 1px)",
+          backgroundSize: "100% 100%, 100% 100%, 96px 96px",
+        }}
+      />
       <div className="pointer-events-none fixed inset-0 z-[9995] opacity-20 mix-blend-screen">
         <motion.div
           animate={{ x: ["-20%", "20%", "-20%"], opacity: [0.08, 0.18, 0.08] }}
@@ -545,6 +626,12 @@ export default function Home() {
 
       <section id="home" className="relative flex flex-col items-center justify-center h-screen text-center px-6 overflow-hidden">
         <div className="absolute inset-0 bg-[url('/bg.jpg')] bg-cover bg-center opacity-15 grayscale" />
+        <motion.div
+          initial={{ opacity: 0, scale: 1.8 }}
+          animate={{ opacity: loading ? 0 : [0.85, 0], scale: loading ? 1.8 : [1.8, 1] }}
+          transition={{ delay: 0.05, duration: 1.2, ease: "easeOut" }}
+          className="pointer-events-none absolute inset-0 z-30 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.95),rgba(255,255,255,0.12)_18%,transparent_42%)]"
+        />
 
         <motion.div
           initial={{ scale: 1.08 }}
@@ -558,6 +645,7 @@ export default function Home() {
         </motion.div>
 
         <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/25 to-black/70" />
+        <div className="absolute inset-0 bg-[linear-gradient(115deg,transparent_0%,transparent_46%,rgba(255,255,255,0.08)_50%,transparent_54%,transparent_100%)] opacity-45" />
 
         <motion.div
           animate={{ x: ["-20%", "20%"], opacity: [0.12, 0.28, 0.12] }}
@@ -628,7 +716,7 @@ export default function Home() {
             transition={{ delay: 0.5, duration: 1.2 }}
             className="text-5xl md:text-7xl font-bold text-gray-200 mt-2 drop-shadow-[0_0_20px_white]"
           >
-            GANG
+            <GlitchTitle>GANG</GlitchTitle>
           </motion.h2>
 
           <motion.p
@@ -653,14 +741,24 @@ export default function Home() {
               ["TOP 1", "GANG"],
               ["24/7", "سيطرة"],
               ["∞", "نفوذ"],
-            ].map(([num, label]) => (
+            ].map(([num, label], index) => (
               <motion.div
                 key={label}
+                initial={{ opacity: 0, y: 24, rotateX: 18 }}
+                animate={{ opacity: 1, y: 0, rotateX: 0 }}
+                transition={{ delay: 1.45 + index * 0.1, duration: 0.65 }}
                 whileHover={{ scale: 1.05, y: -5 }}
                 className="relative overflow-hidden bg-black/50 border border-white/20 rounded-2xl p-4 backdrop-blur-md group shadow-[0_0_18px_rgba(255,255,255,0.08)]"
               >
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-500 bg-white/5" />
-                <p className="relative z-10 text-3xl font-black drop-shadow-[0_0_14px_white]">{num}</p>
+                <motion.div
+                  animate={{ x: ["-140%", "140%"] }}
+                  transition={{ duration: 2.8, repeat: Infinity, delay: index * 0.22, ease: "easeInOut" }}
+                  className="absolute inset-y-0 w-1/2 bg-gradient-to-r from-transparent via-white/15 to-transparent"
+                />
+                <p className="relative z-10 text-3xl font-black drop-shadow-[0_0_14px_white]">
+                  <CountUpValue value={num} />
+                </p>
                 <p className="relative z-10 text-gray-400 text-sm mt-1">{label}</p>
                 <div className="relative z-10 mt-3 h-[1px] bg-gradient-to-r from-transparent via-white/70 to-transparent opacity-60" />
               </motion.div>
@@ -730,7 +828,9 @@ export default function Home() {
       <AnnouncementsFeed />
 
       <RevealSection id="command" className="py-24 px-6 bg-black border-y border-white/10">
-        <h2 className="text-5xl font-black text-center mb-4">القيادة العليا</h2>
+        <h2 className="text-5xl font-black text-center mb-4">
+          <GlitchTitle>القيادة العليا</GlitchTitle>
+        </h2>
         <p className="text-center text-gray-400 mb-14 tracking-[4px]">HIGH COMMAND</p>
 
         <div className="max-w-7xl mx-auto grid sm:grid-cols-2 lg:grid-cols-5 gap-6">
@@ -749,10 +849,18 @@ export default function Home() {
               whileHover={{ scale: 1.07, y: -10 }}
               className="relative overflow-hidden bg-zinc-950 border border-white/20 rounded-[30px] p-6 text-center group shadow-[0_0_40px_rgba(255,255,255,0.08)]"
             >
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-500 bg-gradient-to-br from-white/15 via-transparent to-white/5" />
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-500 bg-gradient-to-br from-white/15 via-transparent to-red-500/10" />
+              <motion.div
+                animate={{ x: ["-120%", "120%"] }}
+                transition={{ duration: 3.6, repeat: Infinity, delay: index * 0.3, ease: "easeInOut" }}
+                className="absolute inset-y-0 w-1/2 bg-gradient-to-r from-transparent via-white/10 to-transparent"
+              />
+              <div className="absolute left-4 top-4 rounded-full border border-red-500/30 px-3 py-1 text-[10px] font-black tracking-[3px] text-red-300">
+                HC-{String(index + 1).padStart(2, "0")}
+              </div>
 
               <div className="relative z-10">
-                <div className="mx-auto mb-5 w-24 h-24 rounded-full bg-white text-black flex items-center justify-center text-4xl font-black shadow-[0_0_35px_white]">
+                <div className="mx-auto mb-5 w-24 h-24 rounded-full bg-white text-black flex items-center justify-center text-4xl font-black shadow-[0_0_35px_white] ring-4 ring-white/10 group-hover:ring-red-500/20 transition">
                   {name[0]}
                 </div>
 
@@ -845,7 +953,9 @@ export default function Home() {
       </RevealSection>
 
       <RevealSection id="members" className="py-24 px-6 bg-black">
-        <h2 className="text-5xl font-black text-center mb-6">أعضاء TOKYO GANG</h2>
+        <h2 className="text-5xl font-black text-center mb-6">
+          <GlitchTitle>أعضاء TOKYO GANG</GlitchTitle>
+        </h2>
         <p className="text-center text-gray-400 mb-10">
           قاعدة بيانات كاملة لأعضاء العصابة وعددهم {syncedTokyoMemberCount === null ? "جاري المزامنة" : `${syncedTokyoMemberCount} عضو`}
         </p>
@@ -869,16 +979,21 @@ export default function Home() {
                   exit={{ opacity: 0, y: -10, scale: 0.96 }}
                   transition={{ duration: 0.25, ease: "easeOut" }}
                   whileHover={{ scale: 1.04, y: -6 }}
-                  className="flex items-center gap-4 rounded-3xl border border-green-400/20 bg-green-400/5 p-4 shadow-[0_0_28px_rgba(74,222,128,0.08)]"
+                  className="group relative flex items-center gap-4 overflow-hidden rounded-3xl border border-green-400/20 bg-green-400/5 p-4 shadow-[0_0_28px_rgba(74,222,128,0.08)]"
                 >
+                  <motion.div
+                    animate={{ x: ["-120%", "140%"] }}
+                    transition={{ duration: 2.4, repeat: Infinity, ease: "linear" }}
+                    className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-green-300/10 to-transparent"
+                  />
                   {member.image ? (
-                    <img src={member.image} alt={member.name} className="h-14 w-14 rounded-full border border-white/20 object-cover" />
+                    <img src={member.image} alt={member.name} className="relative z-10 h-14 w-14 rounded-full border border-white/20 object-cover shadow-[0_0_18px_rgba(74,222,128,0.20)]" />
                   ) : (
-                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-xl font-black text-black">
+                    <div className="relative z-10 flex h-14 w-14 items-center justify-center rounded-full bg-white text-xl font-black text-black">
                       {member.name[0]}
                     </div>
                   )}
-                  <div className="min-w-0">
+                  <div className="relative z-10 min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="truncate font-black text-white">{member.name}</p>
                       {member.status && (
@@ -935,12 +1050,20 @@ export default function Home() {
               initial={{ opacity: 0, y: 60 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ delay: (index % 8) * 0.05 }}
-              className="group relative overflow-hidden bg-zinc-950 border border-white/15 rounded-3xl p-6 hover:border-white transition duration-300"
+              className="group relative overflow-hidden bg-zinc-950 border border-white/15 rounded-3xl p-6 hover:border-white transition duration-300 shadow-[0_0_35px_rgba(255,255,255,0.04)]"
             >
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-br from-white/10 to-transparent" />
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-br from-white/10 via-transparent to-red-500/10" />
+              <motion.div
+                animate={{ y: ["-120%", "120%"] }}
+                transition={{ duration: 3.2, repeat: Infinity, delay: (index % 4) * 0.2, ease: "easeInOut" }}
+                className="absolute inset-x-0 h-1/3 bg-gradient-to-b from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100"
+              />
+              <div className="absolute right-4 top-4 rounded-full border border-red-500/25 px-3 py-1 text-[10px] font-black tracking-[3px] text-red-300 opacity-70">
+                FILE
+              </div>
 
               <div className="relative z-10">
-                <div className="w-20 h-20 rounded-full bg-white text-black mx-auto mb-5 flex items-center justify-center font-black text-2xl">
+                <div className="w-20 h-20 rounded-full bg-white text-black mx-auto mb-5 flex items-center justify-center font-black text-2xl shadow-[0_0_24px_rgba(255,255,255,0.35)] ring-4 ring-white/10 group-hover:ring-red-500/25 transition">
                   {name[0]}
                 </div>
 
