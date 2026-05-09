@@ -119,6 +119,16 @@ function getDismissalRoleId() {
   return roleId;
 }
 
+function getLeaveRoleId() {
+  const roleId = process.env.DISCORD_LEAVE_ROLE_ID;
+
+  if (!roleId) {
+    throw new Error("DISCORD_LEAVE_ROLE_ID غير موجود في Vercel Environment Variables");
+  }
+
+  return roleId;
+}
+
 function getOptionalRoleId(key: string) {
   return process.env[key];
 }
@@ -241,6 +251,14 @@ export async function applyWarningRole(discordId: string, severity: "NORMAL" | "
 
 export async function removeTokyoRole(discordId: string) {
   await removeRole(discordId, getTokyoRoleId(), "TOKYO");
+}
+
+export async function giveLeaveRole(discordId: string) {
+  await giveRole(discordId, getLeaveRoleId(), "الإجازة");
+}
+
+export async function removeLeaveRole(discordId: string) {
+  await removeRole(discordId, getLeaveRoleId(), "الإجازة");
 }
 
 export async function applyInternalRankRole(discordId: string, rank: string, previousRank?: string | null) {

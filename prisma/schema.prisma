@@ -59,6 +59,13 @@ model SiteAlert {
   createdAt DateTime @default(now())
 }
 
+model SiteSetting {
+  key       String   @id
+  value     String
+  updatedBy String?
+  updatedAt DateTime @updatedAt
+}
+
 model TokyoMember {
   id           String   @id @default(cuid())
   discordId    String   @unique

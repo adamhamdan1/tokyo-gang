@@ -64,6 +64,7 @@ export function AdminMemberActions({ memberId, currentRank, currentScore }: Prop
       reason: formData.get("reason"),
       startsAt: formData.get("startsAt"),
       endsAt: formData.get("endsAt"),
+      durationDays: Number(formData.get("durationDays")),
     });
   };
 
@@ -114,9 +115,11 @@ export function AdminMemberActions({ memberId, currentRank, currentScore }: Prop
           <p className="font-black text-white">تسجيل إجازة</p>
           <input name="reason" required placeholder="سبب الإجازة" className="rounded-xl border border-white/15 bg-black px-4 py-3 outline-none" />
           <div className="grid gap-3 md:grid-cols-2">
+            <input name="durationDays" type="number" min="1" placeholder="المدة بالأيام مثل 3" className="rounded-xl border border-white/15 bg-black px-4 py-3 outline-none" />
             <input name="startsAt" type="datetime-local" className="rounded-xl border border-white/15 bg-black px-4 py-3 outline-none" />
             <input name="endsAt" type="datetime-local" className="rounded-xl border border-white/15 bg-black px-4 py-3 outline-none" />
           </div>
+          <p className="text-xs text-gray-500">إذا كتبت مدة بالأيام، النظام يحسب وقت الانتهاء تلقائياً ويشيل رتبة الإجازة بعد انتهاء المدة.</p>
           <button disabled={loading === "LEAVE"} className="rounded-xl bg-green-300 px-5 py-3 font-black text-black disabled:opacity-50">
             تسجيل الإجازة
           </button>

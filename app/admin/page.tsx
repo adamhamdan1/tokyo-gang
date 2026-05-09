@@ -9,6 +9,7 @@ import { AdminComplaintActions } from "./AdminComplaintActions";
 import { AdminComplaintVote } from "./AdminComplaintVote";
 import { AdminDiscordTestButton } from "./AdminDiscordTestButton";
 import { AdminSignOutButton } from "./AdminSignOutButton";
+import { AdminSpotlightForm } from "./AdminSpotlightForm";
 import { AdminSyncButton } from "./AdminSyncButton";
 import { AdminSummonForm } from "./AdminSummonForm";
 import Link from "next/link";
@@ -258,6 +259,7 @@ export default async function AdminPage({
 
         <AdminAnnouncementForm />
         <AdminAlertForm />
+        <AdminSpotlightForm members={tokyoMembers} />
 
         <AdminSummonForm members={tokyoMembers} />
 

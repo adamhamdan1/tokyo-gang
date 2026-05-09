@@ -80,6 +80,18 @@ type SiteAlert = {
   message: string;
 };
 
+type SpotlightMember = {
+  id: string;
+  displayName: string;
+  username: string;
+  image: string | null;
+  status: string;
+  internalRank: string;
+  behaviorScore: number;
+};
+
+const discordInviteUrl = "https://discord.gg/u7G6E6nvS7";
+
 const memberStatusStyles = {
   online: "border-green-400/40 bg-green-400/10 text-green-300",
   idle: "border-yellow-400/40 bg-yellow-400/10 text-yellow-200",
@@ -203,10 +215,29 @@ export default function Home() {
     return window.localStorage.getItem("tokyo-theme") ?? "classic";
   });
   const [siteAlert, setSiteAlert] = useState<SiteAlert | null>(null);
+  const [spotlight, setSpotlight] = useState<SpotlightMember | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 3000);
     return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadSpotlight = async () => {
+      const response = await fetch(`/api/spotlight?t=${Date.now()}`, { cache: "no-store" });
+      const data = (await response.json().catch(() => null)) as { member?: SpotlightMember | null } | null;
+      if (active) setSpotlight(data?.member ?? null);
+    };
+
+    loadSpotlight();
+    const interval = window.setInterval(loadSpotlight, 30000);
+
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
   }, []);
 
   useEffect(() => {
@@ -317,12 +348,24 @@ export default function Home() {
     return matchesSearch && matchesRank;
   });
   const syncedTokyoMemberCount = roleMemberCount ?? null;
-  const spotlightMember = discordMembers[0] ?? {
+  const spotlightMember = spotlight
+    ? {
+        id: spotlight.id,
+        name: spotlight.displayName,
+        username: spotlight.username,
+        image: spotlight.image,
+        status: spotlight.status,
+        rank: spotlight.internalRank,
+        score: spotlight.behaviorScore,
+      }
+    : {
     id: "offline",
     name: "TOKYO GANG",
     username: "high_command",
     image: null,
     status: "online" as const,
+    rank: "HIGH COMMAND",
+    score: 100,
   };
   const themeClasses: Record<string, string> = {
     classic: "theme-classic",
@@ -847,7 +890,7 @@ export default function Home() {
               <span className="relative z-10">ACCESS APPLICATION</span>
             </a>
 
-            <a href="https://discord.gg/tok" target="_blank" className="group relative overflow-hidden px-8 py-4 border border-white/40 bg-black/35 hover:bg-white hover:text-black rounded-2xl text-lg font-black transition hover:scale-105">
+            <a href={discordInviteUrl} target="_blank" className="group relative overflow-hidden px-8 py-4 border border-white/40 bg-black/35 hover:bg-white hover:text-black rounded-2xl text-lg font-black transition hover:scale-105">
               <span className="absolute inset-y-0 -left-1/2 w-1/2 bg-gradient-to-r from-transparent via-white/20 to-transparent transition group-hover:left-full" />
               <span className="relative z-10">LINK DISCORD</span>
             </a>
@@ -907,7 +950,7 @@ export default function Home() {
                 <h2 className="text-4xl font-black text-white">{spotlightMember.name}</h2>
                 <p className="mt-1 text-sm text-gray-400">@{spotlightMember.username}</p>
                 <p className="mt-3 inline-flex rounded-full border border-green-400/25 px-3 py-1 text-xs font-black text-green-300">
-                  LIVE TOKYO FILE
+                  {spotlightMember.rank} - SCORE {spotlightMember.score}
                 </p>
               </div>
             </div>
@@ -925,7 +968,7 @@ export default function Home() {
               <p>ONLINE: {onlineCount ?? "SYNCING"}</p>
               <p>TOKYO ROLE: {roleMemberCount ?? "SYNCING"}</p>
             </div>
-            <a href="https://discord.gg/tok" target="_blank" className="mt-6 inline-block rounded-2xl bg-green-300 px-6 py-3 font-black text-black transition hover:bg-white">
+            <a href={discordInviteUrl} target="_blank" className="mt-6 inline-block rounded-2xl bg-green-300 px-6 py-3 font-black text-black transition hover:bg-white">
               JOIN DISCORD
             </a>
           </motion.div>

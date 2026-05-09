@@ -1,4 +1,5 @@
 import { listTokyoRoleMembers } from "@/lib/discord";
+import { cleanupExpiredLeaves } from "@/lib/leave-sync";
 import { prisma } from "@/lib/prisma";
 
 type SyncResult = {
@@ -25,6 +26,8 @@ function getAutoSyncIntervalMs() {
 }
 
 async function runTokyoMemberSync() {
+  await cleanupExpiredLeaves();
+
   const members = await listTokyoRoleMembers();
   const now = new Date();
   const discordIds = members.map((member) => member.id);

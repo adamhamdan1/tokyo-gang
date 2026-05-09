@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { createAdminLog } from "@/lib/admin-log";
-import { applyInternalRankRole, removeTokyoRole, sendAdminEmbed, sendDiscordDm } from "@/lib/discord";
+import { applyInternalRankRole, giveLeaveRole, removeTokyoRole, sendAdminEmbed, sendDiscordDm } from "@/lib/discord";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
@@ -18,6 +18,7 @@ type ActionBody = {
   score?: number;
   startsAt?: string;
   endsAt?: string;
+  durationDays?: number;
 };
 
 const allowedRanks = ["MEMBER", "SENIOR", "OFFICER", "DEPUTY", "LEADER"];
@@ -169,19 +170,41 @@ export async function POST(req: Request, context: RouteContext) {
       return NextResponse.json({ error: "اكتب سبب الإجازة" }, { status: 400 });
     }
 
+    const durationDays = Number(body.durationDays);
+    const startsAt = body.startsAt ? new Date(body.startsAt) : new Date();
+    const endsAt = body.endsAt
+      ? new Date(body.endsAt)
+      : Number.isFinite(durationDays) && durationDays > 0
+        ? new Date(startsAt.getTime() + durationDays * 24 * 60 * 60 * 1000)
+        : null;
+
+    try {
+      await giveLeaveRole(member.discordId);
+    } catch (error) {
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : "فشل إعطاء رتبة الإجازة" },
+        { status: 400 }
+      );
+    }
+
     const leave = await prisma.leaveRequest.create({
       data: {
         memberId: member.id,
         reason,
-        startsAt: body.startsAt ? new Date(body.startsAt) : null,
-        endsAt: body.endsAt ? new Date(body.endsAt) : null,
+        startsAt,
+        endsAt,
         status: "APPROVED",
         reviewedBy: admin.session.user.id,
       },
     });
 
     await prisma.tokyoMember.update({ where: { id: member.id }, data: { status: "ON_LEAVE" } });
-    await sendDiscordDm(member.discordId, `تم تسجيل إجازتك في TOKYO GANG.\nالسبب: ${reason}`).catch(() => null);
+    await sendDiscordDm(
+      member.discordId,
+      `تم تسجيل إجازتك في TOKYO GANG وتم إعطاؤك رتبة الإجازة.\nالسبب: ${reason}${
+        endsAt ? `\nتنتهي: ${endsAt.toLocaleString("ar")}` : ""
+      }`
+    ).catch(() => null);
     await createAdminLog({
       action: "LEAVE_APPROVE",
       title: `تسجيل إجازة ${member.displayName}`,
