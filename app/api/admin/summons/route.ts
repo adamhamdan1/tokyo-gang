@@ -18,6 +18,10 @@ type SummonBody = {
   details?: string;
 };
 
+type DeleteSummonBody = {
+  summonId?: string;
+};
+
 function getAdminIds() {
   return process.env.ADMIN_DISCORD_IDS?.split(",").map((id) => id.trim()).filter(Boolean) || [];
 }
@@ -125,4 +129,33 @@ export async function POST(req: Request) {
   }).catch((error) => console.error("Admin db log failed", error));
 
   return NextResponse.json({ success: true, summon });
+}
+
+export async function DELETE(req: Request) {
+  const admin = await requireAdmin();
+
+  if (!admin.authorized) {
+    return admin.response;
+  }
+
+  const body = (await req.json()) as DeleteSummonBody;
+
+  if (!body.summonId) {
+    return NextResponse.json({ error: "حدد لوق الاستدعاء" }, { status: 400 });
+  }
+
+  const summon = await prisma.summon.findUnique({
+    where: { id: body.summonId },
+    include: { member: true },
+  });
+
+  if (!summon) {
+    return NextResponse.json({ error: "لوق الاستدعاء غير موجود" }, { status: 404 });
+  }
+
+  await prisma.summon.delete({
+    where: { id: summon.id },
+  });
+
+  return NextResponse.json({ success: true });
 }

@@ -37,6 +37,28 @@ export function AdminComplaintActions({ complaintId, status }: Props) {
     }
   };
 
+  const deleteComplaint = async () => {
+    if (!confirm("حذف الشكوى نهائياً؟")) return;
+
+    setLoadingStatus("DELETE");
+
+    try {
+      const response = await fetch(`/api/admin/complaints/${complaintId}`, {
+        method: "DELETE",
+      });
+      const result = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        alert(result?.error ?? "فشل حذف الشكوى");
+        return;
+      }
+
+      router.refresh();
+    } finally {
+      setLoadingStatus(null);
+    }
+  };
+
   return (
     <div className="mt-4 flex flex-wrap gap-2">
       <button
@@ -62,6 +84,14 @@ export function AdminComplaintActions({ complaintId, status }: Props) {
         className="rounded-xl bg-red-500 px-4 py-2 text-sm font-black text-white disabled:opacity-50"
       >
         {loadingStatus === "DISMISSED" ? "..." : "رفض الشكوى"}
+      </button>
+      <button
+        type="button"
+        disabled={loadingStatus !== null}
+        onClick={deleteComplaint}
+        className="rounded-xl border border-red-500/35 px-4 py-2 text-sm font-black text-red-300 transition hover:bg-red-500 hover:text-white disabled:opacity-50"
+      >
+        {loadingStatus === "DELETE" ? "..." : "حذف الشكوى"}
       </button>
     </div>
   );

@@ -80,3 +80,31 @@ export async function PATCH(req: Request, context: RouteContext) {
 
   return NextResponse.json({ success: true, complaint });
 }
+
+export async function DELETE(_req: Request, context: RouteContext) {
+  const admin = await requireAdmin();
+
+  if (!admin.authorized) {
+    return admin.response;
+  }
+
+  const { id } = await context.params;
+  const complaint = await prisma.complaint.findUnique({
+    where: { id },
+    include: {
+      reporter: true,
+      accused: true,
+    },
+  });
+
+  if (!complaint) {
+    return NextResponse.json({ error: "الشكوى غير موجودة" }, { status: 404 });
+  }
+
+  await prisma.$transaction([
+    prisma.complaintVote.deleteMany({ where: { complaintId: id } }),
+    prisma.complaint.delete({ where: { id } }),
+  ]);
+
+  return NextResponse.json({ success: true });
+}

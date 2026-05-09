@@ -8,9 +8,11 @@ import { AdminAnnouncementForm } from "./AdminAnnouncementForm";
 import { AdminComplaintActions } from "./AdminComplaintActions";
 import { AdminComplaintVote } from "./AdminComplaintVote";
 import { AdminDiscordTestButton } from "./AdminDiscordTestButton";
+import { AdminLogDeleteButton } from "./AdminLogDeleteButton";
 import { AdminSignOutButton } from "./AdminSignOutButton";
 import { AdminSpotlightForm } from "./AdminSpotlightForm";
 import { AdminSyncButton } from "./AdminSyncButton";
+import { AdminSummonDeleteButton } from "./AdminSummonDeleteButton";
 import { AdminSummonForm } from "./AdminSummonForm";
 import Link from "next/link";
 
@@ -93,7 +95,6 @@ export default async function AdminPage({
 
   const [
     applications,
-    memberCount,
     totalApplications,
     acceptedApplications,
     rejectedApplications,
@@ -137,7 +138,6 @@ export default async function AdminPage({
         createdAt: "desc",
       },
     }),
-    prisma.user.count(),
     prisma.application.count(),
     prisma.application.count({ where: { status: "ACCEPTED" } }),
     prisma.application.count({ where: { status: "REJECTED" } }),
@@ -181,7 +181,6 @@ export default async function AdminPage({
   ]);
 
   const stats = [
-    ["عدد الأعضاء", memberCount],
     ["عدد التقديمات", totalApplications],
     ["عدد المقبولين", acceptedApplications],
     ["فترة التجربة", trialApplications],
@@ -285,7 +284,10 @@ export default async function AdminPage({
                 <article key={log.id} className="rounded-2xl border border-white/10 bg-black/40 p-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="font-black text-white">{log.title}</p>
-                    <span className="text-xs text-gray-600">{log.createdAt.toLocaleString("ar")}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-600">{log.createdAt.toLocaleString("ar")}</span>
+                      <AdminLogDeleteButton logId={log.id} />
+                    </div>
                   </div>
                   <p className="mt-1 text-xs font-black tracking-[2px] text-cyan-300">{log.action}</p>
                 </article>
@@ -387,6 +389,7 @@ export default async function AdminPage({
                   </div>
                   <p className="mt-3 text-sm text-gray-400">{summon.reason}</p>
                   {summon.details && <p className="mt-2 text-xs text-gray-500">{summon.details}</p>}
+                  <AdminSummonDeleteButton summonId={summon.id} />
                 </article>
               ))}
             </div>

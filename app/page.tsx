@@ -210,10 +210,6 @@ export default function Home() {
   const [tokyoOnlineCount, setTokyoOnlineCount] = useState<number | null>(null);
   const [roleMemberCount, setRoleMemberCount] = useState<number | null>(null);
   const [lastDiscordSync, setLastDiscordSync] = useState<Date | null>(null);
-  const [themeMode, setThemeMode] = useState(() => {
-    if (typeof window === "undefined") return "classic";
-    return window.localStorage.getItem("tokyo-theme") ?? "classic";
-  });
   const [siteAlert, setSiteAlert] = useState<SiteAlert | null>(null);
   const [spotlight, setSpotlight] = useState<SpotlightMember | null>(null);
 
@@ -239,10 +235,6 @@ export default function Home() {
       window.clearInterval(interval);
     };
   }, []);
-
-  useEffect(() => {
-    window.localStorage.setItem("tokyo-theme", themeMode);
-  }, [themeMode]);
 
   useEffect(() => {
     const move = (e: MouseEvent) => {
@@ -367,13 +359,6 @@ export default function Home() {
     rank: "HIGH COMMAND",
     score: 100,
   };
-  const themeClasses: Record<string, string> = {
-    classic: "theme-classic",
-    alert: "theme-alert",
-    ghost: "theme-ghost",
-    neon: "theme-neon",
-  };
-
   const toggleMusic = () => {
     if (!audioRef.current) return;
 
@@ -394,7 +379,7 @@ export default function Home() {
   };
 
   return (
-    <main dir="rtl" className={`min-h-screen bg-black text-white overflow-hidden cursor-none ${themeClasses[themeMode] ?? "theme-classic"}`}>
+    <main dir="rtl" className="min-h-screen bg-black text-white overflow-hidden cursor-none">
       <SpeedInsights />
       <Analytics />
       <AmbientParticles />
@@ -664,25 +649,6 @@ export default function Home() {
               Discord
             </button>
           )}
-          <div className="hidden items-center gap-1 rounded-full border border-white/10 bg-black/50 p-1 lg:flex">
-            {[
-              ["classic", "Classic"],
-              ["alert", "Alert"],
-              ["ghost", "Ghost"],
-              ["neon", "Neon"],
-            ].map(([value, label]) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() => setThemeMode(value)}
-                className={`rounded-full px-3 py-1 text-[10px] font-black transition ${
-                  themeMode === value ? "bg-white text-black" : "text-gray-400 hover:text-white"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
         </div>
       </nav>
 
