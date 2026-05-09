@@ -37,7 +37,7 @@ export function AdminAnnouncementForm() {
           setLoading(false);
         }
       }}
-      className="mb-10 grid gap-4 rounded-3xl border border-white/15 bg-zinc-950 p-6"
+      className="mb-8 grid gap-4 rounded-2xl border border-white/15 bg-zinc-950 p-5 md:mb-10 md:rounded-3xl md:p-6"
     >
       <p className="text-sm font-black tracking-[5px] text-red-500">إضافة إعلان</p>
       <input name="title" required placeholder="عنوان الإعلان" className="rounded-2xl border border-white/15 bg-black px-4 py-3 outline-none" />

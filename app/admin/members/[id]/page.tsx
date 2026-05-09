@@ -108,37 +108,37 @@ export default async function AdminMemberPage({ params }: Props) {
   const statusClass = memberStatusStyles[member.status] ?? memberStatusStyles.ACTIVE;
 
   return (
-    <main dir="rtl" className="min-h-screen bg-black p-6 text-white md:p-10">
+    <main dir="rtl" className="min-h-screen bg-black px-3 py-5 text-white sm:px-5 md:p-10">
       <div className="mx-auto max-w-7xl">
-        <Link href="/admin" className="rounded-2xl border border-white/15 bg-zinc-950 px-5 py-3 text-sm font-black text-gray-300">
+        <Link href="/admin" className="inline-block rounded-2xl border border-white/15 bg-zinc-950 px-5 py-3 text-sm font-black text-gray-300">
           الرجوع للوحة الإدارة
         </Link>
 
-        <header className="my-10 rounded-3xl border border-white/10 bg-zinc-950 p-6">
+        <header className="my-6 rounded-2xl border border-white/10 bg-zinc-950 p-5 md:my-10 md:rounded-3xl md:p-6">
           <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-            <div className="flex items-center gap-4">
+            <div className="flex min-w-0 items-center gap-3 md:gap-4">
               {member.image ? (
-                <img src={member.image} alt={member.username} className="h-20 w-20 rounded-full border border-white/20 object-cover" />
+                <img src={member.image} alt={member.username} className="h-16 w-16 rounded-full border border-white/20 object-cover md:h-20 md:w-20" />
               ) : (
-                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white text-3xl font-black text-black">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white text-2xl font-black text-black md:h-20 md:w-20 md:text-3xl">
                   {member.displayName[0]}
                 </div>
               )}
-              <div>
-                <p className="text-xs font-black tracking-[5px] text-red-500">TOKYO MEMBER PROFILE</p>
-                <h1 className="mt-2 text-5xl font-black">{member.displayName}</h1>
-                <p className="mt-2 text-sm text-gray-400">
+              <div className="min-w-0">
+                <p className="text-[10px] font-black tracking-[4px] text-red-500 md:text-xs md:tracking-[5px]">TOKYO MEMBER PROFILE</p>
+                <h1 className="mt-2 truncate text-3xl font-black md:text-5xl">{member.displayName}</h1>
+                <p className="mt-2 break-all text-xs text-gray-400 md:text-sm">
                   @{member.username} - {member.discordId}
                 </p>
               </div>
             </div>
-            <div className={`rounded-2xl border px-5 py-3 text-sm font-black ${statusClass}`}>
+            <div className={`w-fit rounded-2xl border px-5 py-3 text-sm font-black ${statusClass}`}>
               {member.status}
             </div>
           </div>
         </header>
 
-        <section className="mb-10 grid gap-4 md:grid-cols-4">
+        <section className="mb-8 grid grid-cols-2 gap-3 md:mb-10 md:grid-cols-4 md:gap-4">
           {[
             ["التحذيرات", member.warnings.length],
             ["الاستدعاءات", member.summons.length],
@@ -147,26 +147,26 @@ export default async function AdminMemberPage({ params }: Props) {
             ["التقييم", member.behaviorScore],
             ["الرتبة", member.internalRank],
           ].map(([label, value]) => (
-            <div key={label} className="rounded-3xl border border-white/10 bg-zinc-950 p-6">
-              <p className="text-sm text-gray-400">{label}</p>
-              <p className="mt-3 text-4xl font-black">{value}</p>
+            <div key={label} className="rounded-2xl border border-white/10 bg-zinc-950 p-4 md:rounded-3xl md:p-6">
+              <p className="text-xs text-gray-400 md:text-sm">{label}</p>
+              <p className="mt-3 text-2xl font-black md:text-4xl">{value}</p>
             </div>
           ))}
         </section>
 
-        <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+        <div className="grid gap-5 md:gap-6 lg:grid-cols-[0.9fr_1.1fr]">
           <div className="grid gap-6">
             <AdminWarningForm memberId={member.id} />
             <AdminMemberActions memberId={member.id} currentRank={member.internalRank} currentScore={member.behaviorScore} />
           </div>
 
-          <section className="rounded-3xl border border-white/10 bg-zinc-950 p-6">
+          <section className="rounded-2xl border border-white/10 bg-zinc-950 p-5 md:rounded-3xl md:p-6">
             <p className="text-xs font-black tracking-[5px] text-yellow-300">WARNINGS</p>
             <div className="mt-5 grid gap-3">
               {member.warnings.length === 0 && <p className="text-gray-500">لا يوجد تحذيرات.</p>}
               {member.warnings.map((warning) => (
                 <article key={warning.id} className="rounded-2xl border border-white/10 bg-black/40 p-4">
-                  <div className="flex items-center justify-between gap-3">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <p className="font-black text-white">{warning.reason}</p>
                     <span className="rounded-full border border-yellow-400/30 px-3 py-1 text-xs font-black text-yellow-300">
                       {warningLabels[warning.severity] ?? warning.severity}
@@ -180,7 +180,7 @@ export default async function AdminMemberPage({ params }: Props) {
           </section>
         </div>
 
-        <section className="mt-6 grid gap-6 lg:grid-cols-3">
+        <section className="mt-5 grid gap-5 md:mt-6 md:gap-6 lg:grid-cols-3">
           <Panel title="الاستدعاءات">
             {member.summons.map((summon) => (
               <Item key={summon.id} title={summon.reason} meta={`${summon.status} - ${summon.createdAt.toLocaleString("ar")}`} />
@@ -198,7 +198,7 @@ export default async function AdminMemberPage({ params }: Props) {
           </Panel>
         </section>
 
-        <section className="mt-6 grid gap-6 lg:grid-cols-3">
+        <section className="mt-5 grid gap-5 md:mt-6 md:gap-6 lg:grid-cols-3">
           <Panel title="سجل الرتب">
             {member.rankChanges.map((change) => (
               <Item key={change.id} title={`${change.action}: ${change.rank}`} meta={`${change.reason ?? "بدون سبب"} - ${change.createdAt.toLocaleString("ar")}`} />
@@ -225,7 +225,7 @@ export default async function AdminMemberPage({ params }: Props) {
 
 function Panel({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="rounded-3xl border border-white/10 bg-zinc-950 p-6">
+    <section className="rounded-2xl border border-white/10 bg-zinc-950 p-5 md:rounded-3xl md:p-6">
       <p className="text-xs font-black tracking-[4px] text-cyan-300">{title}</p>
       <div className="mt-5 grid gap-3">{children}</div>
     </section>

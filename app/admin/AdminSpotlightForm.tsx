@@ -43,7 +43,7 @@ export function AdminSpotlightForm({ members }: Props) {
           setLoading(false);
         }
       }}
-      className="mb-10 grid gap-4 rounded-3xl border border-yellow-400/20 bg-yellow-400/10 p-6 shadow-[0_0_35px_rgba(250,204,21,0.08)]"
+      className="mb-8 grid gap-4 rounded-2xl border border-yellow-400/20 bg-yellow-400/10 p-5 shadow-[0_0_35px_rgba(250,204,21,0.08)] md:mb-10 md:rounded-3xl md:p-6"
     >
       <p className="text-xs font-black tracking-[5px] text-yellow-300">MEMBER SPOTLIGHT CONTROL</p>
       <select name="memberId" required className="rounded-2xl border border-white/15 bg-black px-4 py-3 outline-none">

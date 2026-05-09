@@ -39,7 +39,7 @@ export function AdminAlertForm() {
           setLoading(false);
         }
       }}
-      className="mb-10 grid gap-4 rounded-3xl border border-red-500/25 bg-red-500/10 p-6 shadow-[0_0_35px_rgba(239,68,68,0.10)]"
+      className="mb-8 grid gap-4 rounded-2xl border border-red-500/25 bg-red-500/10 p-5 shadow-[0_0_35px_rgba(239,68,68,0.10)] md:mb-10 md:rounded-3xl md:p-6"
     >
       <p className="text-xs font-black tracking-[5px] text-red-300">TOKYO ALERT BROADCAST</p>
       <div className="grid gap-3 md:grid-cols-[1fr_140px]">

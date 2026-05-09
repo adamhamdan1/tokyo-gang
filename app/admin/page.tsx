@@ -192,19 +192,19 @@ export default async function AdminPage({
   ];
 
   return (
-    <main dir="rtl" className="relative min-h-screen overflow-hidden bg-black text-white p-6 md:p-10">
+    <main dir="rtl" className="relative min-h-screen overflow-hidden bg-black px-3 py-5 text-white sm:px-5 md:p-10">
       <div className="pointer-events-none fixed inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(to_right,rgba(255,255,255,0.035)_1px,transparent_1px)] bg-[length:100%_6px,80px_80px] opacity-55" />
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(239,68,68,0.16),transparent_28%),radial-gradient(circle_at_80%_20%,rgba(34,211,238,0.10),transparent_26%),radial-gradient(circle_at_center,transparent_42%,rgba(0,0,0,0.72)_100%)]" />
       <Link
         href="/"
-        className="fixed left-5 top-5 z-50 rounded-2xl border border-white/20 bg-white px-5 py-3 text-sm font-black text-black shadow-[0_0_28px_rgba(255,255,255,0.2)] transition hover:bg-gray-300"
+        className="fixed left-3 top-3 z-50 rounded-xl border border-white/20 bg-white px-4 py-2 text-xs font-black text-black shadow-[0_0_28px_rgba(255,255,255,0.2)] transition hover:bg-gray-300 md:left-5 md:top-5 md:rounded-2xl md:px-5 md:py-3 md:text-sm"
       >
         الرئيسية
       </Link>
 
       <div className="relative z-10 mx-auto max-w-7xl">
-        <div className="mb-10 overflow-hidden rounded-3xl border border-white/10 bg-zinc-950/80 p-6 shadow-[0_0_50px_rgba(255,255,255,0.05)] backdrop-blur-xl md:p-8">
-          <div className="mb-6 flex items-center justify-between border-b border-white/10 pb-4 text-xs font-black tracking-[4px] text-gray-500">
+        <div className="mb-6 overflow-hidden rounded-2xl border border-white/10 bg-zinc-950/80 p-5 shadow-[0_0_50px_rgba(255,255,255,0.05)] backdrop-blur-xl md:mb-10 md:rounded-3xl md:p-8">
+          <div className="mb-5 flex flex-col gap-2 border-b border-white/10 pb-4 text-[10px] font-black tracking-[3px] text-gray-500 sm:flex-row sm:items-center sm:justify-between md:mb-6 md:text-xs md:tracking-[4px]">
             <span>TOKYO COMMAND CENTER</span>
             <span className="flex items-center gap-2 text-green-400">
               <span className="h-2 w-2 rounded-full bg-green-400 shadow-[0_0_14px_lime]" />
@@ -213,43 +213,43 @@ export default async function AdminPage({
           </div>
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-sm font-black tracking-[6px] text-red-500">TOKYO ADMIN</p>
-            <h1 className="mt-3 text-5xl font-black drop-shadow-[0_0_28px_rgba(255,255,255,0.35)]">
+            <p className="text-xs font-black tracking-[5px] text-red-500 md:text-sm md:tracking-[6px]">TOKYO ADMIN</p>
+            <h1 className="mt-3 text-3xl font-black leading-tight drop-shadow-[0_0_28px_rgba(255,255,255,0.35)] sm:text-4xl md:text-5xl">
               لوحة إدارة التقديمات
             </h1>
           </div>
 
-          <div className="rounded-2xl border border-white/15 bg-zinc-950 px-5 py-3 text-sm text-gray-300">
+          <div className="w-fit rounded-2xl border border-white/15 bg-zinc-950 px-4 py-2 text-sm text-gray-300 md:px-5 md:py-3">
             {session.user.name}
           </div>
           </div>
         </div>
 
-        <div className="mb-8 flex flex-wrap gap-3">
+        <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:mb-8 lg:flex lg:flex-wrap">
           <Link
             href="/"
-            className="rounded-2xl border border-white/15 bg-zinc-950 px-5 py-3 text-sm font-black text-gray-300 transition hover:border-white/30 hover:text-white"
+            className="rounded-2xl border border-white/15 bg-zinc-950 px-5 py-3 text-center text-sm font-black text-gray-300 transition hover:border-white/30 hover:text-white"
           >
             الرجوع للرئيسية
           </Link>
           <AdminDiscordTestButton />
           <AdminSyncButton />
           <AdminSignOutButton />
-          <div className="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-5 py-3 text-sm font-black text-cyan-300">
+          <div className="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-5 py-3 text-center text-sm font-black text-cyan-300">
             مزامنة TOKYO تلقائية{tokyoSync ? `: ${tokyoSync.count} عضو` : ""}
           </div>
         </div>
 
-        <section className="mb-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <section className="mb-8 grid grid-cols-2 gap-3 md:mb-10 md:gap-4 lg:grid-cols-4">
           {stats.map(([label, value]) => (
             <div
               key={label}
-              className="group relative overflow-hidden rounded-3xl border border-white/15 bg-zinc-950/85 p-6 shadow-[0_0_40px_rgba(255,255,255,0.06)]"
+              className="group relative overflow-hidden rounded-2xl border border-white/15 bg-zinc-950/85 p-4 shadow-[0_0_40px_rgba(255,255,255,0.06)] md:rounded-3xl md:p-6"
             >
               <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/45 to-transparent opacity-60" />
               <div className="absolute inset-0 opacity-0 transition group-hover:opacity-100 bg-[linear-gradient(110deg,transparent,rgba(255,255,255,0.08),transparent)]" />
-              <p className="relative z-10 text-sm text-gray-400">{label}</p>
-              <p className="relative z-10 mt-3 text-5xl font-black text-white drop-shadow-[0_0_18px_rgba(255,255,255,0.35)]">
+              <p className="relative z-10 text-xs text-gray-400 md:text-sm">{label}</p>
+              <p className="relative z-10 mt-3 text-3xl font-black text-white drop-shadow-[0_0_18px_rgba(255,255,255,0.35)] md:text-5xl">
                 {value}
               </p>
             </div>
@@ -262,8 +262,8 @@ export default async function AdminPage({
 
         <AdminSummonForm members={tokyoMembers} />
 
-        <section className="mb-10 grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
-          <div className="rounded-3xl border border-green-400/20 bg-green-400/10 p-6">
+        <section className="mb-8 grid gap-4 lg:mb-10 lg:grid-cols-[0.9fr_1.1fr]">
+          <div className="rounded-2xl border border-green-400/20 bg-green-400/10 p-5 md:rounded-3xl md:p-6">
             <p className="text-xs font-black tracking-[5px] text-green-300">ADMIN NOTIFICATIONS</p>
             <div className="mt-5 grid gap-3 text-sm">
               <p className="rounded-2xl border border-white/10 bg-black/30 p-4">
@@ -277,7 +277,7 @@ export default async function AdminPage({
               </p>
             </div>
           </div>
-          <div className="rounded-3xl border border-white/10 bg-zinc-950 p-6">
+          <div className="rounded-2xl border border-white/10 bg-zinc-950 p-5 md:rounded-3xl md:p-6">
             <p className="text-xs font-black tracking-[5px] text-cyan-300">ADMIN LOG</p>
             <div className="mt-5 grid gap-3">
               {recentLogs.map((log) => (
@@ -296,7 +296,7 @@ export default async function AdminPage({
           </div>
         </section>
 
-        <section className="mb-10 rounded-3xl border border-white/10 bg-zinc-950 p-6">
+        <section className="mb-8 rounded-2xl border border-white/10 bg-zinc-950 p-5 md:mb-10 md:rounded-3xl md:p-6">
           <p className="text-xs font-black tracking-[5px] text-red-400">TOKYO MEMBER DIRECTORY</p>
           <div className="mt-5 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {tokyoMembers.slice(0, 12).map((member) => (
@@ -323,11 +323,11 @@ export default async function AdminPage({
         </section>
 
         {complaints.length > 0 && (
-          <section className="mb-10 rounded-3xl border border-red-500/20 bg-zinc-950 p-6">
+          <section className="mb-8 rounded-2xl border border-red-500/20 bg-zinc-950 p-4 md:mb-10 md:rounded-3xl md:p-6">
             <p className="text-xs font-black tracking-[5px] text-red-400">MEMBER COMPLAINTS</p>
             <div className="mt-5 grid gap-4 lg:grid-cols-2">
               {complaints.map((complaint) => (
-                <article key={complaint.id} className="rounded-2xl border border-white/10 bg-black/40 p-5">
+                <article key={complaint.id} className="rounded-2xl border border-white/10 bg-black/40 p-4 md:p-5">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <p className="text-xs text-gray-500">المشتكي</p>
@@ -374,7 +374,7 @@ export default async function AdminPage({
         )}
 
         {activeSummons.length > 0 && (
-          <section className="mb-10 rounded-3xl border border-cyan-400/20 bg-zinc-950 p-6">
+          <section className="mb-8 rounded-2xl border border-cyan-400/20 bg-zinc-950 p-5 md:mb-10 md:rounded-3xl md:p-6">
             <p className="text-xs font-black tracking-[5px] text-cyan-300">RECENT SUMMONS</p>
             <div className="mt-5 grid gap-4 md:grid-cols-2">
               {activeSummons.map((summon) => (
@@ -397,9 +397,9 @@ export default async function AdminPage({
         )}
 
         {announcements.length > 0 && (
-          <section className="mb-10 grid gap-4 md:grid-cols-2">
+          <section className="mb-8 grid gap-4 md:mb-10 md:grid-cols-2">
             {announcements.map((announcement) => (
-              <article key={announcement.id} className="rounded-3xl border border-white/15 bg-zinc-950 p-6">
+              <article key={announcement.id} className="rounded-2xl border border-white/15 bg-zinc-950 p-5 md:rounded-3xl md:p-6">
                 <p className="text-xs font-black tracking-[4px] text-red-500">TOKYO NOTICE</p>
                 <h3 className="mt-3 text-2xl font-black">{announcement.title}</h3>
                 <p className="mt-3 leading-8 text-gray-400">{announcement.message}</p>
@@ -409,7 +409,7 @@ export default async function AdminPage({
           </section>
         )}
 
-        <section className="sticky top-0 z-40 mb-8 rounded-3xl border border-white/10 bg-black/80 p-4 backdrop-blur-xl">
+        <section className="sticky top-2 z-40 mb-8 rounded-2xl border border-white/10 bg-black/85 p-3 backdrop-blur-xl md:top-0 md:rounded-3xl md:p-4">
           <form className="mb-4 flex flex-col gap-3 md:flex-row" action="/admin">
             {activeStatus !== "ALL" && <input type="hidden" name="status" value={activeStatus} />}
             <input
@@ -427,7 +427,7 @@ export default async function AdminPage({
               </Link>
             )}
           </form>
-          <div className="flex flex-wrap gap-3">
+          <div className="flex gap-2 overflow-x-auto pb-1 md:flex-wrap md:overflow-visible md:pb-0">
           {filterTabs.map(([label, status]) => {
             const href = buildAdminHref(status, query);
             const active = activeStatus === status;
@@ -436,7 +436,7 @@ export default async function AdminPage({
               <Link
                 key={status}
                 href={href}
-                className={`rounded-2xl border px-5 py-3 text-sm font-black transition ${
+                className={`shrink-0 rounded-2xl border px-4 py-3 text-xs font-black transition md:px-5 md:text-sm ${
                   active
                     ? "border-white bg-white text-black"
                     : "border-white/15 bg-zinc-950 text-gray-300 hover:border-white/30 hover:text-white"
@@ -454,7 +454,7 @@ export default async function AdminPage({
           </div>
         </section>
 
-        <section className="grid gap-6">
+        <section className="grid gap-5 md:gap-6">
           {applications.map((app) => {
             const style = statusStyles[app.status] ?? statusStyles.PENDING;
             const submittedAt = new Intl.DateTimeFormat("ar", {
@@ -465,14 +465,14 @@ export default async function AdminPage({
             return (
               <article
                 key={app.id}
-                className={`rounded-3xl border p-6 ${style}`}
+                className={`rounded-2xl border p-4 md:rounded-3xl md:p-6 ${style}`}
               >
                 <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="flex items-center gap-4">
+                  <div className="flex min-w-0 items-center gap-3 md:gap-4">
                     {app.user.image ? (
                       <img
                         src={app.user.image}
-                        className="h-16 w-16 rounded-full border border-white/20 object-cover"
+                        className="h-12 w-12 rounded-full border border-white/20 object-cover md:h-16 md:w-16"
                         alt={app.user.username}
                       />
                     ) : (
@@ -482,7 +482,7 @@ export default async function AdminPage({
                     )}
 
                     <div>
-                      <h2 className="text-3xl font-black text-white">{app.name}</h2>
+                        <h2 className="text-2xl font-black text-white md:text-3xl">{app.name}</h2>
                       <p className="mt-1 text-sm text-gray-300">Discord: {app.user.username}</p>
                       <p className="text-xs text-gray-500">ID: {app.user.discordId}</p>
                     </div>

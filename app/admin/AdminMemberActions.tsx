@@ -76,7 +76,7 @@ export function AdminMemberActions({ memberId, currentRank, currentScore }: Prop
   };
 
   return (
-    <section className="rounded-3xl border border-cyan-400/20 bg-cyan-400/10 p-6">
+    <section className="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-5 md:rounded-3xl md:p-6">
       <p className="text-xs font-black tracking-[5px] text-cyan-300">MEMBER CONTROL</p>
       <div className="mt-5 grid gap-5">
         <form action={changeRank} className="grid gap-3 rounded-2xl border border-white/10 bg-black/35 p-4">

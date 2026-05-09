@@ -57,10 +57,10 @@ export function AdminSummonForm({ members }: Props) {
   };
 
   return (
-    <form action={createSummon} className="mb-10 rounded-3xl border border-cyan-400/20 bg-cyan-400/10 p-6 shadow-[0_0_35px_rgba(34,211,238,0.08)]">
+    <form action={createSummon} className="mb-8 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-5 shadow-[0_0_35px_rgba(34,211,238,0.08)] md:mb-10 md:rounded-3xl md:p-6">
       <div className="mb-5">
         <p className="text-xs font-black tracking-[5px] text-cyan-300">TOKYO SUMMON SYSTEM</p>
-        <h2 className="mt-2 text-3xl font-black text-white">استدعاء عضو من العصابة</h2>
+        <h2 className="mt-2 text-2xl font-black text-white md:text-3xl">استدعاء عضو من العصابة</h2>
         <p className="mt-2 text-sm text-gray-400">
           ينسحب من العضو رتبة TOKYO، وينعطى رتبة الاستدعاء، وتوصله رسالة خاصة ورسالة في روم الاستدعاء.
         </p>
@@ -105,7 +105,7 @@ export function AdminSummonForm({ members }: Props) {
 
       <button
         disabled={loading || members.length === 0}
-        className="mt-5 rounded-2xl bg-cyan-400 px-7 py-3 font-black text-black transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
+        className="mt-5 w-full rounded-2xl bg-cyan-400 px-7 py-3 font-black text-black transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
       >
         {loading ? "جاري الاستدعاء..." : "استدعاء العضو"}
       </button>

@@ -170,8 +170,8 @@ function GlitchTitle({ children, className = "" }: { children: string; className
 
 function AmbientParticles() {
   return (
-    <div className="pointer-events-none fixed inset-0 z-[2] overflow-hidden opacity-50">
-      {Array.from({ length: 18 }).map((_, index) => (
+    <div className="pointer-events-none fixed inset-0 z-[2] hidden overflow-hidden opacity-35 md:block">
+      {Array.from({ length: 8 }).map((_, index) => (
         <motion.span
           key={index}
           animate={{
@@ -238,6 +238,10 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    if (!window.matchMedia("(pointer: fine)").matches) {
+      return;
+    }
+
     const move = (e: MouseEvent) => {
       setMouse({ x: e.clientX, y: e.clientY });
     };
@@ -380,7 +384,7 @@ export default function Home() {
   };
 
   return (
-    <main dir="rtl" className="min-h-screen bg-black text-white overflow-hidden cursor-none">
+    <main dir="rtl" className="min-h-screen overflow-hidden bg-black text-white lg:cursor-none">
       <SpeedInsights />
       <Analytics />
       <AmbientParticles />
@@ -410,7 +414,7 @@ export default function Home() {
           backgroundSize: "100% 100%, 100% 100%, 96px 96px",
         }}
       />
-      <div className="pointer-events-none fixed inset-0 z-[9995] opacity-20 mix-blend-screen">
+      <div className="pointer-events-none fixed inset-0 z-[9995] hidden opacity-20 mix-blend-screen md:block">
         <motion.div
           animate={{ x: ["-20%", "20%", "-20%"], opacity: [0.08, 0.18, 0.08] }}
           transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
@@ -423,7 +427,7 @@ export default function Home() {
         />
       </div>
 
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+      <div className="pointer-events-none fixed inset-0 z-0 hidden overflow-hidden md:block">
         <motion.div
           animate={{ x: [0, 120, -120, 0], y: [0, -60, 60, 0], opacity: [0.08, 0.18, 0.08] }}
           transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
@@ -437,12 +441,12 @@ export default function Home() {
       </div>
 
       <motion.div
-        className="pointer-events-none fixed z-[9999] w-8 h-8 rounded-full border border-white/60 shadow-[0_0_18px_white]"
+        className="pointer-events-none fixed z-[9999] hidden h-8 w-8 rounded-full border border-white/60 shadow-[0_0_18px_white] lg:block"
         style={{ left: mouse.x - 16, top: mouse.y - 16 }}
       />
 
       <motion.div
-        className="pointer-events-none fixed z-[9998] w-2 h-2 rounded-full bg-white shadow-[0_0_12px_white]"
+        className="pointer-events-none fixed z-[9998] hidden h-2 w-2 rounded-full bg-white shadow-[0_0_12px_white] lg:block"
         style={{ left: mouse.x - 4, top: mouse.y - 4 }}
       />
 
@@ -653,12 +657,12 @@ export default function Home() {
         </div>
       </nav>
 
-      <div className="group fixed bottom-6 left-6 z-50 flex items-center gap-3 rounded-full border border-white/15 bg-black/70 p-3 backdrop-blur-md shadow-[0_0_28px_rgba(255,255,255,0.08)] transition hover:rounded-2xl">
+      <div className="group fixed bottom-4 left-4 z-50 flex items-center gap-3 rounded-full border border-white/15 bg-black/70 p-2 backdrop-blur-md shadow-[0_0_28px_rgba(255,255,255,0.08)] transition hover:rounded-2xl md:bottom-6 md:left-6 md:p-3">
         <button
           type="button"
           onClick={toggleMusic}
           aria-label={playing ? "إيقاف الموسيقى" : "تشغيل الموسيقى"}
-          className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-xl font-black text-black transition hover:bg-gray-300"
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-lg font-black text-black transition hover:bg-gray-300 md:h-12 md:w-12 md:text-xl"
         >
           {playing ? "Ⅱ" : "▶"}
         </button>
@@ -710,8 +714,8 @@ export default function Home() {
         </div>
       </div>
 
-      <section id="home" className="relative flex flex-col items-center justify-center h-screen text-center px-6 overflow-hidden">
-        <div className="absolute inset-0 bg-[url('/bg.jpg')] bg-cover bg-center opacity-15 grayscale" />
+      <section id="home" className="relative flex min-h-[100svh] flex-col items-center justify-center overflow-hidden px-4 text-center md:h-screen md:px-6">
+        <div className="absolute inset-0 bg-[url('/bg.jpg')] bg-cover bg-center opacity-35 grayscale md:opacity-15" />
         <motion.div
           initial={{ opacity: 0, scale: 1.8 }}
           animate={{ opacity: loading ? 0 : [0.85, 0], scale: loading ? 1.8 : [1.8, 1] }}
@@ -723,7 +727,7 @@ export default function Home() {
           initial={{ scale: 1.08 }}
           animate={{ scale: 1.18, x: [0, 20, -20, 0], y: [0, -12, 12, 0] }}
           transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute inset-0 overflow-hidden"
+          className="absolute inset-0 hidden overflow-hidden md:block"
         >
           <video autoPlay muted loop playsInline className="w-full h-full object-cover opacity-60 grayscale scale-110">
             <source src="/bg.mp4" type="video/mp4" />
@@ -736,13 +740,13 @@ export default function Home() {
         <motion.div
           animate={{ x: ["-20%", "20%"], opacity: [0.12, 0.28, 0.12] }}
           transition={{ duration: 10, repeat: Infinity }}
-          className="absolute -bottom-20 left-0 w-[700px] h-[300px] bg-white/10 blur-3xl rounded-full"
+          className="absolute -bottom-20 left-0 hidden h-[300px] w-[700px] rounded-full bg-white/10 blur-3xl md:block"
         />
 
         <motion.div
           animate={{ y: [40, -40, 40], opacity: [0.06, 0.18, 0.06] }}
           transition={{ duration: 9, repeat: Infinity }}
-          className="absolute bottom-10 w-[900px] h-[180px] bg-white/10 blur-3xl rounded-full"
+          className="absolute bottom-10 hidden h-[180px] w-[900px] rounded-full bg-white/10 blur-3xl md:block"
         />
 
         <motion.div
@@ -760,7 +764,7 @@ export default function Home() {
 
           <motion.p
             initial={{ opacity: 0, y: 25, letterSpacing: "0px" }}
-            animate={{ opacity: 1, y: 0, letterSpacing: "8px" }}
+            animate={{ opacity: 1, y: 0, letterSpacing: "3px" }}
             transition={{ delay: 0.7, duration: 1 }}
             className="mb-5 text-sm text-gray-300 drop-shadow-[0_0_10px_white]"
           >
@@ -776,7 +780,7 @@ export default function Home() {
               filter: { duration: 1.1 },
               x: { duration: 0.25, repeat: Infinity, repeatDelay: 3 },
             }}
-            className="relative text-7xl md:text-9xl font-black text-white tracking-[10px] drop-shadow-[0_0_40px_white]"
+            className="relative text-6xl font-black tracking-[4px] text-white drop-shadow-[0_0_40px_white] sm:text-7xl md:text-9xl md:tracking-[10px]"
           >
             <motion.span
               animate={{ x: [2, -3, 1, 0], opacity: [0.16, 0.35, 0.12, 0.2] }}
@@ -798,9 +802,9 @@ export default function Home() {
 
           <motion.h2
             initial={{ opacity: 0, y: 50, letterSpacing: "0px" }}
-            animate={{ opacity: 1, y: 0, letterSpacing: "10px" }}
+            animate={{ opacity: 1, y: 0, letterSpacing: "4px" }}
             transition={{ delay: 0.5, duration: 1.2 }}
-            className="text-5xl md:text-7xl font-bold text-gray-200 mt-2 drop-shadow-[0_0_20px_white]"
+            className="mt-2 text-4xl font-bold text-gray-200 drop-shadow-[0_0_20px_white] sm:text-5xl md:text-7xl"
           >
             <GlitchTitle>GANG</GlitchTitle>
           </motion.h2>
@@ -942,19 +946,58 @@ export default function Home() {
         </div>
       </section>
 
-      <RevealSection id="server" className="py-24 px-6 bg-zinc-950 border-t border-white/10">
-        <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center">
-          <div>
-            <p className="text-sm tracking-[6px] text-gray-400 mb-4">مكان تواجدنا حالياً</p>
-            <h2 className="text-5xl font-black mb-6">INFINITE CITY CFW</h2>
-            <p className="text-gray-300 text-lg leading-9">
+      <RevealSection id="server" className="relative overflow-hidden border-t border-white/10 bg-black px-4 py-16 md:px-6 md:py-24">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_24%_40%,rgba(239,68,68,0.22),transparent_30%),radial-gradient(circle_at_78%_48%,rgba(255,255,255,0.10),transparent_24%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(to_right,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[length:100%_6px,88px_88px] opacity-60" />
+
+        <div className="relative mx-auto grid max-w-6xl items-center gap-8 md:grid-cols-[0.88fr_1.12fr] md:gap-12">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.92, rotateY: -10 }}
+            whileInView={{ opacity: 1, scale: 1, rotateY: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7, ease: "easeOut" }}
+            className="group relative mx-auto flex aspect-square w-full max-w-[360px] items-center justify-center overflow-hidden rounded-[34px] border border-white/15 bg-zinc-950/80 p-8 shadow-[0_0_80px_rgba(255,255,255,0.10)] md:max-w-[420px] md:rounded-[42px] md:p-10"
+          >
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.12),transparent_58%)]" />
+            <div className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent" />
+            <div className="absolute inset-y-10 right-0 w-px bg-gradient-to-b from-transparent via-red-400/70 to-transparent" />
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 22, repeat: Infinity, ease: "linear" }}
+              className="absolute inset-10 rounded-full border border-dashed border-white/10"
+            />
+            <motion.div
+              animate={{ scale: [0.94, 1.04, 0.94], opacity: [0.2, 0.42, 0.2] }}
+              transition={{ duration: 3.8, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute h-44 w-44 rounded-full bg-white/10 blur-3xl md:h-56 md:w-56"
+            />
+            <img
+              src="/server-logo.png"
+              alt="Infinite City CFW"
+              className="relative z-10 w-56 object-contain grayscale drop-shadow-[0_0_34px_rgba(255,255,255,0.35)] transition duration-500 group-hover:scale-105 group-hover:grayscale-0 md:w-72"
+            />
+          </motion.div>
+
+          <div className="text-center md:text-right">
+            <p className="text-xs font-black tracking-[6px] text-red-300 md:text-sm">مكان تواجدنا حالياً</p>
+            <h2 className="mt-4 text-4xl font-black leading-tight text-white drop-shadow-[0_0_28px_rgba(255,255,255,0.24)] sm:text-5xl md:text-6xl">
+              INFINITE CITY CFW
+            </h2>
+            <p className="mx-auto mt-6 max-w-2xl text-base leading-9 text-gray-300 md:mx-0 md:text-lg">
               حالياً تتواجد عصابة TOKYO GANG داخل سيرفر INFINITE CITY CFW، حيث نفرض حضورنا وهيبتنا داخل عالم فايف إم.
             </p>
-          </div>
 
-          <div className="flex justify-center">
-            <div className="bg-black border border-white/20 rounded-[40px] p-10 shadow-[0_0_80px_rgba(255,255,255,0.08)]">
-              <img src="/server-logo.png" alt="Server Logo" className="w-72 object-contain grayscale hover:grayscale-0 transition duration-500" />
+            <div className="mt-7 grid gap-3 sm:grid-cols-3">
+              {[
+                ["SERVER", "ACTIVE"],
+                ["TOKYO PRESENCE", "LOCKED"],
+                ["STATUS", "CONTROL"],
+              ].map(([label, value]) => (
+                <div key={label} className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+                  <p className="text-[10px] font-black tracking-[3px] text-gray-500">{label}</p>
+                  <p className="mt-2 text-lg font-black text-white">{value}</p>
+                </div>
+              ))}
             </div>
           </div>
         </div>
