@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Cairo } from "next/font/google";
 import { Providers } from "./providers";
+import { PageTransitionOverlay } from "./PageTransitionOverlay";
+import { ToastProvider } from "./ToastProvider";
 import "./globals.css";
 
 const cairo = Cairo({
@@ -41,7 +43,12 @@ export default function RootLayout({
   return (
     <html lang="ar">
       <body className={cairo.className}>
-        <Providers>{children}</Providers>
+        <Providers>
+          <ToastProvider>
+            <PageTransitionOverlay />
+            {children}
+          </ToastProvider>
+        </Providers>
       </body>
     </html>
   );

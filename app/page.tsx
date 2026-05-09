@@ -74,6 +74,12 @@ type DiscordMember = {
   status?: "online" | "idle" | "dnd";
 };
 
+type SiteAlert = {
+  id: string;
+  title: string;
+  message: string;
+};
+
 const memberStatusStyles = {
   online: "border-green-400/40 bg-green-400/10 text-green-300",
   idle: "border-yellow-400/40 bg-yellow-400/10 text-yellow-200",
@@ -192,11 +198,20 @@ export default function Home() {
   const [tokyoOnlineCount, setTokyoOnlineCount] = useState<number | null>(null);
   const [roleMemberCount, setRoleMemberCount] = useState<number | null>(null);
   const [lastDiscordSync, setLastDiscordSync] = useState<Date | null>(null);
+  const [themeMode, setThemeMode] = useState(() => {
+    if (typeof window === "undefined") return "classic";
+    return window.localStorage.getItem("tokyo-theme") ?? "classic";
+  });
+  const [siteAlert, setSiteAlert] = useState<SiteAlert | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 3000);
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem("tokyo-theme", themeMode);
+  }, [themeMode]);
 
   useEffect(() => {
     const move = (e: MouseEvent) => {
@@ -278,12 +293,43 @@ export default function Home() {
     };
   }, []);
 
+  useEffect(() => {
+    let active = true;
+
+    const loadAlert = async () => {
+      const response = await fetch(`/api/alerts?t=${Date.now()}`, { cache: "no-store" });
+      const data = (await response.json().catch(() => null)) as { alert?: SiteAlert | null } | null;
+      if (active) setSiteAlert(data?.alert ?? null);
+    };
+
+    loadAlert();
+    const interval = window.setInterval(loadAlert, 30000);
+
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, []);
+
   const filteredMembers = members.filter(([name, role]) => {
     const matchesSearch = name.toLowerCase().includes(search.toLowerCase());
     const matchesRank = rank === "الكل" || role === rank;
     return matchesSearch && matchesRank;
   });
   const syncedTokyoMemberCount = roleMemberCount ?? null;
+  const spotlightMember = discordMembers[0] ?? {
+    id: "offline",
+    name: "TOKYO GANG",
+    username: "high_command",
+    image: null,
+    status: "online" as const,
+  };
+  const themeClasses: Record<string, string> = {
+    classic: "theme-classic",
+    alert: "theme-alert",
+    ghost: "theme-ghost",
+    neon: "theme-neon",
+  };
 
   const toggleMusic = () => {
     if (!audioRef.current) return;
@@ -305,10 +351,21 @@ export default function Home() {
   };
 
   return (
-    <main dir="rtl" className="min-h-screen bg-black text-white overflow-hidden cursor-none">
+    <main dir="rtl" className={`min-h-screen bg-black text-white overflow-hidden cursor-none ${themeClasses[themeMode] ?? "theme-classic"}`}>
       <SpeedInsights />
       <Analytics />
       <AmbientParticles />
+
+      {siteAlert && (
+        <motion.div
+          initial={{ y: -80, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className="fixed inset-x-0 top-0 z-[80] border-b border-red-500/40 bg-red-950/85 px-4 py-3 text-center text-white shadow-[0_0_35px_rgba(239,68,68,0.25)] backdrop-blur-xl"
+        >
+          <p className="text-xs font-black tracking-[5px] text-red-200">{siteAlert.title}</p>
+          <p className="mt-1 text-sm font-bold">{siteAlert.message}</p>
+        </motion.div>
+      )}
 
       <div className="pointer-events-none fixed inset-0 z-[9997] opacity-[0.035] bg-[linear-gradient(to_bottom,white_1px,transparent_1px)] bg-[length:100%_4px]" />
       <div className="pointer-events-none fixed inset-0 z-[9996] bg-[radial-gradient(circle_at_center,transparent_45%,rgba(0,0,0,0.65)_100%)]" />
@@ -564,6 +621,25 @@ export default function Home() {
               Discord
             </button>
           )}
+          <div className="hidden items-center gap-1 rounded-full border border-white/10 bg-black/50 p-1 lg:flex">
+            {[
+              ["classic", "Classic"],
+              ["alert", "Alert"],
+              ["ghost", "Ghost"],
+              ["neon", "Neon"],
+            ].map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setThemeMode(value)}
+                className={`rounded-full px-3 py-1 text-[10px] font-black transition ${
+                  themeMode === value ? "bg-white text-black" : "text-gray-400 hover:text-white"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
       </nav>
 
@@ -766,12 +842,14 @@ export default function Home() {
           </div>
 
           <div className="mt-10 flex gap-4 justify-center flex-wrap">
-            <a href="#apply" className="px-8 py-4 bg-white text-black hover:bg-gray-300 rounded-2xl text-lg font-bold transition hover:scale-105">
-              تقديم انضمام
+            <a href="#apply" className="group relative overflow-hidden px-8 py-4 bg-white text-black hover:bg-gray-300 rounded-2xl text-lg font-black transition hover:scale-105 shadow-[0_0_30px_rgba(255,255,255,0.18)]">
+              <span className="absolute inset-y-0 -right-1/2 w-1/2 bg-gradient-to-r from-transparent via-black/10 to-transparent transition group-hover:right-full" />
+              <span className="relative z-10">ACCESS APPLICATION</span>
             </a>
 
-            <a href="https://discord.gg/tok" target="_blank" className="px-8 py-4 border border-white hover:bg-white hover:text-black rounded-2xl text-lg font-bold transition hover:scale-105">
-              دخول الديسكورد
+            <a href="https://discord.gg/tok" target="_blank" className="group relative overflow-hidden px-8 py-4 border border-white/40 bg-black/35 hover:bg-white hover:text-black rounded-2xl text-lg font-black transition hover:scale-105">
+              <span className="absolute inset-y-0 -left-1/2 w-1/2 bg-gradient-to-r from-transparent via-white/20 to-transparent transition group-hover:left-full" />
+              <span className="relative z-10">LINK DISCORD</span>
             </a>
           </div>
         </motion.div>
@@ -805,6 +883,53 @@ export default function Home() {
         >
           {killfeed.map((item) => `// ${item}`).join("   ")}
         </motion.div>
+      </section>
+
+      <section className="relative overflow-hidden border-y border-white/10 bg-black px-6 py-14">
+        <div className="mx-auto grid max-w-6xl gap-6 md:grid-cols-[1.1fr_0.9fr]">
+          <motion.div
+            initial={{ opacity: 0, x: 40 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            className="relative overflow-hidden rounded-3xl border border-red-500/25 bg-red-500/10 p-6 shadow-[0_0_45px_rgba(239,68,68,0.10)]"
+          >
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-red-400 to-transparent" />
+            <p className="text-xs font-black tracking-[5px] text-red-300">MEMBER SPOTLIGHT</p>
+            <div className="mt-5 flex items-center gap-5">
+              {spotlightMember.image ? (
+                <img src={spotlightMember.image} alt={spotlightMember.name} className="h-24 w-24 rounded-full border border-white/20 object-cover shadow-[0_0_28px_rgba(255,255,255,0.18)]" />
+              ) : (
+                <div className="flex h-24 w-24 items-center justify-center rounded-full bg-white text-3xl font-black text-black shadow-[0_0_28px_rgba(255,255,255,0.2)]">
+                  {spotlightMember.name[0]}
+                </div>
+              )}
+              <div>
+                <h2 className="text-4xl font-black text-white">{spotlightMember.name}</h2>
+                <p className="mt-1 text-sm text-gray-400">@{spotlightMember.username}</p>
+                <p className="mt-3 inline-flex rounded-full border border-green-400/25 px-3 py-1 text-xs font-black text-green-300">
+                  LIVE TOKYO FILE
+                </p>
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, x: -40 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            className="relative overflow-hidden rounded-3xl border border-green-400/20 bg-green-400/10 p-6 shadow-[0_0_45px_rgba(74,222,128,0.08)]"
+          >
+            <p className="text-xs font-black tracking-[5px] text-green-300">DISCORD INVITE PANEL</p>
+            <div className="mt-5 grid gap-3 text-sm text-gray-300">
+              <p>SERVER: TOKYO GANG</p>
+              <p>ONLINE: {onlineCount ?? "SYNCING"}</p>
+              <p>TOKYO ROLE: {roleMemberCount ?? "SYNCING"}</p>
+            </div>
+            <a href="https://discord.gg/tok" target="_blank" className="mt-6 inline-block rounded-2xl bg-green-300 px-6 py-3 font-black text-black transition hover:bg-white">
+              JOIN DISCORD
+            </a>
+          </motion.div>
+        </div>
       </section>
 
       <RevealSection id="server" className="py-24 px-6 bg-zinc-950 border-t border-white/10">
@@ -1207,8 +1332,24 @@ export default function Home() {
         )}
       </RevealSection>
 
-      <footer className="py-10 text-center text-gray-500 bg-black border-t border-white/10">
-        Dev by Hamdan | TOKYO GANG © 2026
+      <footer className="relative overflow-hidden border-t border-white/10 bg-black px-6 py-12 text-gray-400">
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+        <div className="mx-auto grid max-w-6xl gap-8 md:grid-cols-3">
+          <div>
+            <p className="text-2xl font-black tracking-[7px] text-white">TOKYO GANG</p>
+            <p className="mt-3 text-sm leading-7">Official command portal. Built for control, loyalty, and presence.</p>
+          </div>
+          <div className="grid gap-2 text-sm">
+            <a href="#apply" className="hover:text-white">التقديم</a>
+            <a href="/status" className="hover:text-white">حالة الطلب</a>
+            <a href="/complaints" className="hover:text-white">الشكاوي</a>
+          </div>
+          <div className="text-sm md:text-left">
+            <p>SERVER STATUS: LINKED</p>
+            <p>ONLINE: {onlineCount ?? "SYNCING"}</p>
+            <p className="mt-4 text-xs tracking-[4px] text-gray-600">Dev by Hamdan | 2026</p>
+          </div>
+        </div>
       </footer>
 
       <AnimatePresence>

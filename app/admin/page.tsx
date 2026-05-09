@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { syncTokyoMembersSafely } from "@/lib/tokyo-member-sync";
 import { AdminDecisionButtons } from "./AdminDecisionButtons";
+import { AdminAlertForm } from "./AdminAlertForm";
 import { AdminAnnouncementDeleteButton } from "./AdminAnnouncementDeleteButton";
 import { AdminAnnouncementForm } from "./AdminAnnouncementForm";
 import { AdminComplaintActions } from "./AdminComplaintActions";
@@ -70,10 +71,15 @@ export default async function AdminPage({
 
   if (!session?.user?.id || !adminIds.includes(session.user.id)) {
     return (
-      <main dir="rtl" className="min-h-screen bg-black text-white flex items-center justify-center p-8">
-        <div className="rounded-3xl border border-red-500/30 bg-red-500/10 px-10 py-8 text-center shadow-[0_0_45px_rgba(239,68,68,0.16)]">
-          <p className="text-sm font-black tracking-[6px] text-red-400">ACCESS DENIED</p>
-          <h1 className="mt-4 text-5xl font-black">ممنوع الدخول</h1>
+      <main dir="rtl" className="relative flex min-h-screen items-center justify-center overflow-hidden bg-black p-8 text-white">
+        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[length:100%_6px] opacity-70" />
+        <div className="relative overflow-hidden rounded-3xl border border-red-500/30 bg-red-500/10 px-10 py-8 text-center shadow-[0_0_55px_rgba(239,68,68,0.20)]">
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-red-400 to-transparent" />
+          <p className="text-sm font-black tracking-[6px] text-red-400">SECURITY TERMINAL</p>
+          <h1 className="mt-4 text-5xl font-black">ACCESS DENIED</h1>
+          <div className="mx-auto mt-6 h-1 w-56 overflow-hidden rounded-full bg-white/10">
+            <div className="h-full w-2/3 bg-red-500 shadow-[0_0_18px_rgba(239,68,68,0.7)]" />
+          </div>
           <p className="mt-5 text-sm text-gray-300">
             Discord ID الحالي: {session?.user?.id ?? "غير مسجل دخول"}
           </p>
@@ -251,6 +257,7 @@ export default async function AdminPage({
         </section>
 
         <AdminAnnouncementForm />
+        <AdminAlertForm />
 
         <AdminSummonForm members={tokyoMembers} />
 

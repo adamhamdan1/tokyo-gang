@@ -49,6 +49,16 @@ model Announcement {
   createdAt DateTime @default(now())
 }
 
+model SiteAlert {
+  id        String   @id @default(cuid())
+  title     String
+  message   String
+  active    Boolean  @default(true)
+  expiresAt DateTime?
+  createdBy String?
+  createdAt DateTime @default(now())
+}
+
 model TokyoMember {
   id           String   @id @default(cuid())
   discordId    String   @unique
