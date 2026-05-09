@@ -42,7 +42,7 @@ const filterTabs = [
   ["فترة التجربة", "TRIAL"],
 ];
 
-function buildAdminHref(status: string, query: string) {
+function buildAdminHref(status: string, query: string, logs?: string) {
   const params = new URLSearchParams();
 
   if (status !== "ALL") {
@@ -53,6 +53,10 @@ function buildAdminHref(status: string, query: string) {
     params.set("q", query);
   }
 
+  if (logs) {
+    params.set("logs", logs);
+  }
+
   const value = params.toString();
   return value ? `/admin?${value}` : "/admin";
 }
@@ -60,7 +64,7 @@ function buildAdminHref(status: string, query: string) {
 export default async function AdminPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ status?: string; q?: string }>;
+  searchParams?: Promise<{ status?: string; q?: string; logs?: string }>;
 }) {
   const session = await auth();
   const adminIds = process.env.ADMIN_DISCORD_IDS?.split(",").map((id) => id.trim()) || [];
@@ -69,6 +73,7 @@ export default async function AdminPage({
     ? params?.status
     : "ALL";
   const query = params?.q?.trim() ?? "";
+  const showAllLogs = params?.logs === "all";
   // eslint-disable-next-line react-hooks/purity
   const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
@@ -105,6 +110,7 @@ export default async function AdminPage({
     activeSummons,
     complaints,
     recentLogs,
+    adminLogCount,
     warningCount,
     leaveCount,
     blacklistCount,
@@ -174,7 +180,11 @@ export default async function AdminPage({
         votes: true,
       },
     }),
-    prisma.adminLog.findMany({ orderBy: { createdAt: "desc" }, take: 8 }),
+    prisma.adminLog.findMany({
+      orderBy: { createdAt: "desc" },
+      ...(showAllLogs ? {} : { take: 3 }),
+    }),
+    prisma.adminLog.count(),
     prisma.memberWarning.count(),
     prisma.leaveRequest.count({ where: { status: "APPROVED" } }),
     prisma.blacklistEntry.count({ where: { active: true } }),
@@ -278,7 +288,22 @@ export default async function AdminPage({
             </div>
           </div>
           <div className="rounded-2xl border border-white/10 bg-zinc-950 p-5 md:rounded-3xl md:p-6">
-            <p className="text-xs font-black tracking-[5px] text-cyan-300">ADMIN LOG</p>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-black tracking-[5px] text-cyan-300">ADMIN LOG</p>
+                <p className="mt-1 text-xs text-gray-500">
+                  {showAllLogs ? `كل اللوغات: ${adminLogCount}` : "آخر 3 أحداث"}
+                </p>
+              </div>
+              {adminLogCount > 3 && (
+                <Link
+                  href={buildAdminHref(activeStatus ?? "ALL", query, showAllLogs ? undefined : "all")}
+                  className="rounded-xl border border-cyan-400/25 px-4 py-2 text-xs font-black text-cyan-300 transition hover:bg-cyan-400 hover:text-black"
+                >
+                  {showAllLogs ? "عرض آخر 3" : "عرض الكل"}
+                </Link>
+              )}
+            </div>
             <div className="mt-5 grid gap-3">
               {recentLogs.map((log) => (
                 <article key={log.id} className="rounded-2xl border border-white/10 bg-black/40 p-4">
