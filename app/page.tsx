@@ -42,6 +42,7 @@ const members = [
   ["ريموند كروز", "مقاتل"],
   ["وليد كروز", "مقاتل"],
   ["برهوم كروز", "مقاتل"],
+  ["صلاحات كروز", "مقاتل"],
 ];
 
 const killfeed = [
@@ -1036,6 +1037,12 @@ export default function Home() {
     role: "ستريمر رسمي",
     kick: "https://kick.com/1abufayez1",
     logo: "/abufayez.webp",
+  },
+  {
+    name: "صلاحات كروز",
+    role: "ستريمر رسمي",
+    kick: "https://kick.com/salahat8",
+    logo: "/salahat.webp",
   },
 ].map((streamer, index) => (
             <motion.div
