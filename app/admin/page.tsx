@@ -5,6 +5,7 @@ import { AdminDecisionButtons } from "./AdminDecisionButtons";
 import { AdminAnnouncementDeleteButton } from "./AdminAnnouncementDeleteButton";
 import { AdminAnnouncementForm } from "./AdminAnnouncementForm";
 import { AdminComplaintActions } from "./AdminComplaintActions";
+import { AdminComplaintVote } from "./AdminComplaintVote";
 import { AdminDiscordTestButton } from "./AdminDiscordTestButton";
 import { AdminSignOutButton } from "./AdminSignOutButton";
 import { AdminSyncButton } from "./AdminSyncButton";
@@ -97,6 +98,8 @@ export default async function AdminPage({
     complaints,
     recentLogs,
     warningCount,
+    leaveCount,
+    blacklistCount,
   ] = await Promise.all([
     prisma.application.findMany({
       where: {
@@ -161,10 +164,13 @@ export default async function AdminPage({
       include: {
         reporter: true,
         accused: true,
+        votes: true,
       },
     }),
     prisma.adminLog.findMany({ orderBy: { createdAt: "desc" }, take: 8 }),
     prisma.memberWarning.count(),
+    prisma.leaveRequest.count({ where: { status: "APPROVED" } }),
+    prisma.blacklistEntry.count({ where: { active: true } }),
   ]);
 
   const stats = [
@@ -174,6 +180,8 @@ export default async function AdminPage({
     ["فترة التجربة", trialApplications],
     ["أعضاء TOKYO", tokyoMembers.length],
     ["التحذيرات", warningCount],
+    ["الإجازات", leaveCount],
+    ["البلاك ليست", blacklistCount],
     ["عدد المرفوضين", rejectedApplications],
   ];
 
@@ -322,6 +330,18 @@ export default async function AdminPage({
                     </a>
                   )}
                   {complaint.adminNote && <p className="mt-3 rounded-xl bg-white/5 p-3 text-xs text-gray-400">{complaint.adminNote}</p>}
+                  <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                    <span className="rounded-full border border-green-400/20 px-3 py-1 text-green-300">
+                      مع: {complaint.votes.filter((vote) => vote.vote === "FOR").length}
+                    </span>
+                    <span className="rounded-full border border-red-500/20 px-3 py-1 text-red-300">
+                      ضد: {complaint.votes.filter((vote) => vote.vote === "AGAINST").length}
+                    </span>
+                    <span className="rounded-full border border-white/15 px-3 py-1 text-gray-300">
+                      محايد: {complaint.votes.filter((vote) => vote.vote === "ABSTAIN").length}
+                    </span>
+                  </div>
+                  <AdminComplaintVote complaintId={complaint.id} />
                   <AdminComplaintActions complaintId={complaint.id} status={complaint.status} />
                 </article>
               ))}

@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { AdminMemberActions } from "../../AdminMemberActions";
 import { AdminWarningForm } from "../../AdminWarningForm";
 
 type Props = {
@@ -17,6 +18,9 @@ const memberStatusStyles: Record<string, string> = {
   SUMMONED: "border-cyan-400/30 bg-cyan-400/10 text-cyan-300",
   DISMISSED: "border-red-600/40 bg-red-600/10 text-red-300",
   SUSPENDED: "border-red-600/40 bg-red-600/10 text-red-300",
+  ON_LEAVE: "border-blue-400/30 bg-blue-400/10 text-blue-300",
+  HIGH_RISK: "border-red-500/30 bg-red-500/10 text-red-300",
+  BLACKLISTED: "border-red-700/40 bg-red-700/10 text-red-300",
 };
 
 const warningLabels: Record<string, string> = {
@@ -68,6 +72,22 @@ export default async function AdminMemberPage({ params }: Props) {
       adminLogs: {
         orderBy: { createdAt: "desc" },
         take: 12,
+      },
+      rankChanges: {
+        orderBy: { createdAt: "desc" },
+        take: 8,
+      },
+      leaveRequests: {
+        orderBy: { createdAt: "desc" },
+        take: 8,
+      },
+      notes: {
+        orderBy: { createdAt: "desc" },
+        take: 8,
+      },
+      blacklistEntries: {
+        orderBy: { createdAt: "desc" },
+        take: 3,
       },
     },
   });
@@ -124,16 +144,21 @@ export default async function AdminMemberPage({ params }: Props) {
             ["الاستدعاءات", member.summons.length],
             ["شكاوي عليه", member.complaintsAgainst.length],
             ["شكاوي رفعها", member.complaintsFiled.length],
+            ["التقييم", member.behaviorScore],
+            ["الرتبة", member.internalRank],
           ].map(([label, value]) => (
             <div key={label} className="rounded-3xl border border-white/10 bg-zinc-950 p-6">
               <p className="text-sm text-gray-400">{label}</p>
-              <p className="mt-3 text-5xl font-black">{value}</p>
+              <p className="mt-3 text-4xl font-black">{value}</p>
             </div>
           ))}
         </section>
 
         <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-          <AdminWarningForm memberId={member.id} />
+          <div className="grid gap-6">
+            <AdminWarningForm memberId={member.id} />
+            <AdminMemberActions memberId={member.id} currentRank={member.internalRank} currentScore={member.behaviorScore} />
+          </div>
 
           <section className="rounded-3xl border border-white/10 bg-zinc-950 p-6">
             <p className="text-xs font-black tracking-[5px] text-yellow-300">WARNINGS</p>
@@ -169,6 +194,27 @@ export default async function AdminMemberPage({ params }: Props) {
           <Panel title="سجل الإدارة">
             {member.adminLogs.map((log) => (
               <Item key={log.id} title={log.title} meta={`${log.action} - ${log.createdAt.toLocaleString("ar")}`} />
+            ))}
+          </Panel>
+        </section>
+
+        <section className="mt-6 grid gap-6 lg:grid-cols-3">
+          <Panel title="سجل الرتب">
+            {member.rankChanges.map((change) => (
+              <Item key={change.id} title={`${change.action}: ${change.rank}`} meta={`${change.reason ?? "بدون سبب"} - ${change.createdAt.toLocaleString("ar")}`} />
+            ))}
+          </Panel>
+          <Panel title="الإجازات">
+            {member.leaveRequests.map((leave) => (
+              <Item key={leave.id} title={leave.reason} meta={`${leave.status} - ${leave.createdAt.toLocaleString("ar")}`} />
+            ))}
+          </Panel>
+          <Panel title="الملاحظات الخاصة">
+            {member.notes.map((note) => (
+              <Item key={note.id} title={note.note} meta={note.createdAt.toLocaleString("ar")} />
+            ))}
+            {member.blacklistEntries.map((entry) => (
+              <Item key={entry.id} title={`BLACKLIST: ${entry.reason}`} meta={entry.active ? "نشط" : "مغلق"} />
             ))}
           </Panel>
         </section>

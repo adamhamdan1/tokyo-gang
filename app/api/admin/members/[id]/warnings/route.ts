@@ -79,12 +79,25 @@ export async function POST(req: Request, context: RouteContext) {
       issuedBy: admin.session.user.id,
     },
   });
+  const recentStrongWarnings = await prisma.memberWarning.count({
+    where: {
+      memberId: member.id,
+      severity: "HIGH",
+      createdAt: {
+        gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+      },
+    },
+  });
+  const escalated = severity === "HIGH" && recentStrongWarnings >= 2;
 
   await prisma.tokyoMember.update({
     where: { id: member.id },
     data: {
-      status: severity === "DISMISSAL" ? "DISMISSED" : "WARNED",
+      status: severity === "DISMISSAL" ? "DISMISSED" : escalated ? "HIGH_RISK" : "WARNED",
       inTokyoRole: severity === "DISMISSAL" ? false : member.inTokyoRole,
+      behaviorScore: {
+        decrement: severity === "DISMISSAL" ? 100 : severity === "HIGH" ? 20 : 10,
+      },
     },
   });
 
@@ -117,8 +130,8 @@ export async function POST(req: Request, context: RouteContext) {
       : `وصلك تحذير من إدارة TOKYO GANG.\nالقوة: ${severity}\nالسبب: ${reason}${details ? `\nالتفاصيل: ${details}` : ""}`
   ).catch((error) => console.error("Warning DM failed", error));
   await createAdminLog({
-    action: "MEMBER_WARNING",
-    title: `تحذير عضو: ${severity}`,
+    action: escalated ? "MEMBER_ESCALATION" : "MEMBER_WARNING",
+    title: escalated ? `تصعيد تلقائي: ${member.displayName}` : `تحذير عضو: ${severity}`,
     details: `العضو: ${member.displayName} (${member.discordId})\nالسبب: ${reason}${details ? `\nالتفاصيل: ${details}` : ""}`,
     adminDiscordId: admin.session.user.id,
     targetType: "WARNING",

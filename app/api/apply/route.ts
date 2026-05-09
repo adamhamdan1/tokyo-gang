@@ -65,6 +65,20 @@ export async function POST(req: Request) {
     );
   }
 
+  const blacklistEntry = await prisma.blacklistEntry.findFirst({
+    where: {
+      discordId: session.user.id,
+      active: true,
+    },
+  });
+
+  if (blacklistEntry) {
+    return NextResponse.json(
+      { error: `أنت ممنوع من التقديم حالياً. السبب: ${blacklistEntry.reason}` },
+      { status: 403 }
+    );
+  }
+
   const username = session.user.name ?? "Discord User";
   const user = await prisma.user.upsert({
     where: {

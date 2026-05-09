@@ -123,6 +123,10 @@ function getOptionalRoleId(key: string) {
   return process.env[key];
 }
 
+function getRankRoleId(rank: string) {
+  return process.env[`DISCORD_RANK_ROLE_${rank}_ID`];
+}
+
 function getSummonChannelId() {
   const channelId = process.env.DISCORD_SUMMON_CHANNEL_ID;
 
@@ -237,6 +241,33 @@ export async function applyWarningRole(discordId: string, severity: "NORMAL" | "
 
 export async function removeTokyoRole(discordId: string) {
   await removeRole(discordId, getTokyoRoleId(), "TOKYO");
+}
+
+export async function applyInternalRankRole(discordId: string, rank: string, previousRank?: string | null) {
+  const normalizedRank = rank.toUpperCase();
+  const roleId = getRankRoleId(normalizedRank);
+
+  if (!roleId) {
+    throw new Error(`DISCORD_RANK_ROLE_${normalizedRank}_ID غير موجود في Vercel Environment Variables`);
+  }
+
+  const previousRoleId = previousRank ? getRankRoleId(previousRank.toUpperCase()) : null;
+
+  if (previousRoleId && previousRoleId !== roleId) {
+    await removeRole(discordId, previousRoleId, `رتبة ${previousRank}`);
+  }
+
+  await giveRole(discordId, roleId, `رتبة ${normalizedRank}`);
+
+  return roleId;
+}
+
+export async function giveNamedRole(discordId: string, roleId: string, label: string) {
+  await giveRole(discordId, roleId, label);
+}
+
+export async function removeNamedRole(discordId: string, roleId: string, label: string) {
+  await removeRole(discordId, roleId, label);
 }
 
 async function giveRole(discordId: string, roleId: string, roleLabel: string) {
