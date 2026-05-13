@@ -151,6 +151,10 @@ function getComplaintLogChannelId() {
   return process.env.DISCORD_COMPLAINT_LOG_CHANNEL_ID;
 }
 
+function getWarningLogChannelId() {
+  return process.env.DISCORD_WARNING_LOG_CHANNEL_ID ?? "1490246556857798817";
+}
+
 async function fetchDiscord(path: string, init?: RequestInit) {
   return fetch(`${DISCORD_API_BASE}${path}`, {
     ...init,
@@ -552,6 +556,116 @@ export async function sendComplaintLogMessage(content: string) {
 
   if (!response.ok) {
     throw new Error(`فشل إرسال لوق الشكوى في الديسكورد (${response.status})`);
+  }
+}
+
+function safeEmbedValue(value: string, fallback = "غير محدد") {
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return fallback;
+  }
+
+  return trimmed.length > 1024 ? `${trimmed.slice(0, 1021)}...` : trimmed;
+}
+
+export async function sendWarningChannelEmbed(input: {
+  memberDiscordId: string;
+  memberName: string;
+  severity: "NORMAL" | "HIGH" | "DISMISSAL";
+  reason: string;
+  details?: string;
+  adminName: string;
+  warningCount?: number;
+  avatarUrl?: string | null;
+}) {
+  const severityConfig = {
+    NORMAL: {
+      title: "تحذير إداري",
+      label: "تحذير عادي",
+      color: 16_673_280,
+      status: "تم تسجيل تحذير عادي على العضو.",
+    },
+    HIGH: {
+      title: "تحذير قوي",
+      label: "تحذير قوي",
+      color: 16_443_672,
+      status: "تم تسجيل تحذير قوي على العضو.",
+    },
+    DISMISSAL: {
+      title: "فصل إداري",
+      label: "فصل",
+      color: 15_116_280,
+      status: "تم فصل العضو إدارياً.",
+    },
+  } satisfies Record<
+    "NORMAL" | "HIGH" | "DISMISSAL",
+    { title: string; label: string; color: number; status: string }
+  >;
+  const config = severityConfig[input.severity];
+  const fields = [
+    {
+      name: "العضو",
+      value: `${input.memberName}\n<@${input.memberDiscordId}>`,
+      inline: true,
+    },
+    {
+      name: "نوع الإجراء",
+      value: config.label,
+      inline: true,
+    },
+    {
+      name: "المسؤول",
+      value: input.adminName,
+      inline: true,
+    },
+    {
+      name: "السبب",
+      value: safeEmbedValue(input.reason),
+    },
+    ...(input.details
+      ? [
+          {
+            name: "التفاصيل",
+            value: safeEmbedValue(input.details),
+          },
+        ]
+      : []),
+    ...(typeof input.warningCount === "number"
+      ? [
+          {
+            name: "عدد تحذيرات العضو",
+            value: String(input.warningCount),
+            inline: true,
+          },
+        ]
+      : []),
+  ];
+
+  const response = await fetchDiscord(`/channels/${getWarningLogChannelId()}/messages`, {
+    method: "POST",
+    body: JSON.stringify({
+      embeds: [
+        {
+          title: `TOKYO GANG | ${config.title}`,
+          description: config.status,
+          color: config.color,
+          fields,
+          thumbnail: input.avatarUrl ? { url: input.avatarUrl } : undefined,
+          timestamp: new Date().toISOString(),
+          footer: {
+            text: "TOKYO GANG Warning System",
+          },
+        },
+      ],
+      allowed_mentions: {
+        users: [input.memberDiscordId],
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`فشل إرسال التحذير في روم التحذيرات (${response.status})`);
   }
 }
 

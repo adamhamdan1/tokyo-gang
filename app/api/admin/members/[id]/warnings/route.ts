@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { createAdminLog } from "@/lib/admin-log";
-import { applyWarningRole, sendAdminEmbed, sendAdminLog, sendDiscordDm } from "@/lib/discord";
+import { applyWarningRole, sendAdminEmbed, sendAdminLog, sendDiscordDm, sendWarningChannelEmbed } from "@/lib/discord";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
@@ -89,6 +89,11 @@ export async function POST(req: Request, context: RouteContext) {
     },
   });
   const escalated = severity === "HIGH" && recentStrongWarnings >= 2;
+  const totalWarningCount = await prisma.memberWarning.count({
+    where: {
+      memberId: member.id,
+    },
+  });
 
   await prisma.tokyoMember.update({
     where: { id: member.id },
@@ -123,6 +128,16 @@ export async function POST(req: Request, context: RouteContext) {
     console.error("Warning admin embed failed", error);
     return sendAdminLog(message).catch((logError) => console.error("Warning admin log failed", logError));
   });
+  await sendWarningChannelEmbed({
+    memberDiscordId: member.discordId,
+    memberName: member.displayName,
+    severity,
+    reason,
+    details,
+    adminName: admin.session.user.name ?? admin.session.user.id,
+    warningCount: totalWarningCount,
+    avatarUrl: member.image,
+  }).catch((error) => console.error("Warning public channel embed failed", error));
   await sendDiscordDm(
     member.discordId,
     severity === "DISMISSAL"
