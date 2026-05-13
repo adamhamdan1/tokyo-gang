@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { AdminMemberActions } from "../../AdminMemberActions";
 import { AdminWarningForm } from "../../AdminWarningForm";
+import { AdminWarningDeleteButton } from "../../AdminWarningDeleteButton";
 
 type Props = {
   params: Promise<{
@@ -161,16 +162,22 @@ export default async function AdminMemberPage({ params }: Props) {
           </div>
 
           <section className="rounded-2xl border border-white/10 bg-zinc-950 p-5 md:rounded-3xl md:p-6">
-            <p className="text-xs font-black tracking-[5px] text-yellow-300">WARNINGS</p>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-xs font-black tracking-[5px] text-yellow-300">WARNINGS</p>
+              {member.warnings.length > 0 && <AdminWarningDeleteButton memberId={member.id} all />}
+            </div>
             <div className="mt-5 grid gap-3">
               {member.warnings.length === 0 && <p className="text-gray-500">لا يوجد تحذيرات.</p>}
               {member.warnings.map((warning) => (
                 <article key={warning.id} className="rounded-2xl border border-white/10 bg-black/40 p-4">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <p className="font-black text-white">{warning.reason}</p>
-                    <span className="rounded-full border border-yellow-400/30 px-3 py-1 text-xs font-black text-yellow-300">
-                      {warningLabels[warning.severity] ?? warning.severity}
-                    </span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="rounded-full border border-yellow-400/30 px-3 py-1 text-xs font-black text-yellow-300">
+                        {warningLabels[warning.severity] ?? warning.severity}
+                      </span>
+                      <AdminWarningDeleteButton memberId={member.id} warningId={warning.id} />
+                    </div>
                   </div>
                   {warning.details && <p className="mt-2 text-sm text-gray-400">{warning.details}</p>}
                   <p className="mt-2 text-xs text-gray-600">{warning.createdAt.toLocaleString("ar")}</p>

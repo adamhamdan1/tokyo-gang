@@ -253,6 +253,50 @@ export async function applyWarningRole(discordId: string, severity: "NORMAL" | "
   await giveRole(discordId, getDismissalRoleId(), "الفصل");
 }
 
+export async function removeWarningRole(discordId: string, severity: "NORMAL" | "HIGH" | "DISMISSAL") {
+  if (severity === "NORMAL") {
+    const warningRoleId = getOptionalRoleId("DISCORD_WARNING_ROLE_ID");
+
+    if (warningRoleId) {
+      await removeRole(discordId, warningRoleId, "التحذير العادي");
+    }
+
+    return;
+  }
+
+  if (severity === "HIGH") {
+    const strongWarningRoleId = getOptionalRoleId("DISCORD_STRONG_WARNING_ROLE_ID");
+
+    if (strongWarningRoleId) {
+      await removeRole(discordId, strongWarningRoleId, "التحذير القوي");
+    }
+
+    return;
+  }
+
+  const dismissalRoleId = getOptionalRoleId("DISCORD_DISMISSAL_ROLE_ID");
+
+  if (dismissalRoleId) {
+    await removeRole(discordId, dismissalRoleId, "الفصل");
+  }
+}
+
+export async function removeAllWarningRoles(discordId: string) {
+  const roleIds = [
+    ["DISCORD_WARNING_ROLE_ID", "التحذير العادي"],
+    ["DISCORD_STRONG_WARNING_ROLE_ID", "التحذير القوي"],
+    ["DISCORD_DISMISSAL_ROLE_ID", "الفصل"],
+  ] as const;
+
+  for (const [key, label] of roleIds) {
+    const roleId = getOptionalRoleId(key);
+
+    if (roleId) {
+      await removeRole(discordId, roleId, label);
+    }
+  }
+}
+
 export async function removeTokyoRole(discordId: string) {
   await removeRole(discordId, getTokyoRoleId(), "TOKYO");
 }

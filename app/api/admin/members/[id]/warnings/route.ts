@@ -1,6 +1,14 @@
 import { auth } from "@/auth";
 import { createAdminLog } from "@/lib/admin-log";
-import { applyWarningRole, sendAdminEmbed, sendAdminLog, sendDiscordDm, sendWarningChannelEmbed } from "@/lib/discord";
+import {
+  applyWarningRole,
+  removeAllWarningRoles,
+  removeWarningRole,
+  sendAdminEmbed,
+  sendAdminLog,
+  sendDiscordDm,
+  sendWarningChannelEmbed,
+} from "@/lib/discord";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
@@ -14,6 +22,11 @@ type WarningBody = {
   reason?: string;
   severity?: string;
   details?: string;
+};
+
+type DeleteWarningBody = {
+  warningId?: string;
+  all?: boolean;
 };
 
 function getAdminIds() {
@@ -32,6 +45,18 @@ async function requireAdmin() {
   }
 
   return { authorized: true as const, session };
+}
+
+function normalizeWarningSeverity(value: string): "NORMAL" | "HIGH" | "DISMISSAL" {
+  if (value === "HIGH" || value === "FINAL") {
+    return "HIGH";
+  }
+
+  if (value === "DISMISSAL") {
+    return "DISMISSAL";
+  }
+
+  return "NORMAL";
 }
 
 export async function POST(req: Request, context: RouteContext) {
@@ -155,4 +180,92 @@ export async function POST(req: Request, context: RouteContext) {
   }).catch((error) => console.error("Warning db log failed", error));
 
   return NextResponse.json({ success: true, warning });
+}
+
+export async function DELETE(req: Request, context: RouteContext) {
+  const admin = await requireAdmin();
+
+  if (!admin.authorized) {
+    return admin.response;
+  }
+
+  const { id } = await context.params;
+  const body = (await req.json()) as DeleteWarningBody;
+  const member = await prisma.tokyoMember.findUnique({
+    where: { id },
+  });
+
+  if (!member) {
+    return NextResponse.json({ error: "العضو غير موجود" }, { status: 404 });
+  }
+
+  if (body.all) {
+    await removeAllWarningRoles(member.discordId).catch((error) => console.error("Remove all warning roles failed", error));
+    const deleted = await prisma.memberWarning.deleteMany({
+      where: { memberId: member.id },
+    });
+
+    await prisma.tokyoMember.update({
+      where: { id: member.id },
+      data: {
+        status: member.inTokyoRole ? "ACTIVE" : member.status === "DISMISSED" ? "DISMISSED" : member.status,
+      },
+    });
+
+    await createAdminLog({
+      action: "MEMBER_WARNINGS_CLEAR",
+      title: `حذف كل تحذيرات: ${member.displayName}`,
+      details: `تم حذف ${deleted.count} تحذير`,
+      adminDiscordId: admin.session.user.id,
+      targetType: "WARNING",
+      targetMemberId: member.id,
+    }).catch((error) => console.error("Warning clear db log failed", error));
+
+    return NextResponse.json({ success: true, deleted: deleted.count });
+  }
+
+  if (!body.warningId) {
+    return NextResponse.json({ error: "حدد التحذير" }, { status: 400 });
+  }
+
+  const warning = await prisma.memberWarning.findFirst({
+    where: {
+      id: body.warningId,
+      memberId: member.id,
+    },
+  });
+
+  if (!warning) {
+    return NextResponse.json({ error: "التحذير غير موجود" }, { status: 404 });
+  }
+
+  await removeWarningRole(member.discordId, normalizeWarningSeverity(warning.severity)).catch((error) =>
+    console.error("Remove warning role failed", error)
+  );
+  await prisma.memberWarning.delete({
+    where: { id: warning.id },
+  });
+
+  const remainingWarnings = await prisma.memberWarning.count({
+    where: { memberId: member.id },
+  });
+
+  if (remainingWarnings === 0 && member.inTokyoRole) {
+    await prisma.tokyoMember.update({
+      where: { id: member.id },
+      data: { status: "ACTIVE" },
+    });
+  }
+
+  await createAdminLog({
+    action: "MEMBER_WARNING_DELETE",
+    title: `حذف تحذير: ${member.displayName}`,
+    details: `النوع: ${warning.severity}\nالسبب: ${warning.reason}`,
+    adminDiscordId: admin.session.user.id,
+    targetType: "WARNING",
+    targetId: warning.id,
+    targetMemberId: member.id,
+  }).catch((error) => console.error("Warning delete db log failed", error));
+
+  return NextResponse.json({ success: true, remainingWarnings });
 }

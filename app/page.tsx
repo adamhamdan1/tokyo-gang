@@ -393,7 +393,7 @@ export default function Home() {
         <motion.div
           initial={{ y: -80, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="fixed inset-x-0 top-0 z-[80] border-b border-red-500/40 bg-red-950/85 px-4 py-3 text-center text-white shadow-[0_0_35px_rgba(239,68,68,0.25)] backdrop-blur-xl"
+          className="fixed inset-x-0 top-[72px] z-40 border-b border-red-500/40 bg-red-950/85 px-4 py-3 text-center text-white shadow-[0_0_35px_rgba(239,68,68,0.25)] backdrop-blur-xl md:top-[73px]"
         >
           <p className="text-xs font-black tracking-[5px] text-red-200">{siteAlert.title}</p>
           <p className="mt-1 text-sm font-bold">{siteAlert.message}</p>
@@ -600,7 +600,7 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-black/50 backdrop-blur-md border-b border-white/10">
+      <nav className="fixed top-0 left-0 right-0 z-[90] bg-black/50 backdrop-blur-md border-b border-white/10">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center gap-5">
           <h1 className="font-black tracking-[5px]">TOKYO GANG</h1>
           <MobileMenu />
