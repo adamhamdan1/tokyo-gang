@@ -317,13 +317,7 @@ async function removeRole(discordId: string, roleId: string, roleLabel: string) 
 }
 
 export async function listAcceptedRoleMembers() {
-  const response = await fetchDiscord(`/guilds/${getGuildId()}/members?limit=1000`);
-
-  if (!response.ok) {
-    throw new Error(`فشل جلب أعضاء السيرفر من Discord (${response.status})`);
-  }
-
-  const members = (await response.json()) as DiscordMember[];
+  const members = await listGuildMembers();
   const acceptedRoleId = getAcceptedRoleId();
 
   return members
@@ -382,13 +376,7 @@ async function listCachedRoleMembers(roleId: string) {
 }
 
 async function listRoleMembers(roleId: string) {
-  const response = await fetchDiscord(`/guilds/${getGuildId()}/members?limit=1000`);
-
-  if (!response.ok) {
-    throw new Error(`فشل جلب أعضاء السيرفر من Discord (${response.status})`);
-  }
-
-  const members = (await response.json()) as DiscordMember[];
+  const members = await listGuildMembers();
 
   return members
     .filter((member) => member.roles?.includes(roleId))
@@ -399,6 +387,42 @@ async function listRoleMembers(roleId: string) {
       image: getAvatarUrl(member.user),
     }))
     .filter((member) => member.id) satisfies TokyoRoleMember[];
+}
+
+async function listGuildMembers() {
+  const members: DiscordMember[] = [];
+  let after: string | null = null;
+
+  while (true) {
+    const params = new URLSearchParams({ limit: "1000" });
+
+    if (after) {
+      params.set("after", after);
+    }
+
+    const response = await fetchDiscord(`/guilds/${getGuildId()}/members?${params.toString()}`);
+
+    if (!response.ok) {
+      throw new Error(`فشل جلب أعضاء السيرفر من Discord (${response.status})`);
+    }
+
+    const page = (await response.json()) as DiscordMember[];
+    members.push(...page);
+
+    if (page.length < 1000) {
+      break;
+    }
+
+    const lastMemberId = page.at(-1)?.user?.id;
+
+    if (!lastMemberId) {
+      break;
+    }
+
+    after = lastMemberId;
+  }
+
+  return members;
 }
 
 function normalizeDiscordName(value: string) {

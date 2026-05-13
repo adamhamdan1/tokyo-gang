@@ -324,7 +324,7 @@ export default async function AdminPage({
         <section className="mb-8 rounded-2xl border border-white/10 bg-zinc-950 p-5 md:mb-10 md:rounded-3xl md:p-6">
           <p className="text-xs font-black tracking-[5px] text-red-400">TOKYO MEMBER DIRECTORY</p>
           <div className="mt-5 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-            {tokyoMembers.slice(0, 12).map((member) => (
+            {tokyoMembers.map((member) => (
               <Link
                 key={member.id}
                 href={`/admin/members/${member.id}`}
