@@ -389,17 +389,6 @@ export default function Home() {
       <Analytics />
       <AmbientParticles />
 
-      {siteAlert && (
-        <motion.div
-          initial={{ y: -80, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className="fixed inset-x-0 top-[72px] z-40 border-b border-red-500/40 bg-red-950/85 px-4 py-3 text-center text-white shadow-[0_0_35px_rgba(239,68,68,0.25)] backdrop-blur-xl md:top-[73px]"
-        >
-          <p className="text-xs font-black tracking-[5px] text-red-200">{siteAlert.title}</p>
-          <p className="mt-1 text-sm font-bold">{siteAlert.message}</p>
-        </motion.div>
-      )}
-
       <div className="pointer-events-none fixed inset-0 z-[9997] opacity-[0.035] bg-[linear-gradient(to_bottom,white_1px,transparent_1px)] bg-[length:100%_4px]" />
       <div className="pointer-events-none fixed inset-0 z-[9996] bg-[radial-gradient(circle_at_center,transparent_45%,rgba(0,0,0,0.65)_100%)]" />
       <motion.div
@@ -600,7 +589,7 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      <nav className="fixed top-0 left-0 right-0 z-[90] bg-black/50 backdrop-blur-md border-b border-white/10">
+      <nav className="fixed top-0 left-0 right-0 z-[90] overflow-hidden border-b border-white/10 bg-black/70 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center gap-5">
           <h1 className="font-black tracking-[5px]">TOKYO GANG</h1>
           <MobileMenu />
@@ -655,6 +644,18 @@ export default function Home() {
             </button>
           )}
         </div>
+        {siteAlert && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="border-t border-red-500/30 bg-red-950/85 px-4 py-2 text-center text-white shadow-[0_0_35px_rgba(239,68,68,0.18)]"
+          >
+            <p className="text-[10px] font-black tracking-[4px] text-red-200 md:text-xs">{siteAlert.title}</p>
+            <p className="mx-auto mt-1 max-w-5xl overflow-hidden text-ellipsis whitespace-nowrap text-xs font-bold md:text-sm">
+              {siteAlert.message}
+            </p>
+          </motion.div>
+        )}
       </nav>
 
       <div className="group fixed bottom-4 left-4 z-50 flex items-center gap-3 rounded-full border border-white/15 bg-black/70 p-2 backdrop-blur-md shadow-[0_0_28px_rgba(255,255,255,0.08)] transition hover:rounded-2xl md:bottom-6 md:left-6 md:p-3">
@@ -692,7 +693,7 @@ export default function Home() {
         </motion.a>
       )}
 
-      <div className="fixed right-6 top-24 z-40 hidden w-72 border border-green-400/20 bg-black/70 p-4 text-left backdrop-blur-md lg:block">
+      <div className={`fixed right-6 z-40 hidden w-72 border border-green-400/20 bg-black/70 p-4 text-left backdrop-blur-md lg:block ${siteAlert ? "top-40" : "top-24"}`}>
         <div className="mb-3 flex items-center justify-between">
           <p className="text-xs font-black tracking-[3px] text-green-400">TOKYO NETWORK</p>
           <span className="h-2 w-2 rounded-full bg-green-400 shadow-[0_0_12px_lime]" />
