@@ -214,11 +214,31 @@ export default function Home() {
   const [lastDiscordSync, setLastDiscordSync] = useState<Date | null>(null);
   const [siteAlert, setSiteAlert] = useState<SiteAlert | null>(null);
   const [spotlight, setSpotlight] = useState<SpotlightMember | null>(null);
+  const [loadHeroVideo, setLoadHeroVideo] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 3000);
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    if (loading || !window.matchMedia("(min-width: 768px)").matches) {
+      return;
+    }
+
+    const connection = navigator as Navigator & {
+      connection?: {
+        saveData?: boolean;
+      };
+    };
+
+    if (connection.connection?.saveData) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => setLoadHeroVideo(true), 1200);
+    return () => window.clearTimeout(timer);
+  }, [loading]);
 
   useEffect(() => {
     let active = true;
@@ -288,8 +308,8 @@ export default function Home() {
     let active = true;
 
     const loadDiscordMembers = async () => {
-      const response = await fetch(`/api/discord-members?t=${Date.now()}`, {
-        cache: "no-store",
+      const response = await fetch("/api/discord-members", {
+        cache: "default",
       });
       const data = (await response.json().catch(() => null)) as {
         members?: DiscordMember[] | null;
@@ -314,7 +334,7 @@ export default function Home() {
     };
 
     loadDiscordMembers();
-    const interval = window.setInterval(loadDiscordMembers, 1000);
+    const interval = window.setInterval(loadDiscordMembers, 10000);
 
     return () => {
       active = false;
@@ -732,9 +752,11 @@ export default function Home() {
           transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
           className="absolute inset-0 hidden overflow-hidden md:block"
         >
-          <video autoPlay muted loop playsInline className="w-full h-full object-cover opacity-60 grayscale scale-110">
-            <source src="/bg.mp4" type="video/mp4" />
-          </video>
+          {loadHeroVideo && (
+            <video autoPlay muted loop playsInline preload="none" className="w-full h-full object-cover opacity-60 grayscale scale-110">
+              <source src="/bg.mp4" type="video/mp4" />
+            </video>
+          )}
         </motion.div>
 
         <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/25 to-black/70" />

@@ -4,8 +4,32 @@ import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
+type DiscordMembersPayload = {
+  members: Awaited<ReturnType<typeof listOnlineAcceptedRoleMembers>>["members"];
+  onlineCount: number | null;
+  tokyoOnlineCount: number;
+  roleMemberCount: number;
+};
+
+let cachedPayload: {
+  data: DiscordMembersPayload;
+  expiresAt: number;
+} | null = null;
+
+const DISCORD_MEMBERS_CACHE_MS = 10 * 1000;
+
 export async function GET() {
   try {
+    const now = Date.now();
+
+    if (cachedPayload && cachedPayload.expiresAt > now) {
+      return NextResponse.json(cachedPayload.data, {
+        headers: {
+          "Cache-Control": "public, max-age=0, s-maxage=10, stale-while-revalidate=20",
+        },
+      });
+    }
+
     await syncTokyoMembersSafely();
 
     const [{ members, roleMemberCount }, counts] = await Promise.all([
@@ -13,14 +37,21 @@ export async function GET() {
       getGuildOnlineCount(),
     ]);
 
-    return NextResponse.json({
+    const data = {
       members,
       onlineCount: counts.online,
       tokyoOnlineCount: members.length,
       roleMemberCount,
-    }, {
+    };
+
+    cachedPayload = {
+      data,
+      expiresAt: now + DISCORD_MEMBERS_CACHE_MS,
+    };
+
+    return NextResponse.json(data, {
       headers: {
-        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        "Cache-Control": "public, max-age=0, s-maxage=10, stale-while-revalidate=20",
       },
     });
   } catch (error) {
@@ -36,7 +67,7 @@ export async function GET() {
       {
         status: 503,
         headers: {
-          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+          "Cache-Control": "public, max-age=0, s-maxage=5, stale-while-revalidate=10",
         },
       }
     );
