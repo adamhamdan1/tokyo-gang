@@ -9,6 +9,7 @@ import { AdminComplaintActions } from "./AdminComplaintActions";
 import { AdminComplaintVote } from "./AdminComplaintVote";
 import { AdminDiscordTestButton } from "./AdminDiscordTestButton";
 import { AdminLogDeleteButton } from "./AdminLogDeleteButton";
+import { AdminLeaveDecisionButtons } from "./AdminLeaveDecisionButtons";
 import { AdminSignOutButton } from "./AdminSignOutButton";
 import { AdminSpotlightForm } from "./AdminSpotlightForm";
 import { AdminSyncButton } from "./AdminSyncButton";
@@ -114,6 +115,7 @@ export default async function AdminPage({
     warningCount,
     leaveCount,
     blacklistCount,
+    pendingLeaves,
   ] = await Promise.all([
     prisma.application.findMany({
       where: {
@@ -188,6 +190,12 @@ export default async function AdminPage({
     prisma.memberWarning.count(),
     prisma.leaveRequest.count({ where: { status: "APPROVED" } }),
     prisma.blacklistEntry.count({ where: { active: true } }),
+    prisma.leaveRequest.findMany({
+      where: { status: "PENDING" },
+      include: { member: true },
+      orderBy: { createdAt: "desc" },
+      take: 8,
+    }),
   ]);
 
   const stats = [
@@ -271,6 +279,32 @@ export default async function AdminPage({
         <AdminSpotlightForm members={tokyoMembers} />
 
         <AdminSummonForm members={tokyoMembers} />
+
+        {pendingLeaves.length > 0 && (
+          <section className="mb-8 rounded-2xl border border-emerald-400/20 bg-zinc-950 p-5 md:mb-10 md:rounded-3xl md:p-6">
+            <p className="text-xs font-black tracking-[5px] text-emerald-300">PENDING LEAVES</p>
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
+              {pendingLeaves.map((leave) => (
+                <article key={leave.id} className="rounded-2xl border border-white/10 bg-black/40 p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <Link href={`/admin/members/${leave.member.id}`} className="font-black text-white hover:text-emerald-300">
+                      {leave.member.displayName}
+                    </Link>
+                    <span className="rounded-full border border-emerald-400/25 px-3 py-1 text-xs font-black text-emerald-300">
+                      قيد المراجعة
+                    </span>
+                  </div>
+                  <p className="mt-3 leading-7 text-gray-300">{leave.reason}</p>
+                  <p className="mt-2 text-xs text-gray-500">
+                    {leave.startsAt ? `تبدأ: ${leave.startsAt.toLocaleString("ar")}` : "تبدأ فوراً"}
+                    {leave.endsAt ? ` - تنتهي: ${leave.endsAt.toLocaleString("ar")}` : ""}
+                  </p>
+                  <AdminLeaveDecisionButtons leaveId={leave.id} />
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
 
         <section className="mb-8 grid gap-4 lg:mb-10 lg:grid-cols-[0.9fr_1.1fr]">
           <div className="rounded-2xl border border-green-400/20 bg-green-400/10 p-5 md:rounded-3xl md:p-6">

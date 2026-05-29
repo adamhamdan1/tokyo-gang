@@ -1,15 +1,8 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { syncTokyoMembersSafely } from "@/lib/tokyo-member-sync";
+import { TOKYO_RULES } from "@/lib/tokyo-content";
 import Link from "next/link";
-
-const rules = [
-  ["الاحترام الداخلي", "أي خلاف بين الأعضاء ينرفع للإدارة عبر نظام الشكاوي بدل التصعيد داخل الرومات."],
-  ["الالتزام بالاستدعاء", "أي عضو يصله استدعاء لازم يراجع روم الاستدعاء ويتواصل مع الإدارة بأسرع وقت."],
-  ["الدليل قبل الاتهام", "الشكاوي القوية تحتاج تصوير أو رابط واضح حتى الإدارة تحكم بسرعة وعدل."],
-  ["سرية الإدارة", "أي قرار إداري أو تحقيق داخلي يبقى داخل TOKYO ولا ينتشر خارج النظام."],
-  ["التحذيرات", "التحذيرات ثلاث درجات: عادي، قوي، وفصل. كل درجة مرتبطة برتبة واضحة في الديسكورد."],
-];
 
 export default async function InternalRulesPage() {
   const session = await auth();
@@ -50,11 +43,11 @@ export default async function InternalRulesPage() {
           </p>
         </header>
         <section className="grid gap-4">
-          {rules.map(([title, body], index) => (
-            <article key={title} className="rounded-3xl border border-white/10 bg-zinc-950 p-6">
+          {TOKYO_RULES.map((rule, index) => (
+            <article key={rule} className="rounded-3xl border border-white/10 bg-zinc-950 p-6">
               <p className="text-xs font-black tracking-[4px] text-cyan-300">RULE {String(index + 1).padStart(2, "0")}</p>
-              <h2 className="mt-3 text-3xl font-black">{title}</h2>
-              <p className="mt-3 leading-8 text-gray-400">{body}</p>
+              <h2 className="mt-3 text-3xl font-black">قانون داخلي</h2>
+              <p className="mt-3 leading-8 text-gray-400">{rule}</p>
             </article>
           ))}
         </section>

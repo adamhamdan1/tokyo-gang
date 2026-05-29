@@ -26,6 +26,11 @@ type DiscordWidgetMember = {
   avatar_url?: string;
 };
 
+type DiscordRole = {
+  id: string;
+  name: string;
+};
+
 let roleMembersCache: {
   roleId: string;
   members: TokyoRoleMember[];
@@ -334,6 +339,58 @@ export async function giveNamedRole(discordId: string, roleId: string, label: st
 
 export async function removeNamedRole(discordId: string, roleId: string, label: string) {
   await removeRole(discordId, roleId, label);
+}
+
+export async function giveCatalogRole(discordId: string, roleKey: string, roleName: string) {
+  const roleId = await resolveCatalogRoleId(roleKey, roleName);
+  await giveRole(discordId, roleId, roleName);
+
+  return roleId;
+}
+
+export async function removeCatalogRole(discordId: string, roleKey: string, roleName: string) {
+  const roleId = await resolveCatalogRoleId(roleKey, roleName);
+  await removeRole(discordId, roleId, roleName);
+
+  return roleId;
+}
+
+async function resolveCatalogRoleId(roleKey: string, roleName: string) {
+  const envRoleId = getOptionalRoleId(`DISCORD_ROLE_${roleKey}_ID`);
+
+  if (envRoleId) {
+    return envRoleId;
+  }
+
+  const roles = await listGuildRoles();
+  const exactRole = roles.find((role) => role.name === roleName);
+
+  if (exactRole) {
+    return exactRole.id;
+  }
+
+  const normalizedName = normalizeRoleLookup(roleName);
+  const looseRole = roles.find((role) => normalizeRoleLookup(role.name) === normalizedName);
+
+  if (looseRole) {
+    return looseRole.id;
+  }
+
+  throw new Error(`رتبة ${roleName} غير موجودة في Discord. أضفها بنفس الاسم أو ضع DISCORD_ROLE_${roleKey}_ID في Vercel`);
+}
+
+async function listGuildRoles() {
+  const response = await fetchDiscord(`/guilds/${getGuildId()}/roles`);
+
+  if (!response.ok) {
+    throw new Error(`فشل جلب رتب السيرفر من Discord (${response.status})`);
+  }
+
+  return (await response.json()) as DiscordRole[];
+}
+
+function normalizeRoleLookup(value: string) {
+  return value.trim().replace(/\s+/g, " ").toLowerCase();
 }
 
 async function giveRole(discordId: string, roleId: string, roleLabel: string) {

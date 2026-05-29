@@ -9,6 +9,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { ApplicationForm } from "./ApplicationForm";
 import { AnnouncementsFeed } from "./AnnouncementsFeed";
 import { MobileMenu } from "./MobileMenu";
+import { TOKYO_RULES } from "@/lib/tokyo-content";
 
 const members = [
   ["لومي المخفي", "الشبح"],
@@ -469,7 +470,7 @@ export default function Home() {
             </div>
             <div className="absolute inset-x-6 bottom-7 flex items-center justify-between text-[10px] font-black tracking-[4px] text-white/55 md:text-xs">
               <span>SERVER: TOKYO GANG</span>
-              <span>INFINITE CITY CFW</span>
+              <span>JUSTICE CITY</span>
             </div>
 
             <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 py-20 text-center">
@@ -607,6 +608,7 @@ export default function Home() {
               <>
                 <a href="/status" className="text-green-400 hover:text-green-300">طلبي</a>
                 <a href="/complaints" className="text-cyan-300 hover:text-cyan-200">الشكاوي</a>
+                <a href="/leave" className="text-emerald-300 hover:text-emerald-200">الإجازات</a>
                 <a href="/rules-internal" className="text-yellow-300 hover:text-yellow-200">القوانين الداخلية</a>
                 <a href="/admin" className="text-red-400 hover:text-red-300">الإدارة</a>
               </>
@@ -973,8 +975,8 @@ export default function Home() {
               className="absolute h-44 w-44 rounded-full bg-white/10 blur-3xl md:h-56 md:w-56"
             />
             <img
-              src="/server-logo.png"
-              alt="Infinite City CFW"
+              src="/justice-city.gif"
+              alt="Justice City"
               className="relative z-10 w-56 object-contain grayscale drop-shadow-[0_0_34px_rgba(255,255,255,0.35)] transition duration-500 group-hover:scale-105 group-hover:grayscale-0 md:w-72"
             />
           </motion.div>
@@ -982,10 +984,10 @@ export default function Home() {
           <div className="text-center md:text-right">
             <p className="text-xs font-black tracking-[6px] text-red-300 md:text-sm">مكان تواجدنا حالياً</p>
             <h2 className="mt-4 text-4xl font-black leading-tight text-white drop-shadow-[0_0_28px_rgba(255,255,255,0.24)] sm:text-5xl md:text-6xl">
-              INFINITE CITY CFW
+              JUSTICE CITY
             </h2>
             <p className="mx-auto mt-6 max-w-2xl text-base leading-9 text-gray-300 md:mx-0 md:text-lg">
-              حالياً تتواجد عصابة TOKYO GANG داخل سيرفر INFINITE CITY CFW، حيث نفرض حضورنا وهيبتنا داخل عالم فايف إم.
+              حالياً تتواجد عصابة TOKYO GANG داخل سيرفر Justice City، حيث نفرض حضورنا وهيبتنا داخل عالم فايف إم.
             </p>
 
             <div className="mt-7 grid gap-3 sm:grid-cols-3">
@@ -1321,10 +1323,14 @@ export default function Home() {
 
       <RevealSection id="rules" className="py-24 px-6 bg-black">
         <h2 className="text-5xl font-black text-center mb-14">قوانين العصابة</h2>
-        <div className="max-w-5xl mx-auto grid md:grid-cols-3 gap-6">
-          {["الاحترام بين الأعضاء خط أحمر", "ممنوع الخيانة أو تسريب معلومات", "الالتزام بأوامر القيادة", "ممنوع التخريب بدون سبب", "الحضور وقت الاجتماعات مهم", "الهيبة قبل كل شيء"].map((rule, i) => (
-            <div key={i} className="border border-white/20 bg-zinc-950 rounded-3xl p-6 text-center hover:border-white transition">
-              {rule}
+        <p className="mx-auto -mt-8 mb-10 max-w-2xl text-center leading-8 text-gray-400">
+          القوانين إلزامية لكل عضو، وسيتم سؤال المتقدم عنها أثناء المقابلة.
+        </p>
+        <div className="max-w-6xl mx-auto grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {TOKYO_RULES.map((rule, i) => (
+            <div key={rule} className="border border-white/20 bg-zinc-950 rounded-3xl p-5 hover:border-white transition">
+              <p className="mb-3 text-xs font-black tracking-[3px] text-red-400">RULE {String(i + 1).padStart(2, "0")}</p>
+              <p className="leading-8 text-gray-200">{rule}</p>
             </div>
           ))}
         </div>

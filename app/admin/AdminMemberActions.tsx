@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { TOKYO_ROLE_CATEGORIES } from "@/lib/tokyo-content";
 
 type Props = {
   memberId: string;
@@ -68,6 +69,15 @@ export function AdminMemberActions({ memberId, currentRank, currentScore }: Prop
     });
   };
 
+  const updateDiscordRole = (formData: FormData) => {
+    sendAction({
+      action: "DISCORD_ROLE",
+      roleKey: formData.get("roleKey"),
+      mode: formData.get("mode"),
+      reason: formData.get("reason"),
+    });
+  };
+
   const blacklist = () => {
     const reason = prompt("سبب البلاك ليست")?.trim();
     if (!reason) return;
@@ -108,6 +118,30 @@ export function AdminMemberActions({ memberId, currentRank, currentScore }: Prop
           <textarea name="note" required placeholder="اكتب ملاحظة لا تظهر للعضو" className="h-24 rounded-xl border border-white/15 bg-black px-4 py-3 outline-none" />
           <button disabled={loading === "NOTE"} className="rounded-xl bg-yellow-300 px-5 py-3 font-black text-black disabled:opacity-50">
             إضافة ملاحظة
+          </button>
+        </form>
+
+        <form action={updateDiscordRole} className="grid gap-3 rounded-2xl border border-white/10 bg-black/35 p-4">
+          <p className="font-black text-white">رتب ديسكورد</p>
+          <select name="roleKey" required className="rounded-xl border border-white/15 bg-black px-4 py-3 outline-none">
+            <option value="">اختر رتبة</option>
+            {TOKYO_ROLE_CATEGORIES.map((category) => (
+              <optgroup key={category.title} label={category.title}>
+                {category.roles.map((role) => (
+                  <option key={role.key} value={role.key}>
+                    {role.discordName} - {role.label}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+          <select name="mode" defaultValue="GIVE" className="rounded-xl border border-white/15 bg-black px-4 py-3 outline-none">
+            <option value="GIVE">إعطاء الرتبة</option>
+            <option value="REMOVE">سحب الرتبة</option>
+          </select>
+          <input name="reason" placeholder="سبب الإجراء" className="rounded-xl border border-white/15 bg-black px-4 py-3 outline-none" />
+          <button disabled={loading === "DISCORD_ROLE"} className="rounded-xl bg-cyan-300 px-5 py-3 font-black text-black disabled:opacity-50">
+            تنفيذ رتبة ديسكورد
           </button>
         </form>
 

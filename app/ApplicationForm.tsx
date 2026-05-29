@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { TOKYO_RULES } from "@/lib/tokyo-content";
 
 export function ApplicationForm() {
   const [experience, setExperience] = useState("");
@@ -108,14 +109,13 @@ export function ApplicationForm() {
         <section className="rounded-3xl border border-green-400/20 bg-green-400/5 p-6 shadow-[0_0_35px_rgba(74,222,128,0.08)]">
           <p className="text-xs font-black tracking-[5px] text-green-400">TOKYO RULES CLEARANCE</p>
           <h3 className="mt-4 text-3xl font-black text-white">اقرأ القوانين قبل التقديم</h3>
-          <div className="mt-5 grid gap-3 text-sm leading-7 text-gray-300">
-            {[
-              "الاحترام بين الأعضاء والإدارة خط أحمر.",
-              "ممنوع الخيانة أو تسريب معلومات العصابة.",
-              "الالتزام بأوامر القيادة وقت الاجتماعات والحروب.",
-              "أي مخالفة ممكن تسبب رفض الطلب أو سحب الرتبة.",
-            ].map((rule) => (
+          <p className="mt-3 leading-8 text-gray-400">
+            لازم تقرأها كاملة، لأنه ممكن يتم سؤالك عنها أثناء المقابلة للتأكد من معرفتك بالقوانين.
+          </p>
+          <div className="mt-5 grid max-h-96 gap-3 overflow-y-auto pe-2 text-sm leading-7 text-gray-300">
+            {TOKYO_RULES.map((rule, index) => (
               <div key={rule} className="rounded-2xl border border-white/10 bg-black/35 p-4">
+                <span className="me-2 text-xs font-black text-green-300">{String(index + 1).padStart(2, "0")}</span>
                 {rule}
               </div>
             ))}

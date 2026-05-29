@@ -1,7 +1,8 @@
 import { auth } from "@/auth";
 import { createAdminLog } from "@/lib/admin-log";
-import { applyInternalRankRole, giveLeaveRole, removeTokyoRole, sendAdminEmbed, sendDiscordDm } from "@/lib/discord";
+import { applyInternalRankRole, giveCatalogRole, giveLeaveRole, removeCatalogRole, removeTokyoRole, sendAdminEmbed, sendDiscordDm } from "@/lib/discord";
 import { prisma } from "@/lib/prisma";
+import { getTokyoRoleOption } from "@/lib/tokyo-content";
 import { NextResponse } from "next/server";
 
 type RouteContext = {
@@ -19,6 +20,8 @@ type ActionBody = {
   startsAt?: string;
   endsAt?: string;
   durationDays?: number;
+  roleKey?: string;
+  mode?: string;
 };
 
 const allowedRanks = ["MEMBER", "SENIOR", "OFFICER", "DEPUTY", "LEADER"];
@@ -159,6 +162,62 @@ export async function POST(req: Request, context: RouteContext) {
       targetId: member.id,
       targetMemberId: member.id,
     });
+
+    return NextResponse.json({ success: true });
+  }
+
+  if (body.action === "DISCORD_ROLE") {
+    const role = body.roleKey ? getTokyoRoleOption(body.roleKey) : null;
+    const mode = body.mode === "REMOVE" ? "REMOVE" : "GIVE";
+
+    if (!role) {
+      return NextResponse.json({ error: "اختر رتبة صحيحة" }, { status: 400 });
+    }
+
+    let discordRoleId: string;
+
+    try {
+      discordRoleId =
+        mode === "REMOVE"
+          ? await removeCatalogRole(member.discordId, role.key, role.discordName)
+          : await giveCatalogRole(member.discordId, role.key, role.discordName);
+    } catch (error) {
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : "فشل تعديل رتبة ديسكورد" },
+        { status: 400 }
+      );
+    }
+
+    await prisma.roleAudit.create({
+      data: {
+        memberId: member.id,
+        action: mode === "REMOVE" ? "DISCORD_ROLE_REMOVE" : "DISCORD_ROLE_GIVE",
+        rank: role.discordName,
+        discordRoleId,
+        reason: body.reason?.trim(),
+        adminDiscordId: admin.session.user.id,
+      },
+    });
+
+    await createAdminLog({
+      action: mode === "REMOVE" ? "DISCORD_ROLE_REMOVE" : "DISCORD_ROLE_GIVE",
+      title: `${mode === "REMOVE" ? "سحب" : "إعطاء"} رتبة ${role.discordName} لـ ${member.displayName}`,
+      details: body.reason?.trim() || role.description,
+      adminDiscordId: admin.session.user.id,
+      targetType: "MEMBER",
+      targetId: member.id,
+      targetMemberId: member.id,
+    });
+
+    await sendAdminEmbed({
+      title: "تعديل رتبة ديسكورد",
+      fields: [
+        { name: "العضو", value: `${member.displayName} (<@${member.discordId}>)`, inline: true },
+        { name: "الإجراء", value: mode === "REMOVE" ? "سحب" : "إعطاء", inline: true },
+        { name: "الرتبة", value: role.discordName, inline: true },
+        ...(body.reason ? [{ name: "السبب", value: body.reason }] : []),
+      ],
+    }).catch((error) => console.error("Discord role embed failed", error));
 
     return NextResponse.json({ success: true });
   }
