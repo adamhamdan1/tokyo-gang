@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getAdminContext } from "@/lib/admin-permissions";
+import { getDatabaseAdminIds } from "@/lib/admin-permissions";
 import { calculateMemberRisk } from "@/lib/member-insights";
 import { syncTokyoMembersSafely } from "@/lib/tokyo-member-sync";
 import { syncWarningsSafely } from "@/lib/warning-sync";
@@ -15,6 +16,8 @@ import { AdminLeaveDecisionButtons } from "./AdminLeaveDecisionButtons";
 import { AdminWarningAutoRefresh } from "./AdminWarningAutoRefresh";
 import { AdminSignOutButton } from "./AdminSignOutButton";
 import { AdminSpotlightForm } from "./AdminSpotlightForm";
+import { AdminManagerForm } from "./AdminManagerForm";
+import { AdminWeeklyReportButton } from "./AdminWeeklyReportButton";
 import { AdminSyncButton } from "./AdminSyncButton";
 import { AdminSummonDeleteButton } from "./AdminSummonDeleteButton";
 import { AdminSummonForm } from "./AdminSummonForm";
@@ -68,7 +71,7 @@ function buildAdminHref(status: string, query: string, logs?: string) {
 export default async function AdminPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ status?: string; q?: string; logs?: string; members?: string }>;
+  searchParams?: Promise<{ status?: string; q?: string; logs?: string; members?: string; mode?: string }>;
 }) {
   const admin = await getAdminContext();
   const params = await searchParams;
@@ -77,11 +80,14 @@ export default async function AdminPage({
     : "ALL";
   const query = params?.q?.trim() ?? "";
   const showAllLogs = params?.logs === "all";
+  const mode = ["APPLICATIONS", "DISCIPLINE", "MEMBERS", "SYSTEM"].includes(params?.mode ?? "") ? params?.mode : "APPLICATIONS";
   const memberFilter = ["WARNED", "HIGH_RISK", "LEAVE", "SUMMONED", "RISK"].includes(params?.members ?? "")
     ? params?.members
     : "ALL";
   // eslint-disable-next-line react-hooks/purity
   const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  // eslint-disable-next-line react-hooks/purity
+  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
   if (!admin) {
     return (
@@ -122,6 +128,12 @@ export default async function AdminPage({
     leaveCount,
     blacklistCount,
     pendingLeaves,
+    extraAdmins,
+    weeklyApplications,
+    weeklyAccepted,
+    weeklyWarnings,
+    weeklySummons,
+    weeklyComplaints,
   ] = await Promise.all([
     prisma.application.findMany({
       where: {
@@ -219,6 +231,12 @@ export default async function AdminPage({
       orderBy: { createdAt: "desc" },
       take: 8,
     }),
+    getDatabaseAdminIds(),
+    prisma.application.count({ where: { createdAt: { gte: weekAgo } } }),
+    prisma.application.count({ where: { status: "ACCEPTED", decidedAt: { gte: weekAgo } } }),
+    prisma.memberWarning.count({ where: { createdAt: { gte: weekAgo } } }),
+    prisma.summon.count({ where: { createdAt: { gte: weekAgo } } }),
+    prisma.complaint.count({ where: { createdAt: { gte: weekAgo } } }),
   ]);
 
   const stats = [
@@ -233,7 +251,15 @@ export default async function AdminPage({
   ];
   const filteredTokyoMembers = tokyoMembers.filter((member) => {
     const risk = calculateMemberRisk(member);
+    const matchesQuery =
+      !query ||
+      member.displayName.toLowerCase().includes(query.toLowerCase()) ||
+      member.username.toLowerCase().includes(query.toLowerCase()) ||
+      member.discordId.includes(query) ||
+      member.status.toLowerCase().includes(query.toLowerCase()) ||
+      member.warnings.some((warning) => warning.severity.toLowerCase().includes(query.toLowerCase()));
 
+    if (!matchesQuery) return false;
     if (memberFilter === "WARNED") return member.warnings.length > 0;
     if (memberFilter === "HIGH_RISK") return member.warnings.some((warning) => warning.severity === "HIGH" || warning.severity === "DISMISSAL");
     if (memberFilter === "LEAVE") return member.status === "ON_LEAVE";
@@ -343,11 +369,31 @@ export default async function AdminPage({
 
         <AdminAnnouncementForm />
         <AdminAlertForm />
+        {admin.isOwner && <AdminManagerForm admins={extraAdmins} />}
         <AdminSpotlightForm members={tokyoMembers} />
 
         <AdminSummonForm members={tokyoMembers} />
 
-        {pendingLeaves.length > 0 && (
+        <section className="mb-8 flex flex-wrap gap-2 rounded-2xl border border-white/10 bg-zinc-950/85 p-3 md:mb-10 md:rounded-3xl">
+          {[
+            ["Applications Mode", "APPLICATIONS"],
+            ["Discipline Mode", "DISCIPLINE"],
+            ["Members Mode", "MEMBERS"],
+            ["System Mode", "SYSTEM"],
+          ].map(([label, value]) => (
+            <Link
+              key={value}
+              href={`/admin?mode=${value}${query ? `&q=${encodeURIComponent(query)}` : ""}`}
+              className={`rounded-2xl border px-4 py-3 text-xs font-black transition ${
+                mode === value ? "border-white bg-white text-black" : "border-white/15 text-gray-300 hover:text-white"
+              }`}
+            >
+              {label}
+            </Link>
+          ))}
+        </section>
+
+        {(mode === "DISCIPLINE" || mode === "MEMBERS" || mode === "SYSTEM") && pendingLeaves.length > 0 && (
           <section className="mb-8 rounded-2xl border border-emerald-400/20 bg-zinc-950 p-5 md:mb-10 md:rounded-3xl md:p-6">
             <p className="text-xs font-black tracking-[5px] text-emerald-300">PENDING LEAVES</p>
             <div className="mt-5 grid gap-4 md:grid-cols-2">
@@ -373,7 +419,7 @@ export default async function AdminPage({
           </section>
         )}
 
-        <section className="mb-8 grid gap-4 lg:mb-10 lg:grid-cols-[0.9fr_1.1fr]">
+        {(mode === "DISCIPLINE" || mode === "SYSTEM") && <section className="mb-8 grid gap-4 lg:mb-10 lg:grid-cols-[0.9fr_1.1fr]">
           <div className="rounded-2xl border border-green-400/20 bg-green-400/10 p-5 md:rounded-3xl md:p-6">
             <p className="text-xs font-black tracking-[5px] text-green-300">ADMIN NOTIFICATIONS</p>
             <div className="mt-5 grid gap-3 text-sm">
@@ -420,9 +466,35 @@ export default async function AdminPage({
               ))}
             </div>
           </div>
-        </section>
+        </section>}
 
-        <section className="mb-8 rounded-2xl border border-white/10 bg-zinc-950 p-5 md:mb-10 md:rounded-3xl md:p-6">
+        {mode === "SYSTEM" && (
+          <section className="mb-8 rounded-2xl border border-white/10 bg-zinc-950 p-5 md:mb-10 md:rounded-3xl md:p-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-black tracking-[5px] text-white">WEEKLY REPORT</p>
+                <p className="mt-1 text-xs text-gray-500">آخر 7 أيام من نشاط الإدارة والنظام.</p>
+              </div>
+              <AdminWeeklyReportButton />
+            </div>
+            <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-5">
+              {[
+                ["تقديمات", weeklyApplications],
+                ["قبول", weeklyAccepted],
+                ["تحذيرات", weeklyWarnings],
+                ["استدعاءات", weeklySummons],
+                ["شكاوي", weeklyComplaints],
+              ].map(([label, value]) => (
+                <div key={label} className="rounded-2xl border border-white/10 bg-black/40 p-4">
+                  <p className="text-xs text-gray-500">{label}</p>
+                  <p className="mt-2 text-3xl font-black text-white">{value}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {(mode === "MEMBERS" || mode === "DISCIPLINE" || mode === "SYSTEM") && <section className="mb-8 rounded-2xl border border-white/10 bg-zinc-950 p-5 md:mb-10 md:rounded-3xl md:p-6">
           <p className="text-xs font-black tracking-[5px] text-red-400">TOKYO MEMBER DIRECTORY</p>
           <div className="mt-4 flex flex-wrap gap-2">
             {[
@@ -469,13 +541,18 @@ export default async function AdminPage({
                     </p>
                   </div>
                 </div>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <span className="rounded-xl border border-white/10 px-3 py-2 text-xs text-gray-400">فتح الملف</span>
+                  <span className="rounded-xl border border-yellow-400/20 px-3 py-2 text-xs font-black text-yellow-300">تحذير</span>
+                  <span className="rounded-xl border border-cyan-400/20 px-3 py-2 text-xs font-black text-cyan-300">استدعاء</span>
+                </div>
               </Link>
               );
             })}
           </div>
-        </section>
+        </section>}
 
-        {complaints.length > 0 && (
+        {(mode === "DISCIPLINE" || mode === "SYSTEM") && complaints.length > 0 && (
           <section className="mb-8 rounded-2xl border border-red-500/20 bg-zinc-950 p-4 md:mb-10 md:rounded-3xl md:p-6">
             <p className="text-xs font-black tracking-[5px] text-red-400">MEMBER COMPLAINTS</p>
             <div className="mt-5 grid gap-4 lg:grid-cols-2">
@@ -526,7 +603,7 @@ export default async function AdminPage({
           </section>
         )}
 
-        {activeSummons.length > 0 && (
+        {(mode === "DISCIPLINE" || mode === "SYSTEM") && activeSummons.length > 0 && (
           <section className="mb-8 rounded-2xl border border-cyan-400/20 bg-zinc-950 p-5 md:mb-10 md:rounded-3xl md:p-6">
             <p className="text-xs font-black tracking-[5px] text-cyan-300">RECENT SUMMONS</p>
             <div className="mt-5 grid gap-4 md:grid-cols-2">
@@ -549,7 +626,7 @@ export default async function AdminPage({
           </section>
         )}
 
-        {announcements.length > 0 && (
+        {(mode === "SYSTEM" || mode === "APPLICATIONS") && announcements.length > 0 && (
           <section className="mb-8 grid gap-4 md:mb-10 md:grid-cols-2">
             {announcements.map((announcement) => (
               <article key={announcement.id} className="rounded-2xl border border-white/15 bg-zinc-950 p-5 md:rounded-3xl md:p-6">
@@ -562,7 +639,7 @@ export default async function AdminPage({
           </section>
         )}
 
-        <section className="sticky top-2 z-40 mb-8 rounded-2xl border border-white/10 bg-black/85 p-3 backdrop-blur-xl md:top-0 md:rounded-3xl md:p-4">
+        {mode === "APPLICATIONS" && <section className="sticky top-2 z-40 mb-8 rounded-2xl border border-white/10 bg-black/85 p-3 backdrop-blur-xl md:top-0 md:rounded-3xl md:p-4">
           <form className="mb-4 flex flex-col gap-3 md:flex-row" action="/admin">
             {activeStatus !== "ALL" && <input type="hidden" name="status" value={activeStatus} />}
             <input
@@ -605,9 +682,9 @@ export default async function AdminPage({
             );
           })}
           </div>
-        </section>
+        </section>}
 
-        <section className="grid gap-5 md:gap-6">
+        {mode === "APPLICATIONS" && <section className="grid gap-5 md:gap-6">
           {applications.map((app) => {
             const style = statusStyles[app.status] ?? statusStyles.PENDING;
             const submittedAt = new Intl.DateTimeFormat("ar", {
@@ -707,7 +784,7 @@ export default async function AdminPage({
               </article>
             );
           })}
-        </section>
+        </section>}
       </div>
     </main>
   );

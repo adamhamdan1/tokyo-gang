@@ -92,6 +92,11 @@ type SpotlightMember = {
   behaviorScore: number;
 };
 
+type HonorMember = {
+  label: string;
+  member: SpotlightMember;
+};
+
 const discordInviteUrl = "https://discord.gg/u7G6E6nvS7";
 
 const memberStatusStyles = {
@@ -212,6 +217,7 @@ export default function Home() {
   const [lastDiscordSync, setLastDiscordSync] = useState<Date | null>(null);
   const [siteAlert, setSiteAlert] = useState<SiteAlert | null>(null);
   const [spotlight, setSpotlight] = useState<SpotlightMember | null>(null);
+  const [honors, setHonors] = useState<HonorMember[]>([]);
   const [loadHeroVideo, setLoadHeroVideo] = useState(false);
 
   useEffect(() => {
@@ -243,8 +249,9 @@ export default function Home() {
 
     const loadSpotlight = async () => {
       const response = await fetch(`/api/spotlight?t=${Date.now()}`, { cache: "no-store" });
-      const data = (await response.json().catch(() => null)) as { member?: SpotlightMember | null } | null;
+      const data = (await response.json().catch(() => null)) as { member?: SpotlightMember | null; honors?: HonorMember[] } | null;
       if (active) setSpotlight(data?.member ?? null);
+      if (active) setHonors(data?.honors ?? []);
     };
 
     loadSpotlight();
@@ -901,6 +908,49 @@ export default function Home() {
           </motion.div>
         </div>
       </section>
+
+      {honors.length > 0 && (
+        <RevealSection id="honors" className="relative overflow-hidden border-y border-red-500/20 bg-zinc-950 px-6 py-20">
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[length:100%_6px] opacity-70" />
+          <div className="relative mx-auto max-w-7xl">
+            <p className="text-center text-xs font-black tracking-[7px] text-red-300">TOKYO HONORS</p>
+            <h2 className="mt-4 text-center text-5xl font-black text-white drop-shadow-[0_0_28px_rgba(255,255,255,0.26)]">
+              لوحة الهيبة
+            </h2>
+            <div className="mt-12 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+              {honors.map((honor, index) => (
+                <motion.article
+                  key={`${honor.label}-${honor.member.id}`}
+                  initial={{ opacity: 0, y: 35 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.08 }}
+                  whileHover={{ y: -8, scale: 1.03 }}
+                  className="relative overflow-hidden rounded-[32px] border border-white/15 bg-black/55 p-6 text-center shadow-[0_0_50px_rgba(239,68,68,0.10)]"
+                >
+                  <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-red-400 to-transparent" />
+                  <p className="text-[10px] font-black tracking-[5px] text-red-300">{honor.label}</p>
+                  {honor.member.image ? (
+                    <img
+                      src={honor.member.image}
+                      alt={honor.member.displayName}
+                      className="mx-auto mt-6 h-24 w-24 rounded-full border border-white/20 object-cover shadow-[0_0_28px_rgba(255,255,255,0.18)]"
+                    />
+                  ) : (
+                    <div className="mx-auto mt-6 flex h-24 w-24 items-center justify-center rounded-full bg-white text-3xl font-black text-black">
+                      {honor.member.displayName[0]}
+                    </div>
+                  )}
+                  <h3 className="mt-5 text-3xl font-black text-white">{honor.member.displayName}</h3>
+                  <p className="mt-1 text-xs text-gray-500">@{honor.member.username}</p>
+                  <p className="mt-4 rounded-full border border-green-400/20 px-3 py-2 text-xs font-black text-green-300">
+                    {honor.member.internalRank} - SCORE {honor.member.behaviorScore}
+                  </p>
+                </motion.article>
+              ))}
+            </div>
+          </div>
+        </RevealSection>
+      )}
 
       <RevealSection id="server" className="relative overflow-hidden border-t border-white/10 bg-black px-4 py-16 md:px-6 md:py-24">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_24%_40%,rgba(239,68,68,0.22),transparent_30%),radial-gradient(circle_at_78%_48%,rgba(255,255,255,0.10),transparent_24%)]" />

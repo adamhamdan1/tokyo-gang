@@ -9,7 +9,7 @@ import { AdminWarningAutoRefresh } from "../../AdminWarningAutoRefresh";
 import { AdminDiscordCheckButton } from "../../AdminDiscordCheckButton";
 import { WarningCountdown } from "../../WarningCountdown";
 import { getWarningExpiryDate, syncWarningsSafely } from "@/lib/warning-sync";
-import { buildMemberTimeline, calculateMemberRisk } from "@/lib/member-insights";
+import { buildMemberIntelligence, buildMemberTimeline, calculateMemberRisk } from "@/lib/member-insights";
 
 type Props = {
   params: Promise<{
@@ -115,6 +115,7 @@ export default async function AdminMemberPage({ params }: Props) {
 
   const statusClass = memberStatusStyles[member.status] ?? memberStatusStyles.ACTIVE;
   const risk = calculateMemberRisk(member);
+  const intelligence = buildMemberIntelligence(member);
   const timeline = buildMemberTimeline(member).slice(0, 18);
   const riskClass =
     risk.level === "CRITICAL"
@@ -178,6 +179,17 @@ export default async function AdminMemberPage({ params }: Props) {
 
         <div className="grid gap-5 md:gap-6 lg:grid-cols-[0.9fr_1.1fr]">
           <div className="grid gap-6">
+            <section className="rounded-2xl border border-red-400/20 bg-red-500/10 p-5 md:rounded-3xl md:p-6">
+              <p className="text-xs font-black tracking-[5px] text-red-300">MEMBER INTELLIGENCE</p>
+              <p className="mt-4 leading-8 text-white">{intelligence.summary}</p>
+              <div className="mt-4 grid gap-2">
+                {intelligence.suggestions.map((suggestion) => (
+                  <p key={suggestion} className="rounded-2xl border border-white/10 bg-black/35 p-3 text-sm text-gray-300">
+                    {suggestion}
+                  </p>
+                ))}
+              </div>
+            </section>
             <AdminWarningForm memberId={member.id} />
             <AdminMemberActions memberId={member.id} currentRank={member.internalRank} currentScore={member.behaviorScore} />
           </div>

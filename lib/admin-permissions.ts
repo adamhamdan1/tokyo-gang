@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { getTokyoGuildMember } from "@/lib/discord";
+import { prisma } from "@/lib/prisma";
 
 export type AdminCapability = "ALL" | "APPLICATIONS" | "WARNINGS" | "MEMBERS" | "LOGS";
 
@@ -7,6 +8,7 @@ export type AdminContext = {
   id: string;
   name: string;
   roles: string[];
+  isOwner: boolean;
   capabilities: Record<AdminCapability, boolean>;
 };
 
@@ -19,6 +21,24 @@ const capabilityRoleKeys: Record<Exclude<AdminCapability, "ALL">, string[]> = {
 
 function getAdminIds() {
   return process.env.ADMIN_DISCORD_IDS?.split(",").map((id) => id.trim()).filter(Boolean) || [];
+}
+
+export async function getDatabaseAdminIds() {
+  const setting = await prisma.siteSetting.findUnique({ where: { key: "extraAdminDiscordIds" } });
+
+  if (!setting?.value) {
+    return [];
+  }
+
+  return setting.value.split(",").map((id) => id.trim()).filter(Boolean);
+}
+
+export async function getAllAdminIds() {
+  return [...new Set([...getAdminIds(), ...(await getDatabaseAdminIds())])];
+}
+
+export function getOwnerAdminIds() {
+  return getAdminIds();
 }
 
 function getEnvRoleIds(keys: string[]) {
@@ -37,12 +57,30 @@ export async function getAdminContext(): Promise<AdminContext | null> {
   }
 
   const ownerAdminIds = getAdminIds();
+  const extraAdminIds = await getDatabaseAdminIds();
 
   if (ownerAdminIds.includes(session.user.id)) {
     return {
       id: session.user.id,
       name: session.user.name ?? session.user.id,
       roles: [],
+      isOwner: true,
+      capabilities: {
+        ALL: true,
+        APPLICATIONS: true,
+        WARNINGS: true,
+        MEMBERS: true,
+        LOGS: true,
+      },
+    };
+  }
+
+  if (extraAdminIds.includes(session.user.id)) {
+    return {
+      id: session.user.id,
+      name: session.user.name ?? session.user.id,
+      roles: [],
+      isOwner: false,
       capabilities: {
         ALL: true,
         APPLICATIONS: true,
@@ -71,6 +109,7 @@ export async function getAdminContext(): Promise<AdminContext | null> {
     id: session.user.id,
     name: session.user.name ?? session.user.id,
     roles,
+    isOwner: false,
     capabilities,
   };
 }

@@ -126,3 +126,39 @@ export function buildMemberTimeline(input: {
 
   return events.sort((first, second) => second.createdAt.getTime() - first.createdAt.getTime());
 }
+
+export function buildMemberIntelligence(member: MemberRiskInput) {
+  const risk = calculateMemberRisk(member);
+  const issues: string[] = [];
+  const suggestions: string[] = [];
+
+  if (member.warnings.some((warning) => warning.severity === "HIGH" || warning.severity === "DISMISSAL")) {
+    issues.push("عنده تحذير قوي أو فصل مسجل");
+    suggestions.push("يفضل استدعاء العضو ومراجعة سلوكه قبل أي ترقية");
+  }
+
+  if (member.complaintsAgainst.length > 0) {
+    issues.push(`عليه ${member.complaintsAgainst.length} شكوى مفتوحة/حديثة`);
+    suggestions.push("راجع الشكاوي قبل اتخاذ قرار إداري");
+  }
+
+  if (member.summons.length > 0) {
+    issues.push(`عنده ${member.summons.length} استدعاء`);
+  }
+
+  if (member.behaviorScore < 60) {
+    issues.push("تقييمه منخفض");
+    suggestions.push("يفضل وضعه تحت المراقبة أو تنزيل التقييم بشكل رسمي");
+  }
+
+  if (issues.length === 0) {
+    issues.push("ملفه مستقر حالياً");
+    suggestions.push("مناسب للمتابعة الطبيعية أو الترشيح للتمييز إذا كان نشطاً");
+  }
+
+  return {
+    summary: `العضو حالته ${risk.label}، ${issues.join("، ")}.`,
+    suggestions,
+    risk,
+  };
+}

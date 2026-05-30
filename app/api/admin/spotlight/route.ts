@@ -1,21 +1,25 @@
-import { auth } from "@/auth";
 import { createAdminLog } from "@/lib/admin-log";
+import { requireAdminCapability } from "@/lib/admin-permissions";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
 type SpotlightBody = {
   memberId?: string;
+  slot?: string;
 };
 
-function getAdminIds() {
-  return process.env.ADMIN_DISCORD_IDS?.split(",").map((id) => id.trim()).filter(Boolean) || [];
-}
+const allowedSlots = new Set([
+  "spotlightMemberId",
+  "honorEliteMemberId",
+  "honorPlayerMemberId",
+  "honorStreamerMemberId",
+  "honorRecentMemberId",
+]);
 
 export async function POST(req: Request) {
-  const session = await auth();
-  const adminIds = getAdminIds();
+  const admin = await requireAdminCapability("MEMBERS");
 
-  if (!session?.user?.id || !adminIds.includes(session.user.id)) {
+  if (!admin) {
     return NextResponse.json({ error: "Access Denied" }, { status: 403 });
   }
 
@@ -24,6 +28,8 @@ export async function POST(req: Request) {
   if (!body.memberId) {
     return NextResponse.json({ error: "اختار عضو للـ spotlight" }, { status: 400 });
   }
+
+  const slot = allowedSlots.has(body.slot ?? "") ? body.slot! : "spotlightMemberId";
 
   const member = await prisma.tokyoMember.findUnique({
     where: { id: body.memberId },
@@ -34,22 +40,22 @@ export async function POST(req: Request) {
   }
 
   await prisma.siteSetting.upsert({
-    where: { key: "spotlightMemberId" },
+    where: { key: slot },
     update: {
       value: member.id,
-      updatedBy: session.user.id,
+      updatedBy: admin.id,
     },
     create: {
-      key: "spotlightMemberId",
+      key: slot,
       value: member.id,
-      updatedBy: session.user.id,
+      updatedBy: admin.id,
     },
   });
 
   await createAdminLog({
     action: "SPOTLIGHT_SET",
-    title: `تحديد Spotlight: ${member.displayName}`,
-    adminDiscordId: session.user.id,
+    title: `تحديد ${slot}: ${member.displayName}`,
+    adminDiscordId: admin.id,
     targetType: "MEMBER",
     targetId: member.id,
     targetMemberId: member.id,
