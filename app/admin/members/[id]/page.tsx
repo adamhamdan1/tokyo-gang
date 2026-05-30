@@ -6,8 +6,10 @@ import { AdminMemberActions } from "../../AdminMemberActions";
 import { AdminWarningForm } from "../../AdminWarningForm";
 import { AdminWarningDeleteButton } from "../../AdminWarningDeleteButton";
 import { AdminWarningAutoRefresh } from "../../AdminWarningAutoRefresh";
+import { AdminDiscordCheckButton } from "../../AdminDiscordCheckButton";
 import { WarningCountdown } from "../../WarningCountdown";
 import { getWarningExpiryDate, syncWarningsSafely } from "@/lib/warning-sync";
+import { buildMemberTimeline, calculateMemberRisk } from "@/lib/member-insights";
 
 type Props = {
   params: Promise<{
@@ -112,6 +114,16 @@ export default async function AdminMemberPage({ params }: Props) {
   }
 
   const statusClass = memberStatusStyles[member.status] ?? memberStatusStyles.ACTIVE;
+  const risk = calculateMemberRisk(member);
+  const timeline = buildMemberTimeline(member).slice(0, 18);
+  const riskClass =
+    risk.level === "CRITICAL"
+      ? "border-red-500/35 bg-red-500/10 text-red-200"
+      : risk.level === "HIGH"
+        ? "border-orange-400/35 bg-orange-400/10 text-orange-200"
+        : risk.level === "MEDIUM"
+          ? "border-yellow-400/35 bg-yellow-400/10 text-yellow-200"
+          : "border-green-400/30 bg-green-400/10 text-green-200";
 
   return (
     <main dir="rtl" className="min-h-screen bg-black px-3 py-5 text-white sm:px-5 md:p-10">
@@ -142,6 +154,7 @@ export default async function AdminMemberPage({ params }: Props) {
             <div className={`w-fit rounded-2xl border px-5 py-3 text-sm font-black ${statusClass}`}>
               {member.status}
             </div>
+            <AdminDiscordCheckButton memberId={member.id} />
           </div>
         </header>
 
@@ -153,8 +166,10 @@ export default async function AdminMemberPage({ params }: Props) {
             ["شكاوي رفعها", member.complaintsFiled.length],
             ["التقييم", member.behaviorScore],
             ["الرتبة", member.internalRank],
+            ["Risk", `${risk.score}/100`],
+            ["المستوى", risk.label],
           ].map(([label, value]) => (
-            <div key={label} className="rounded-2xl border border-white/10 bg-zinc-950 p-4 md:rounded-3xl md:p-6">
+            <div key={label} className={`rounded-2xl border bg-zinc-950 p-4 md:rounded-3xl md:p-6 ${label === "Risk" || label === "المستوى" ? riskClass : "border-white/10"}`}>
               <p className="text-xs text-gray-400 md:text-sm">{label}</p>
               <p className="mt-3 text-2xl font-black md:text-4xl">{value}</p>
             </div>
@@ -233,6 +248,44 @@ export default async function AdminMemberPage({ params }: Props) {
               <Item key={entry.id} title={`BLACKLIST: ${entry.reason}`} meta={entry.active ? "نشط" : "مغلق"} />
             ))}
           </Panel>
+        </section>
+
+        <section className="mt-5 rounded-2xl border border-white/10 bg-zinc-950 p-5 md:mt-6 md:rounded-3xl md:p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-black tracking-[5px] text-red-400">MEMBER TIMELINE</p>
+              <p className="mt-1 text-xs text-gray-500">آخر الأحداث من التحذيرات، الاستدعاءات، الشكاوي، الرتب، الإجازات واللوغات.</p>
+            </div>
+            <span className={`rounded-full border px-4 py-2 text-xs font-black ${riskClass}`}>
+              RISK {risk.score} - {risk.label}
+            </span>
+          </div>
+          <div className="mt-6 grid gap-3">
+            {timeline.map((event) => (
+              <article key={event.id} className="relative rounded-2xl border border-white/10 bg-black/40 p-4 ps-6">
+                <span
+                  className={`absolute right-0 top-5 h-3 w-3 translate-x-1/2 rounded-full ${
+                    event.tone === "red"
+                      ? "bg-red-400 shadow-[0_0_14px_rgba(248,113,113,0.8)]"
+                      : event.tone === "yellow"
+                        ? "bg-yellow-300 shadow-[0_0_14px_rgba(253,224,71,0.8)]"
+                        : event.tone === "green"
+                          ? "bg-green-300 shadow-[0_0_14px_rgba(134,239,172,0.8)]"
+                          : event.tone === "cyan"
+                            ? "bg-cyan-300 shadow-[0_0_14px_rgba(103,232,249,0.8)]"
+                            : "bg-gray-500"
+                  }`}
+                />
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="font-black text-white">{event.title}</p>
+                  <span className="rounded-full border border-white/10 px-3 py-1 text-xs text-gray-400">{event.type}</span>
+                </div>
+                <p className="mt-2 text-xs text-gray-500">
+                  {event.meta} - {event.createdAt.toLocaleString("ar")}
+                </p>
+              </article>
+            ))}
+          </div>
         </section>
       </div>
     </main>

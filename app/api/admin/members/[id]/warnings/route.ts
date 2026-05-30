@@ -1,5 +1,5 @@
-import { auth } from "@/auth";
 import { createAdminLog } from "@/lib/admin-log";
+import { requireAdminCapability } from "@/lib/admin-permissions";
 import {
   applyWarningRole,
   removeAllWarningRoles,
@@ -29,24 +29,6 @@ type DeleteWarningBody = {
   all?: boolean;
 };
 
-function getAdminIds() {
-  return process.env.ADMIN_DISCORD_IDS?.split(",").map((id) => id.trim()).filter(Boolean) || [];
-}
-
-async function requireAdmin() {
-  const session = await auth();
-  const adminIds = getAdminIds();
-
-  if (!session?.user?.id || !adminIds.includes(session.user.id)) {
-    return {
-      authorized: false as const,
-      response: NextResponse.json({ error: "Access Denied" }, { status: 403 }),
-    };
-  }
-
-  return { authorized: true as const, session };
-}
-
 function normalizeWarningSeverity(value: string): "NORMAL" | "HIGH" | "DISMISSAL" {
   if (value === "HIGH" || value === "FINAL") {
     return "HIGH";
@@ -60,10 +42,10 @@ function normalizeWarningSeverity(value: string): "NORMAL" | "HIGH" | "DISMISSAL
 }
 
 export async function POST(req: Request, context: RouteContext) {
-  const admin = await requireAdmin();
+  const admin = await requireAdminCapability("WARNINGS");
 
-  if (!admin.authorized) {
-    return admin.response;
+  if (!admin) {
+    return NextResponse.json({ error: "Access Denied" }, { status: 403 });
   }
 
   const { id } = await context.params;
@@ -101,7 +83,7 @@ export async function POST(req: Request, context: RouteContext) {
       reason,
       severity,
       details,
-      issuedBy: admin.session.user.id,
+      issuedBy: admin.id,
     },
   });
   const recentStrongWarnings = await prisma.memberWarning.count({
@@ -137,7 +119,7 @@ export async function POST(req: Request, context: RouteContext) {
     `القوة: ${severity}\n` +
     `السبب: ${reason}` +
     `${details ? `\nالتفاصيل: ${details}` : ""}\n` +
-    `الأدمن: ${admin.session.user.name ?? admin.session.user.id}`;
+    `الأدمن: ${admin.name}`;
 
   await sendAdminEmbed({
     title: severity === "DISMISSAL" ? "فصل عضو TOKYO" : "تحذير إداري",
@@ -145,7 +127,7 @@ export async function POST(req: Request, context: RouteContext) {
     fields: [
       { name: "العضو", value: `${member.displayName} (<@${member.discordId}>)`, inline: true },
       { name: "القوة", value: severity, inline: true },
-      { name: "الأدمن", value: admin.session.user.name ?? admin.session.user.id, inline: true },
+      { name: "الأدمن", value: admin.name, inline: true },
       { name: "السبب", value: reason },
       ...(details ? [{ name: "التفاصيل", value: details }] : []),
     ],
@@ -159,21 +141,21 @@ export async function POST(req: Request, context: RouteContext) {
     severity,
     reason,
     details,
-    adminName: admin.session.user.name ?? admin.session.user.id,
+    adminName: admin.name,
     warningCount: totalWarningCount,
     avatarUrl: member.image,
   }).catch((error) => console.error("Warning public channel embed failed", error));
   await sendDiscordDm(
     member.discordId,
     severity === "DISMISSAL"
-      ? `تم فصلك من TOKYO GANG.\nالسبب: ${reason}${details ? `\nالتفاصيل: ${details}` : ""}`
-      : `وصلك تحذير من إدارة TOKYO GANG.\nالقوة: ${severity}\nالسبب: ${reason}${details ? `\nالتفاصيل: ${details}` : ""}`
+      ? `TOKYO GANG\n\nتم فصلك إدارياً من العصابة.\nالسبب: ${reason}${details ? `\nالتفاصيل: ${details}` : ""}\n\nللاستفسار تواصل مع الإدارة.`
+      : `TOKYO GANG\n\nوصلك ${severity === "HIGH" ? "تحذير قوي" : "تحذير عادي"} من الإدارة.\nالسبب: ${reason}${details ? `\nالتفاصيل: ${details}` : ""}\n\nمدة التحذير 14 يوم حسب نظام الموقع.`
   ).catch((error) => console.error("Warning DM failed", error));
   await createAdminLog({
     action: escalated ? "MEMBER_ESCALATION" : "MEMBER_WARNING",
     title: escalated ? `تصعيد تلقائي: ${member.displayName}` : `تحذير عضو: ${severity}`,
     details: `العضو: ${member.displayName} (${member.discordId})\nالسبب: ${reason}${details ? `\nالتفاصيل: ${details}` : ""}`,
-    adminDiscordId: admin.session.user.id,
+    adminDiscordId: admin.id,
     targetType: "WARNING",
     targetId: warning.id,
     targetMemberId: member.id,
@@ -183,10 +165,10 @@ export async function POST(req: Request, context: RouteContext) {
 }
 
 export async function DELETE(req: Request, context: RouteContext) {
-  const admin = await requireAdmin();
+  const admin = await requireAdminCapability("WARNINGS");
 
-  if (!admin.authorized) {
-    return admin.response;
+  if (!admin) {
+    return NextResponse.json({ error: "Access Denied" }, { status: 403 });
   }
 
   const { id } = await context.params;
@@ -216,7 +198,7 @@ export async function DELETE(req: Request, context: RouteContext) {
       action: "MEMBER_WARNINGS_CLEAR",
       title: `حذف كل تحذيرات: ${member.displayName}`,
       details: `تم حذف ${deleted.count} تحذير`,
-      adminDiscordId: admin.session.user.id,
+      adminDiscordId: admin.id,
       targetType: "WARNING",
       targetMemberId: member.id,
     }).catch((error) => console.error("Warning clear db log failed", error));
@@ -261,7 +243,7 @@ export async function DELETE(req: Request, context: RouteContext) {
     action: "MEMBER_WARNING_DELETE",
     title: `حذف تحذير: ${member.displayName}`,
     details: `النوع: ${warning.severity}\nالسبب: ${warning.reason}`,
-    adminDiscordId: admin.session.user.id,
+    adminDiscordId: admin.id,
     targetType: "WARNING",
     targetId: warning.id,
     targetMemberId: member.id,

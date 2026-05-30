@@ -1,5 +1,6 @@
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { getAdminContext } from "@/lib/admin-permissions";
+import { calculateMemberRisk } from "@/lib/member-insights";
 import { syncTokyoMembersSafely } from "@/lib/tokyo-member-sync";
 import { syncWarningsSafely } from "@/lib/warning-sync";
 import { AdminDecisionButtons } from "./AdminDecisionButtons";
@@ -67,20 +68,22 @@ function buildAdminHref(status: string, query: string, logs?: string) {
 export default async function AdminPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ status?: string; q?: string; logs?: string }>;
+  searchParams?: Promise<{ status?: string; q?: string; logs?: string; members?: string }>;
 }) {
-  const session = await auth();
-  const adminIds = process.env.ADMIN_DISCORD_IDS?.split(",").map((id) => id.trim()) || [];
+  const admin = await getAdminContext();
   const params = await searchParams;
   const activeStatus = ["PRIORITY", "PENDING", "ACCEPTED", "REJECTED", "INTERVIEW", "TRIAL"].includes(params?.status ?? "")
     ? params?.status
     : "ALL";
   const query = params?.q?.trim() ?? "";
   const showAllLogs = params?.logs === "all";
+  const memberFilter = ["WARNED", "HIGH_RISK", "LEAVE", "SUMMONED", "RISK"].includes(params?.members ?? "")
+    ? params?.members
+    : "ALL";
   // eslint-disable-next-line react-hooks/purity
   const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-  if (!session?.user?.id || !adminIds.includes(session.user.id)) {
+  if (!admin) {
     return (
       <main dir="rtl" className="relative flex min-h-screen items-center justify-center overflow-hidden bg-black p-8 text-white">
         <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[length:100%_6px] opacity-70" />
@@ -92,7 +95,7 @@ export default async function AdminPage({
             <div className="h-full w-2/3 bg-red-500 shadow-[0_0_18px_rgba(239,68,68,0.7)]" />
           </div>
           <p className="mt-5 text-sm text-gray-300">
-            Discord ID الحالي: {session?.user?.id ?? "غير مسجل دخول"}
+            Discord ID الحالي: غير مصرح
           </p>
         </div>
       </main>
@@ -164,8 +167,25 @@ export default async function AdminPage({
         username: true,
         discordId: true,
         status: true,
-        warnings: {
+        behaviorScore: true,
+        summons: {
+          where: { status: "ACTIVE" },
           select: { id: true },
+        },
+        complaintsAgainst: {
+          where: {
+            status: {
+              notIn: ["RESOLVED", "DISMISSED"],
+            },
+          },
+          select: { id: true },
+        },
+        blacklistEntries: {
+          where: { active: true },
+          select: { id: true },
+        },
+        warnings: {
+          select: { id: true, severity: true },
         },
       },
     }),
@@ -211,6 +231,23 @@ export default async function AdminPage({
     ["البلاك ليست", blacklistCount],
     ["عدد المرفوضين", rejectedApplications],
   ];
+  const filteredTokyoMembers = tokyoMembers.filter((member) => {
+    const risk = calculateMemberRisk(member);
+
+    if (memberFilter === "WARNED") return member.warnings.length > 0;
+    if (memberFilter === "HIGH_RISK") return member.warnings.some((warning) => warning.severity === "HIGH" || warning.severity === "DISMISSAL");
+    if (memberFilter === "LEAVE") return member.status === "ON_LEAVE";
+    if (memberFilter === "SUMMONED") return member.summons.length > 0 || member.status === "SUMMONED";
+    if (memberFilter === "RISK") return risk.level === "HIGH" || risk.level === "CRITICAL";
+
+    return true;
+  });
+  const healthItems = [
+    ["Bot", process.env.DISCORD_BOT_TOKEN ? "LINKED" : "MISSING"],
+    ["DB", "CONNECTED"],
+    ["Members Sync", tokyoSync ? `${tokyoSync.count} عضو` : "READY"],
+    ["Warnings Sync", "30s"],
+  ];
 
   return (
     <main dir="rtl" className="relative min-h-screen overflow-hidden bg-black px-3 py-5 text-white sm:px-5 md:p-10">
@@ -242,7 +279,7 @@ export default async function AdminPage({
           </div>
 
           <div className="w-fit rounded-2xl border border-white/15 bg-zinc-950 px-4 py-2 text-sm text-gray-300 md:px-5 md:py-3">
-            {session.user.name}
+            {admin.name}
           </div>
           </div>
         </div>
@@ -276,6 +313,32 @@ export default async function AdminPage({
               </p>
             </div>
           ))}
+        </section>
+
+        <section className="mb-8 grid gap-4 md:mb-10 lg:grid-cols-[0.9fr_1.1fr]">
+          <div className="rounded-2xl border border-cyan-400/20 bg-zinc-950 p-5 md:rounded-3xl md:p-6">
+            <p className="text-xs font-black tracking-[5px] text-cyan-300">SYSTEM HEALTH</p>
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              {healthItems.map(([label, value]) => (
+                <div key={label} className="rounded-2xl border border-white/10 bg-black/40 p-4">
+                  <p className="text-xs text-gray-500">{label}</p>
+                  <p className={`mt-2 font-black ${value === "MISSING" ? "text-red-300" : "text-green-300"}`}>{value}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-zinc-950 p-5 md:rounded-3xl md:p-6">
+            <p className="text-xs font-black tracking-[5px] text-white">ADMIN PERMISSIONS</p>
+            <div className="mt-5 flex flex-wrap gap-2">
+              {Object.entries(admin.capabilities)
+                .filter(([, enabled]) => enabled)
+                .map(([capability]) => (
+                  <span key={capability} className="rounded-full border border-green-400/25 bg-green-400/10 px-4 py-2 text-xs font-black text-green-300">
+                    {capability}
+                  </span>
+                ))}
+            </div>
+          </div>
         </section>
 
         <AdminAnnouncementForm />
@@ -361,8 +424,31 @@ export default async function AdminPage({
 
         <section className="mb-8 rounded-2xl border border-white/10 bg-zinc-950 p-5 md:mb-10 md:rounded-3xl md:p-6">
           <p className="text-xs font-black tracking-[5px] text-red-400">TOKYO MEMBER DIRECTORY</p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {[
+              ["الكل", "ALL"],
+              ["عنده تحذير", "WARNED"],
+              ["خطر", "HIGH_RISK"],
+              ["إجازة", "LEAVE"],
+              ["استدعاء", "SUMMONED"],
+              ["Risk عالي", "RISK"],
+            ].map(([label, value]) => (
+              <Link
+                key={value}
+                href={`/admin?members=${value}${query ? `&q=${encodeURIComponent(query)}` : ""}`}
+                className={`rounded-xl border px-4 py-2 text-xs font-black ${
+                  memberFilter === value ? "border-white bg-white text-black" : "border-white/15 text-gray-300 hover:text-white"
+                }`}
+              >
+                {label}
+              </Link>
+            ))}
+          </div>
           <div className="mt-5 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-            {tokyoMembers.map((member) => (
+            {filteredTokyoMembers.map((member) => {
+              const risk = calculateMemberRisk(member);
+
+              return (
               <Link
                 key={member.id}
                 href={`/admin/members/${member.id}`}
@@ -378,10 +464,14 @@ export default async function AdminPage({
                     {member.warnings.length > 0 && (
                       <p className="mt-1 text-xs text-yellow-300">{member.warnings.length} تحذير</p>
                     )}
+                    <p className={`mt-1 text-xs font-black ${risk.level === "CRITICAL" ? "text-red-400" : risk.level === "HIGH" ? "text-orange-300" : "text-gray-500"}`}>
+                      RISK {risk.score}
+                    </p>
                   </div>
                 </div>
               </Link>
-            ))}
+              );
+            })}
           </div>
         </section>
 

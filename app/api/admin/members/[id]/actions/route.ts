@@ -1,5 +1,5 @@
-import { auth } from "@/auth";
 import { createAdminLog } from "@/lib/admin-log";
+import { requireAdminCapability } from "@/lib/admin-permissions";
 import { applyInternalRankRole, giveCatalogRole, giveLeaveRole, removeCatalogRole, removeTokyoRole, sendAdminEmbed, sendDiscordDm } from "@/lib/discord";
 import { prisma } from "@/lib/prisma";
 import { getTokyoRoleOption } from "@/lib/tokyo-content";
@@ -26,29 +26,11 @@ type ActionBody = {
 
 const allowedRanks = ["MEMBER", "SENIOR", "OFFICER", "DEPUTY", "LEADER"];
 
-function getAdminIds() {
-  return process.env.ADMIN_DISCORD_IDS?.split(",").map((id) => id.trim()).filter(Boolean) || [];
-}
-
-async function requireAdmin() {
-  const session = await auth();
-  const adminIds = getAdminIds();
-
-  if (!session?.user?.id || !adminIds.includes(session.user.id)) {
-    return {
-      authorized: false as const,
-      response: NextResponse.json({ error: "Access Denied" }, { status: 403 }),
-    };
-  }
-
-  return { authorized: true as const, session };
-}
-
 export async function POST(req: Request, context: RouteContext) {
-  const admin = await requireAdmin();
+  const admin = await requireAdminCapability("MEMBERS");
 
-  if (!admin.authorized) {
-    return admin.response;
+  if (!admin) {
+    return NextResponse.json({ error: "Access Denied" }, { status: 403 });
   }
 
   const { id } = await context.params;
@@ -86,7 +68,7 @@ export async function POST(req: Request, context: RouteContext) {
           rank,
           discordRoleId,
           reason: body.reason?.trim(),
-          adminDiscordId: admin.session.user.id,
+          adminDiscordId: admin.id,
         },
       }),
     ]);
@@ -95,7 +77,7 @@ export async function POST(req: Request, context: RouteContext) {
       action: "RANK_CHANGE",
       title: `تغيير رتبة ${member.displayName} إلى ${rank}`,
       details: body.reason?.trim(),
-      adminDiscordId: admin.session.user.id,
+      adminDiscordId: admin.id,
       targetType: "MEMBER",
       targetId: member.id,
       targetMemberId: member.id,
@@ -106,7 +88,7 @@ export async function POST(req: Request, context: RouteContext) {
       fields: [
         { name: "العضو", value: `${member.displayName} (<@${member.discordId}>)`, inline: true },
         { name: "الرتبة", value: rank, inline: true },
-        { name: "الأدمن", value: admin.session.user.name ?? admin.session.user.id, inline: true },
+        { name: "الأدمن", value: admin.name, inline: true },
         ...(body.reason ? [{ name: "السبب", value: body.reason }] : []),
       ],
     }).catch((error) => console.error("Rank embed failed", error));
@@ -126,7 +108,7 @@ export async function POST(req: Request, context: RouteContext) {
         data: {
           memberId: member.id,
           note,
-          adminDiscordId: admin.session.user.id,
+          adminDiscordId: admin.id,
         },
       }),
       prisma.tokyoMember.update({ where: { id: member.id }, data: { adminNote: note } }),
@@ -136,7 +118,7 @@ export async function POST(req: Request, context: RouteContext) {
       action: "MEMBER_NOTE",
       title: `ملاحظة إدارية على ${member.displayName}`,
       details: note,
-      adminDiscordId: admin.session.user.id,
+      adminDiscordId: admin.id,
       targetType: "MEMBER",
       targetId: member.id,
       targetMemberId: member.id,
@@ -157,7 +139,7 @@ export async function POST(req: Request, context: RouteContext) {
       action: "MEMBER_SCORE",
       title: `تعديل تقييم ${member.displayName} إلى ${Math.round(score)}`,
       details: body.reason?.trim(),
-      adminDiscordId: admin.session.user.id,
+      adminDiscordId: admin.id,
       targetType: "MEMBER",
       targetId: member.id,
       targetMemberId: member.id,
@@ -195,7 +177,7 @@ export async function POST(req: Request, context: RouteContext) {
         rank: role.discordName,
         discordRoleId,
         reason: body.reason?.trim(),
-        adminDiscordId: admin.session.user.id,
+        adminDiscordId: admin.id,
       },
     });
 
@@ -203,7 +185,7 @@ export async function POST(req: Request, context: RouteContext) {
       action: mode === "REMOVE" ? "DISCORD_ROLE_REMOVE" : "DISCORD_ROLE_GIVE",
       title: `${mode === "REMOVE" ? "سحب" : "إعطاء"} رتبة ${role.discordName} لـ ${member.displayName}`,
       details: body.reason?.trim() || role.description,
-      adminDiscordId: admin.session.user.id,
+      adminDiscordId: admin.id,
       targetType: "MEMBER",
       targetId: member.id,
       targetMemberId: member.id,
@@ -253,7 +235,7 @@ export async function POST(req: Request, context: RouteContext) {
         startsAt,
         endsAt,
         status: "APPROVED",
-        reviewedBy: admin.session.user.id,
+        reviewedBy: admin.id,
       },
     });
 
@@ -268,10 +250,10 @@ export async function POST(req: Request, context: RouteContext) {
       action: "LEAVE_APPROVE",
       title: `تسجيل إجازة ${member.displayName}`,
       details: reason,
-      adminDiscordId: admin.session.user.id,
       targetType: "LEAVE",
       targetId: leave.id,
       targetMemberId: member.id,
+      adminDiscordId: admin.id,
     });
 
     return NextResponse.json({ success: true });
@@ -290,7 +272,7 @@ export async function POST(req: Request, context: RouteContext) {
         discordId: member.discordId,
         username: member.username,
         reason,
-        adminDiscordId: admin.session.user.id,
+        adminDiscordId: admin.id,
         memberId: member.id,
       },
     });
@@ -300,7 +282,7 @@ export async function POST(req: Request, context: RouteContext) {
       action: "BLACKLIST_ADD",
       title: `إضافة ${member.displayName} للبلاك ليست`,
       details: reason,
-      adminDiscordId: admin.session.user.id,
+      adminDiscordId: admin.id,
       targetType: "BLACKLIST",
       targetId: entry.id,
       targetMemberId: member.id,
