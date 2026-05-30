@@ -788,6 +788,87 @@ export async function sendWarningChannelEmbed(input: {
   }
 }
 
+export async function sendWarningSyncChannelEmbed(input: {
+  memberDiscordId: string;
+  memberName: string;
+  action: "CREATED_FROM_DISCORD" | "REMOVED_FROM_DISCORD" | "DOWNGRADED" | "EXPIRED";
+  details: string;
+  severity?: "NORMAL" | "HIGH" | "DISMISSAL";
+  avatarUrl?: string | null;
+}) {
+  const actionConfig = {
+    CREATED_FROM_DISCORD: {
+      title: "مزامنة تحذير من Discord",
+      color: 65_535,
+      status: "تم اكتشاف رتبة تحذير على العضو وإضافتها للموقع تلقائياً.",
+    },
+    REMOVED_FROM_DISCORD: {
+      title: "إزالة تحذير بالمزامنة",
+      color: 9_808_727,
+      status: "تم حذف التحذير من الموقع لأن رتبة Discord لم تعد موجودة.",
+    },
+    DOWNGRADED: {
+      title: "تنزيل تحذير تلقائي",
+      color: 16_673_280,
+      status: "تم تنزيل التحذير القوي إلى تحذير عادي حسب مدة النظام.",
+    },
+    EXPIRED: {
+      title: "انتهاء تحذير تلقائي",
+      color: 5_763_716,
+      status: "انتهت مدة التحذير وتم تنظيفه تلقائياً.",
+    },
+  } satisfies Record<
+    "CREATED_FROM_DISCORD" | "REMOVED_FROM_DISCORD" | "DOWNGRADED" | "EXPIRED",
+    { title: string; color: number; status: string }
+  >;
+  const config = actionConfig[input.action];
+
+  const response = await fetchDiscord(`/channels/${getWarningLogChannelId()}/messages`, {
+    method: "POST",
+    body: JSON.stringify({
+      embeds: [
+        {
+          title: `TOKYO GANG | ${config.title}`,
+          description: config.status,
+          color: config.color,
+          fields: [
+            {
+              name: "العضو",
+              value: `${input.memberName}\n<@${input.memberDiscordId}>`,
+              inline: true,
+            },
+            ...(input.severity
+              ? [
+                  {
+                    name: "نوع التحذير",
+                    value: input.severity,
+                    inline: true,
+                  },
+                ]
+              : []),
+            {
+              name: "التفاصيل",
+              value: safeEmbedValue(input.details),
+            },
+          ],
+          thumbnail: input.avatarUrl ? { url: input.avatarUrl } : undefined,
+          timestamp: new Date().toISOString(),
+          footer: {
+            text: "TOKYO GANG Warning Sync",
+          },
+        },
+      ],
+      allowed_mentions: {
+        users: [input.memberDiscordId],
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`فشل إرسال لوق مزامنة التحذيرات (${response.status})`);
+  }
+}
+
 export async function sendAdminLog(content: string) {
   const webhookUrl = process.env.DISCORD_ADMIN_LOG_WEBHOOK_URL;
 

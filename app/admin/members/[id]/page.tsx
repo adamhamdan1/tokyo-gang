@@ -6,7 +6,8 @@ import { AdminMemberActions } from "../../AdminMemberActions";
 import { AdminWarningForm } from "../../AdminWarningForm";
 import { AdminWarningDeleteButton } from "../../AdminWarningDeleteButton";
 import { AdminWarningAutoRefresh } from "../../AdminWarningAutoRefresh";
-import { formatWarningTimeLeft, getWarningTimeLeft, syncWarningsSafely } from "@/lib/warning-sync";
+import { WarningCountdown } from "../../WarningCountdown";
+import { getWarningExpiryDate, syncWarningsSafely } from "@/lib/warning-sync";
 
 type Props = {
   params: Promise<{
@@ -187,9 +188,7 @@ export default async function AdminMemberPage({ params }: Props) {
                   {warning.details && <p className="mt-2 text-sm text-gray-400">{warning.details}</p>}
                   <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-500">
                     <span>{warning.createdAt.toLocaleString("ar")}</span>
-                    <span className="rounded-full border border-white/10 px-3 py-1 text-gray-300">
-                      المتبقي: {formatWarningTimeLeft(getWarningTimeLeft(warning))}
-                    </span>
+                    <WarningCountdown expiresAt={getWarningExpiryDate(warning)?.toISOString() ?? null} />
                   </div>
                 </article>
               ))}

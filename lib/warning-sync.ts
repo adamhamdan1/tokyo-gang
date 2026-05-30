@@ -4,6 +4,7 @@ import {
   getConfiguredWarningRoleIds,
   getTokyoGuildMember,
   removeWarningRole,
+  sendWarningSyncChannelEmbed,
 } from "@/lib/discord";
 import { prisma } from "@/lib/prisma";
 
@@ -11,6 +12,7 @@ type MemberWithWarnings = {
   id: string;
   discordId: string;
   displayName: string;
+  image: string | null;
   inTokyoRole: boolean;
   status: string;
   warnings: Array<{
@@ -108,12 +110,18 @@ export async function syncWarnings(options?: { force?: boolean; memberId?: strin
 
 async function runWarningSync(memberId?: string) {
   const members = await prisma.tokyoMember.findMany({
-    where: {
-      ...(memberId ? { id: memberId } : {}),
-      warnings: {
-        some: {},
-      },
-    },
+    where: memberId
+      ? { id: memberId }
+      : {
+          OR: [
+            { inTokyoRole: true },
+            {
+              warnings: {
+                some: {},
+              },
+            },
+          ],
+        },
     include: {
       warnings: {
         orderBy: { createdAt: "asc" },
@@ -127,34 +135,67 @@ async function runWarningSync(memberId?: string) {
 }
 
 async function syncMemberWarnings(member: MemberWithWarnings) {
-  const guildMember = await getTokyoGuildMember(member.discordId).catch(() => null);
+  let guildMember;
+
+  try {
+    guildMember = await getTokyoGuildMember(member.discordId);
+  } catch (error) {
+    console.error("Warning sync guild lookup failed", member.discordId, error);
+    return;
+  }
+
   const roleIds = getConfiguredWarningRoleIds();
   const memberRoleIds = new Set(guildMember?.roles ?? []);
-  const hasNormalRole = roleIds.normal ? memberRoleIds.has(roleIds.normal) : true;
-  const hasHighRole = roleIds.high ? memberRoleIds.has(roleIds.high) : true;
-  const hasDismissalRole = roleIds.dismissal ? memberRoleIds.has(roleIds.dismissal) : true;
+  const hasNormalRole = roleIds.normal ? memberRoleIds.has(roleIds.normal) : false;
+  const hasHighRole = roleIds.high ? memberRoleIds.has(roleIds.high) : false;
+  const hasDismissalRole = roleIds.dismissal ? memberRoleIds.has(roleIds.dismissal) : false;
+
+  await importManualDiscordWarnings(member, { hasNormalRole, hasHighRole, hasDismissalRole });
 
   for (const warning of member.warnings) {
-    if (warning.severity === "NORMAL" && !hasNormalRole && !hasHighRole) {
-      await deleteSyncedWarning(warning.id, member.id, member.displayName, "تم حذف التحذير العادي لأن رتبته غير موجودة في Discord");
+    if (warning.severity === "NORMAL" && roleIds.normal && !hasNormalRole && !hasHighRole) {
+      await deleteSyncedWarning(
+        warning.id,
+        member,
+        "تم حذف التحذير العادي لأن رتبته غير موجودة في Discord",
+        "REMOVED_FROM_DISCORD",
+        "NORMAL"
+      );
       continue;
     }
 
-    if (warning.severity === "HIGH" && !hasHighRole) {
+    if (warning.severity === "HIGH" && roleIds.high && !hasHighRole) {
       if (hasNormalRole) {
         await prisma.memberWarning.update({
           where: { id: warning.id },
           data: { severity: "NORMAL", createdAt: new Date() },
         });
-        await logWarningSync(member.id, member.displayName, "تم تخفيض التحذير القوي لعادي لأن رتبة التحذير العادي موجودة فقط");
+        await logWarningSync(
+          member,
+          "تم تخفيض التحذير القوي لعادي لأن رتبة التحذير العادي موجودة فقط",
+          "DOWNGRADED",
+          "NORMAL"
+        );
       } else {
-        await deleteSyncedWarning(warning.id, member.id, member.displayName, "تم حذف التحذير القوي لأن رتبته غير موجودة في Discord");
+        await deleteSyncedWarning(
+          warning.id,
+          member,
+          "تم حذف التحذير القوي لأن رتبته غير موجودة في Discord",
+          "REMOVED_FROM_DISCORD",
+          "HIGH"
+        );
       }
       continue;
     }
 
-    if (warning.severity === "DISMISSAL" && !hasDismissalRole) {
-      await deleteSyncedWarning(warning.id, member.id, member.displayName, "تم حذف سجل الفصل لأن رتبة الفصل غير موجودة في Discord");
+    if (warning.severity === "DISMISSAL" && roleIds.dismissal && !hasDismissalRole) {
+      await deleteSyncedWarning(
+        warning.id,
+        member,
+        "تم حذف سجل الفصل لأن رتبة الفصل غير موجودة في Discord",
+        "REMOVED_FROM_DISCORD",
+        "DISMISSAL"
+      );
       continue;
     }
 
@@ -162,6 +203,57 @@ async function syncMemberWarnings(member: MemberWithWarnings) {
   }
 
   await normalizeMemberStatus(member.id);
+}
+
+async function importManualDiscordWarnings(
+  member: MemberWithWarnings,
+  roles: { hasNormalRole: boolean; hasHighRole: boolean; hasDismissalRole: boolean }
+) {
+  const existingSeverities = new Set(member.warnings.map((warning) => warning.severity));
+
+  if (roles.hasDismissalRole && !existingSeverities.has("DISMISSAL")) {
+    await createSyncedWarning(member, "DISMISSAL");
+    return;
+  }
+
+  if (roles.hasHighRole && !existingSeverities.has("HIGH")) {
+    await createSyncedWarning(member, "HIGH");
+    return;
+  }
+
+  if (roles.hasNormalRole && !existingSeverities.has("NORMAL") && !existingSeverities.has("HIGH")) {
+    await createSyncedWarning(member, "NORMAL");
+  }
+}
+
+async function createSyncedWarning(member: MemberWithWarnings, severity: "NORMAL" | "HIGH" | "DISMISSAL") {
+  const reason = "مزامنة تلقائية من Discord";
+  const details = "تم اكتشاف رتبة التحذير على العضو داخل Discord وإضافتها للموقع تلقائياً.";
+
+  await prisma.memberWarning.create({
+    data: {
+      memberId: member.id,
+      reason,
+      severity,
+      details,
+      issuedBy: "DISCORD_SYNC",
+    },
+  });
+
+  await prisma.tokyoMember.update({
+    where: { id: member.id },
+    data: {
+      status: severity === "DISMISSAL" ? "DISMISSED" : severity === "HIGH" ? "HIGH_RISK" : "WARNED",
+      inTokyoRole: severity === "DISMISSAL" ? false : member.inTokyoRole,
+    },
+  });
+
+  await logWarningSync(
+    member,
+    `${details}\nالنوع: ${severity}`,
+    "CREATED_FROM_DISCORD",
+    severity
+  );
 }
 
 async function applyWarningExpiry(
@@ -184,21 +276,27 @@ async function applyWarningExpiry(
         details: warning.reason ? `تم تخفيضه تلقائياً من تحذير قوي بعد 14 يوم. السبب الأصلي: ${warning.reason}` : undefined,
       },
     });
-    await logWarningSync(member.id, member.displayName, "تم تخفيض تحذير قوي إلى تحذير عادي بعد 14 يوم");
+    await logWarningSync(member, "تم تخفيض تحذير قوي إلى تحذير عادي بعد 14 يوم", "DOWNGRADED", "NORMAL");
     return;
   }
 
   if (warning.severity === "NORMAL") {
     await removeWarningRole(member.discordId, "NORMAL").catch((error) => console.error("Warning expire remove role failed", error));
-    await deleteSyncedWarning(warning.id, member.id, member.displayName, "انتهى التحذير العادي تلقائياً بعد 14 يوم");
+    await deleteSyncedWarning(warning.id, member, "انتهى التحذير العادي تلقائياً بعد 14 يوم", "EXPIRED", "NORMAL");
   }
 }
 
-async function deleteSyncedWarning(warningId: string, memberId: string, memberName: string, details: string) {
+async function deleteSyncedWarning(
+  warningId: string,
+  member: { id: string; discordId: string; displayName: string; image?: string | null },
+  details: string,
+  action: "REMOVED_FROM_DISCORD" | "EXPIRED",
+  severity?: "NORMAL" | "HIGH" | "DISMISSAL"
+) {
   await prisma.memberWarning.delete({
     where: { id: warningId },
   });
-  await logWarningSync(memberId, memberName, details);
+  await logWarningSync(member, details, action, severity);
 }
 
 async function normalizeMemberStatus(memberId: string) {
@@ -219,12 +317,26 @@ async function normalizeMemberStatus(memberId: string) {
   }
 }
 
-async function logWarningSync(memberId: string, memberName: string, details: string) {
+async function logWarningSync(
+  member: { id: string; discordId: string; displayName: string; image?: string | null },
+  details: string,
+  action: "CREATED_FROM_DISCORD" | "REMOVED_FROM_DISCORD" | "DOWNGRADED" | "EXPIRED",
+  severity?: "NORMAL" | "HIGH" | "DISMISSAL"
+) {
   await createAdminLog({
     action: "WARNING_SYNC",
-    title: `مزامنة تحذيرات ${memberName}`,
+    title: `مزامنة تحذيرات ${member.displayName}`,
     details,
     targetType: "WARNING",
-    targetMemberId: memberId,
+    targetMemberId: member.id,
   }).catch(() => null);
+
+  await sendWarningSyncChannelEmbed({
+    memberDiscordId: member.discordId,
+    memberName: member.displayName,
+    action,
+    details,
+    severity,
+    avatarUrl: member.image,
+  }).catch((error) => console.error("Warning sync channel log failed", error));
 }

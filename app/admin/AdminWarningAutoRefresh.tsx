@@ -21,6 +21,7 @@ export function AdminWarningAutoRefresh({ memberId }: { memberId?: string }) {
       }
     };
 
+    syncWarnings();
     const interval = window.setInterval(syncWarnings, 30_000);
 
     return () => {
