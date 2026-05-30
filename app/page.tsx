@@ -171,17 +171,16 @@ function GlitchTitle({ children, className = "" }: { children: string; className
 
 function AmbientParticles() {
   return (
-    <div className="pointer-events-none fixed inset-0 z-[2] hidden overflow-hidden opacity-35 md:block">
-      {Array.from({ length: 8 }).map((_, index) => (
+    <div className="pointer-events-none fixed inset-0 z-[2] hidden overflow-hidden opacity-20 xl:block">
+      {Array.from({ length: 5 }).map((_, index) => (
         <motion.span
           key={index}
           animate={{
-            x: [0, index % 2 === 0 ? 42 : -38, 0],
-            y: [0, -80 - index * 4, 0],
-            opacity: [0.08, 0.32, 0.08],
+            y: [0, -42 - index * 3, 0],
+            opacity: [0.06, 0.2, 0.06],
           }}
           transition={{
-            duration: 7 + (index % 6),
+            duration: 10 + (index % 4),
             repeat: Infinity,
             delay: index * 0.35,
             ease: "easeInOut",
@@ -205,7 +204,6 @@ export default function Home() {
   const [volume, setVolume] = useState(40);
   const [search, setSearch] = useState("");
   const [rank, setRank] = useState("الكل");
-  const [mouse, setMouse] = useState({ x: 0, y: 0 });
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [discordMembers, setDiscordMembers] = useState<DiscordMember[]>([]);
   const [onlineCount, setOnlineCount] = useState<number | null>(null);
@@ -256,19 +254,6 @@ export default function Home() {
       active = false;
       window.clearInterval(interval);
     };
-  }, []);
-
-  useEffect(() => {
-    if (!window.matchMedia("(pointer: fine)").matches) {
-      return;
-    }
-
-    const move = (e: MouseEvent) => {
-      setMouse({ x: e.clientX, y: e.clientY });
-    };
-
-    window.addEventListener("mousemove", move);
-    return () => window.removeEventListener("mousemove", move);
   }, []);
 
   useEffect(() => {
@@ -405,59 +390,20 @@ export default function Home() {
   };
 
   return (
-    <main dir="rtl" className="min-h-screen overflow-hidden bg-black text-white lg:cursor-none">
+    <main dir="rtl" className="min-h-screen overflow-hidden bg-black text-white">
       <SpeedInsights />
       <Analytics />
       <AmbientParticles />
 
       <div className="pointer-events-none fixed inset-0 z-[9997] opacity-[0.035] bg-[linear-gradient(to_bottom,white_1px,transparent_1px)] bg-[length:100%_4px]" />
       <div className="pointer-events-none fixed inset-0 z-[9996] bg-[radial-gradient(circle_at_center,transparent_45%,rgba(0,0,0,0.65)_100%)]" />
-      <motion.div
-        className="pointer-events-none fixed inset-0 z-[1] opacity-35"
-        animate={{
-          backgroundPosition: [`${mouse.x * 0.01}px ${mouse.y * 0.01}px`, `${mouse.x * 0.015}px ${mouse.y * 0.015}px`],
-        }}
-        transition={{ duration: 0.4 }}
+      <div
+        className="pointer-events-none fixed inset-0 z-[1] opacity-25"
         style={{
           backgroundImage:
-            "radial-gradient(circle at 18% 24%, rgba(239,68,68,0.18), transparent 28%), radial-gradient(circle at 78% 18%, rgba(255,255,255,0.10), transparent 24%), linear-gradient(135deg, rgba(255,255,255,0.06) 1px, transparent 1px)",
+            "radial-gradient(circle at 18% 24%, rgba(239,68,68,0.14), transparent 28%), radial-gradient(circle at 78% 18%, rgba(255,255,255,0.08), transparent 24%), linear-gradient(135deg, rgba(255,255,255,0.045) 1px, transparent 1px)",
           backgroundSize: "100% 100%, 100% 100%, 96px 96px",
         }}
-      />
-      <div className="pointer-events-none fixed inset-0 z-[9995] hidden opacity-20 mix-blend-screen md:block">
-        <motion.div
-          animate={{ x: ["-20%", "20%", "-20%"], opacity: [0.08, 0.18, 0.08] }}
-          transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-24 h-48 w-[120vw] bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.20),transparent_65%)] blur-3xl"
-        />
-        <motion.div
-          animate={{ x: ["20%", "-15%", "20%"], y: [0, -40, 0], opacity: [0.06, 0.14, 0.06] }}
-          transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute bottom-32 h-56 w-[110vw] bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.16),transparent_70%)] blur-3xl"
-        />
-      </div>
-
-      <div className="pointer-events-none fixed inset-0 z-0 hidden overflow-hidden md:block">
-        <motion.div
-          animate={{ x: [0, 120, -120, 0], y: [0, -60, 60, 0], opacity: [0.08, 0.18, 0.08] }}
-          transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-0 left-0 w-[900px] h-[900px] bg-white/10 blur-[180px] rounded-full"
-        />
-        <motion.div
-          animate={{ x: [0, -100, 100, 0], y: [0, 80, -80, 0], opacity: [0.05, 0.14, 0.05] }}
-          transition={{ duration: 24, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute bottom-0 right-0 w-[1000px] h-[1000px] bg-white/10 blur-[200px] rounded-full"
-        />
-      </div>
-
-      <motion.div
-        className="pointer-events-none fixed z-[9999] hidden h-8 w-8 rounded-full border border-white/60 shadow-[0_0_18px_white] lg:block"
-        style={{ left: mouse.x - 16, top: mouse.y - 16 }}
-      />
-
-      <motion.div
-        className="pointer-events-none fixed z-[9998] hidden h-2 w-2 rounded-full bg-white shadow-[0_0_12px_white] lg:block"
-        style={{ left: mouse.x - 4, top: mouse.y - 4 }}
       />
 
       <audio ref={audioRef} loop>
@@ -746,33 +692,18 @@ export default function Home() {
           className="pointer-events-none absolute inset-0 z-30 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.95),rgba(255,255,255,0.12)_18%,transparent_42%)]"
         />
 
-        <motion.div
-          initial={{ scale: 1.08 }}
-          animate={{ scale: 1.18, x: [0, 20, -20, 0], y: [0, -12, 12, 0] }}
-          transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute inset-0 hidden overflow-hidden md:block"
-        >
+        <div className="absolute inset-0 hidden overflow-hidden xl:block">
           {loadHeroVideo && (
-            <video autoPlay muted loop playsInline preload="none" className="w-full h-full object-cover opacity-60 grayscale scale-110">
+            <video autoPlay muted loop playsInline preload="none" className="h-full w-full scale-105 object-cover opacity-45 grayscale">
               <source src="/bg.mp4" type="video/mp4" />
             </video>
           )}
-        </motion.div>
+        </div>
 
         <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/25 to-black/70" />
         <div className="absolute inset-0 bg-[linear-gradient(115deg,transparent_0%,transparent_46%,rgba(255,255,255,0.08)_50%,transparent_54%,transparent_100%)] opacity-45" />
 
-        <motion.div
-          animate={{ x: ["-20%", "20%"], opacity: [0.12, 0.28, 0.12] }}
-          transition={{ duration: 10, repeat: Infinity }}
-          className="absolute -bottom-20 left-0 hidden h-[300px] w-[700px] rounded-full bg-white/10 blur-3xl md:block"
-        />
-
-        <motion.div
-          animate={{ y: [40, -40, 40], opacity: [0.06, 0.18, 0.06] }}
-          transition={{ duration: 9, repeat: Infinity }}
-          className="absolute bottom-10 hidden h-[180px] w-[900px] rounded-full bg-white/10 blur-3xl md:block"
-        />
+        <div className="absolute -bottom-20 left-0 hidden h-[240px] w-[560px] rounded-full bg-white/[0.06] blur-3xl xl:block" />
 
         <motion.div
           initial={{ opacity: 0, scale: 0.75, y: 120, rotateX: 25 }}
