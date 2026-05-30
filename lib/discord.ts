@@ -124,6 +124,14 @@ function getDismissalRoleId() {
   return roleId;
 }
 
+export function getConfiguredWarningRoleIds() {
+  return {
+    normal: getOptionalRoleId("DISCORD_WARNING_ROLE_ID"),
+    high: getOptionalRoleId("DISCORD_STRONG_WARNING_ROLE_ID"),
+    dismissal: getOptionalRoleId("DISCORD_DISMISSAL_ROLE_ID"),
+  };
+}
+
 function getLeaveRoleId() {
   const roleId = process.env.DISCORD_LEAVE_ROLE_ID;
 
@@ -256,6 +264,16 @@ export async function applyWarningRole(discordId: string, severity: "NORMAL" | "
 
   await removeTokyoRole(discordId);
   await giveRole(discordId, getDismissalRoleId(), "الفصل");
+}
+
+export async function downgradeStrongWarningRole(discordId: string) {
+  const strongWarningRoleId = getOptionalRoleId("DISCORD_STRONG_WARNING_ROLE_ID");
+
+  if (strongWarningRoleId) {
+    await removeRole(discordId, strongWarningRoleId, "التحذير القوي");
+  }
+
+  await giveRole(discordId, getWarningRoleId(), "التحذير العادي");
 }
 
 export async function removeWarningRole(discordId: string, severity: "NORMAL" | "HIGH" | "DISMISSAL") {

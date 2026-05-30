@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { syncTokyoMembersSafely } from "@/lib/tokyo-member-sync";
+import { syncWarningsSafely } from "@/lib/warning-sync";
 import { AdminDecisionButtons } from "./AdminDecisionButtons";
 import { AdminAlertForm } from "./AdminAlertForm";
 import { AdminAnnouncementDeleteButton } from "./AdminAnnouncementDeleteButton";
@@ -10,6 +11,7 @@ import { AdminComplaintVote } from "./AdminComplaintVote";
 import { AdminDiscordTestButton } from "./AdminDiscordTestButton";
 import { AdminLogDeleteButton } from "./AdminLogDeleteButton";
 import { AdminLeaveDecisionButtons } from "./AdminLeaveDecisionButtons";
+import { AdminWarningAutoRefresh } from "./AdminWarningAutoRefresh";
 import { AdminSignOutButton } from "./AdminSignOutButton";
 import { AdminSpotlightForm } from "./AdminSpotlightForm";
 import { AdminSyncButton } from "./AdminSyncButton";
@@ -98,6 +100,7 @@ export default async function AdminPage({
   }
 
   const tokyoSync = await syncTokyoMembersSafely();
+  await syncWarningsSafely();
 
   const [
     applications,
@@ -211,6 +214,7 @@ export default async function AdminPage({
 
   return (
     <main dir="rtl" className="relative min-h-screen overflow-hidden bg-black px-3 py-5 text-white sm:px-5 md:p-10">
+      <AdminWarningAutoRefresh />
       <div className="pointer-events-none fixed inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(to_right,rgba(255,255,255,0.035)_1px,transparent_1px)] bg-[length:100%_6px,80px_80px] opacity-55" />
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(239,68,68,0.16),transparent_28%),radial-gradient(circle_at_80%_20%,rgba(34,211,238,0.10),transparent_26%),radial-gradient(circle_at_center,transparent_42%,rgba(0,0,0,0.72)_100%)]" />
       <Link

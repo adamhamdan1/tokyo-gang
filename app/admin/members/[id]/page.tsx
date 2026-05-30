@@ -5,6 +5,8 @@ import type { ReactNode } from "react";
 import { AdminMemberActions } from "../../AdminMemberActions";
 import { AdminWarningForm } from "../../AdminWarningForm";
 import { AdminWarningDeleteButton } from "../../AdminWarningDeleteButton";
+import { AdminWarningAutoRefresh } from "../../AdminWarningAutoRefresh";
+import { formatWarningTimeLeft, getWarningTimeLeft, syncWarningsSafely } from "@/lib/warning-sync";
 
 type Props = {
   params: Promise<{
@@ -51,6 +53,8 @@ export default async function AdminMemberPage({ params }: Props) {
   }
 
   const { id } = await params;
+  await syncWarningsSafely({ memberId: id, force: true });
+
   const member = await prisma.tokyoMember.findUnique({
     where: { id },
     include: {
@@ -110,6 +114,7 @@ export default async function AdminMemberPage({ params }: Props) {
 
   return (
     <main dir="rtl" className="min-h-screen bg-black px-3 py-5 text-white sm:px-5 md:p-10">
+      <AdminWarningAutoRefresh memberId={member.id} />
       <div className="mx-auto max-w-7xl">
         <Link href="/admin" className="inline-block rounded-2xl border border-white/15 bg-zinc-950 px-5 py-3 text-sm font-black text-gray-300">
           الرجوع للوحة الإدارة
@@ -180,7 +185,12 @@ export default async function AdminMemberPage({ params }: Props) {
                     </div>
                   </div>
                   {warning.details && <p className="mt-2 text-sm text-gray-400">{warning.details}</p>}
-                  <p className="mt-2 text-xs text-gray-600">{warning.createdAt.toLocaleString("ar")}</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                    <span>{warning.createdAt.toLocaleString("ar")}</span>
+                    <span className="rounded-full border border-white/10 px-3 py-1 text-gray-300">
+                      المتبقي: {formatWarningTimeLeft(getWarningTimeLeft(warning))}
+                    </span>
+                  </div>
                 </article>
               ))}
             </div>
