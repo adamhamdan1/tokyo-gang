@@ -26,6 +26,9 @@ type MemberWithWarnings = {
 
 const WARNING_TTL_MS = 14 * 24 * 60 * 60 * 1000;
 const WARNING_SYNC_INTERVAL_MS = 30 * 1000;
+const WARNING_SYNC_LOG_DEDUPE_MS = 10 * 60 * 1000;
+const SYNCED_WARNING_REASON = "مزامنة تلقائية من Discord";
+const SYNCED_WARNING_DETAILS = "تم اكتشاف رتبة التحذير على العضو داخل Discord وإضافتها للموقع تلقائياً.";
 
 const syncState: {
   inFlight: Promise<void> | null;
@@ -150,6 +153,7 @@ async function syncMemberWarnings(member: MemberWithWarnings) {
   const hasHighRole = roleIds.high ? memberRoleIds.has(roleIds.high) : false;
   const hasDismissalRole = roleIds.dismissal ? memberRoleIds.has(roleIds.dismissal) : false;
 
+  await dedupeSyncedWarnings(member);
   await importManualDiscordWarnings(member, { hasNormalRole, hasHighRole, hasDismissalRole });
 
   for (const warning of member.warnings) {
@@ -227,18 +231,53 @@ async function importManualDiscordWarnings(
 }
 
 async function createSyncedWarning(member: MemberWithWarnings, severity: "NORMAL" | "HIGH" | "DISMISSAL") {
-  const reason = "مزامنة تلقائية من Discord";
-  const details = "تم اكتشاف رتبة التحذير على العضو داخل Discord وإضافتها للموقع تلقائياً.";
+  const existingWarning = await prisma.memberWarning.findFirst({
+    where: {
+      memberId: member.id,
+      severity,
+    },
+  });
 
-  await prisma.memberWarning.create({
+  if (existingWarning) {
+    return;
+  }
+
+  const warning = await prisma.memberWarning.create({
     data: {
       memberId: member.id,
-      reason,
+      reason: SYNCED_WARNING_REASON,
       severity,
-      details,
+      details: SYNCED_WARNING_DETAILS,
       issuedBy: "DISCORD_SYNC",
     },
   });
+
+  const duplicates = await prisma.memberWarning.findMany({
+    where: {
+      memberId: member.id,
+      severity,
+      issuedBy: "DISCORD_SYNC",
+      reason: SYNCED_WARNING_REASON,
+    },
+    orderBy: { createdAt: "asc" },
+  });
+  const keepWarning = duplicates[0];
+  const duplicateIds = duplicates.slice(1).map((duplicate) => duplicate.id);
+
+  if (keepWarning?.id !== warning.id && duplicateIds.includes(warning.id)) {
+    await prisma.memberWarning.delete({ where: { id: warning.id } }).catch(() => null);
+    return;
+  }
+
+  if (duplicateIds.length > 0) {
+    await prisma.memberWarning.deleteMany({
+      where: {
+        id: {
+          in: duplicateIds,
+        },
+      },
+    });
+  }
 
   await prisma.tokyoMember.update({
     where: { id: member.id },
@@ -250,10 +289,36 @@ async function createSyncedWarning(member: MemberWithWarnings, severity: "NORMAL
 
   await logWarningSync(
     member,
-    `${details}\nالنوع: ${severity}`,
+    `${SYNCED_WARNING_DETAILS}\nالنوع: ${severity}`,
     "CREATED_FROM_DISCORD",
     severity
   );
+}
+
+async function dedupeSyncedWarnings(member: MemberWithWarnings) {
+  const syncedWarningsBySeverity = new Map<string, string[]>();
+
+  for (const warning of member.warnings) {
+    if (warning.reason !== SYNCED_WARNING_REASON) {
+      continue;
+    }
+
+    syncedWarningsBySeverity.set(warning.severity, [...(syncedWarningsBySeverity.get(warning.severity) ?? []), warning.id]);
+  }
+
+  const duplicateIds = [...syncedWarningsBySeverity.values()].flatMap((ids) => ids.slice(1));
+
+  if (duplicateIds.length === 0) {
+    return;
+  }
+
+  await prisma.memberWarning.deleteMany({
+    where: {
+      id: {
+        in: duplicateIds,
+      },
+    },
+  });
 }
 
 async function applyWarningExpiry(
@@ -323,6 +388,21 @@ async function logWarningSync(
   action: "CREATED_FROM_DISCORD" | "REMOVED_FROM_DISCORD" | "DOWNGRADED" | "EXPIRED",
   severity?: "NORMAL" | "HIGH" | "DISMISSAL"
 ) {
+  const recentDuplicate = await prisma.adminLog.findFirst({
+    where: {
+      action: "WARNING_SYNC",
+      details,
+      targetMemberId: member.id,
+      createdAt: {
+        gte: new Date(Date.now() - WARNING_SYNC_LOG_DEDUPE_MS),
+      },
+    },
+  });
+
+  if (recentDuplicate) {
+    return;
+  }
+
   await createAdminLog({
     action: "WARNING_SYNC",
     title: `مزامنة تحذيرات ${member.displayName}`,
