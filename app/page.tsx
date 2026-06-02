@@ -219,14 +219,31 @@ export default function Home() {
   const [spotlight, setSpotlight] = useState<SpotlightMember | null>(null);
   const [honors, setHonors] = useState<HonorMember[]>([]);
   const [loadHeroVideo, setLoadHeroVideo] = useState(false);
+  const [performanceMode, setPerformanceMode] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 3000);
+    const timer = setTimeout(() => setLoading(false), performanceMode ? 1400 : 3000);
     return () => clearTimeout(timer);
+  }, [performanceMode]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const connection = navigator as Navigator & {
+        connection?: {
+          saveData?: boolean;
+        };
+        hardwareConcurrency?: number;
+      };
+      const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const lowCoreDevice = typeof connection.hardwareConcurrency === "number" && connection.hardwareConcurrency <= 4;
+      setPerformanceMode(Boolean(connection.connection?.saveData || prefersReducedMotion || lowCoreDevice || window.innerWidth < 768));
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {
-    if (loading || !window.matchMedia("(min-width: 768px)").matches) {
+    if (performanceMode || loading || !window.matchMedia("(min-width: 768px)").matches) {
       return;
     }
 
@@ -242,7 +259,7 @@ export default function Home() {
 
     const timer = window.setTimeout(() => setLoadHeroVideo(true), 1200);
     return () => window.clearTimeout(timer);
-  }, [loading]);
+  }, [loading, performanceMode]);
 
   useEffect(() => {
     let active = true;
@@ -397,10 +414,10 @@ export default function Home() {
   };
 
   return (
-    <main dir="rtl" className="min-h-screen overflow-hidden bg-black text-white">
+    <main dir="rtl" data-performance={performanceMode ? "lite" : "full"} className="min-h-screen overflow-hidden bg-black text-white">
       <SpeedInsights />
       <Analytics />
-      <AmbientParticles />
+      {!performanceMode && <AmbientParticles />}
 
       <div className="pointer-events-none fixed inset-0 z-[9997] opacity-[0.035] bg-[linear-gradient(to_bottom,white_1px,transparent_1px)] bg-[length:100%_4px]" />
       <div className="pointer-events-none fixed inset-0 z-[9996] bg-[radial-gradient(circle_at_center,transparent_45%,rgba(0,0,0,0.65)_100%)]" />
@@ -700,7 +717,7 @@ export default function Home() {
         />
 
         <div className="absolute inset-0 hidden overflow-hidden xl:block">
-          {loadHeroVideo && (
+          {!performanceMode && loadHeroVideo && (
             <video autoPlay muted loop playsInline preload="none" className="h-full w-full scale-105 object-cover opacity-45 grayscale">
               <source src="/bg.mp4" type="video/mp4" />
             </video>

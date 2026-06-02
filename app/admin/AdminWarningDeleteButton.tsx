@@ -16,7 +16,12 @@ export function AdminWarningDeleteButton({ memberId, warningId, all = false }: P
   const deleteWarning = async () => {
     const message = all ? "حذف كل تحذيرات العضو وسحب رتب التحذير؟" : "حذف هذا التحذير وسحب رتبته؟";
 
-    if (!confirm(message)) return;
+    if (all) {
+      const confirmation = prompt(`${message}\nاكتب CLEAR للتأكيد`)?.trim();
+      if (confirmation !== "CLEAR") return;
+    } else if (!confirm(message)) {
+      return;
+    }
 
     setLoading(true);
 

@@ -6,13 +6,24 @@ import { TOKYO_ROLE_CATEGORIES } from "@/lib/tokyo-content";
 
 type Props = {
   memberId: string;
+  displayName: string;
   currentRank: string;
   currentScore: number;
 };
 
-export function AdminMemberActions({ memberId, currentRank, currentScore }: Props) {
+const noteTemplates = [
+  "مناسب للمقابلة",
+  "ينقصه خبرة ويحتاج متابعة",
+  "سلوك ممتاز ونشاط واضح",
+  "يحتاج مراقبة خلال الفترة القادمة",
+  "يفضل استدعاؤه لمراجعة الوضع",
+];
+
+export function AdminMemberActions({ memberId, displayName, currentRank, currentScore }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
+  const [noteTemplate, setNoteTemplate] = useState("");
+  const [noteText, setNoteText] = useState("");
 
   const sendAction = async (payload: Record<string, unknown>) => {
     setLoading(String(payload.action));
@@ -81,7 +92,8 @@ export function AdminMemberActions({ memberId, currentRank, currentScore }: Prop
   const blacklist = () => {
     const reason = prompt("سبب البلاك ليست")?.trim();
     if (!reason) return;
-    if (!confirm("متأكد؟ سيتم سحب رتبة TOKYO ووضع العضو في البلاك ليست.")) return;
+    const confirmation = prompt(`سيتم سحب رتبة TOKYO ووضع العضو في البلاك ليست.\nاكتب اسم العضو للتأكيد: ${displayName}`)?.trim();
+    if (confirmation !== displayName) return;
     sendAction({ action: "BLACKLIST", reason });
   };
 
@@ -115,7 +127,27 @@ export function AdminMemberActions({ memberId, currentRank, currentScore }: Prop
 
         <form action={addNote} className="grid gap-3 rounded-2xl border border-white/10 bg-black/35 p-4">
           <p className="font-black text-white">ملاحظة إدارية خاصة</p>
-          <textarea name="note" required placeholder="اكتب ملاحظة لا تظهر للعضو" className="h-24 rounded-xl border border-white/15 bg-black px-4 py-3 outline-none" />
+          <select
+            value={noteTemplate}
+            onChange={(event) => {
+              setNoteTemplate(event.target.value);
+              if (event.target.value) setNoteText(event.target.value);
+            }}
+            className="rounded-xl border border-white/15 bg-black px-4 py-3 outline-none"
+          >
+            <option value="">قوالب ملاحظات جاهزة</option>
+            {noteTemplates.map((template) => (
+              <option key={template} value={template}>{template}</option>
+            ))}
+          </select>
+          <textarea
+            name="note"
+            required
+            value={noteText}
+            onChange={(event) => setNoteText(event.target.value)}
+            placeholder="اكتب ملاحظة لا تظهر للعضو"
+            className="h-24 rounded-xl border border-white/15 bg-black px-4 py-3 outline-none"
+          />
           <button disabled={loading === "NOTE"} className="rounded-xl bg-yellow-300 px-5 py-3 font-black text-black disabled:opacity-50">
             إضافة ملاحظة
           </button>

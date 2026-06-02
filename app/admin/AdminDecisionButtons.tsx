@@ -51,7 +51,9 @@ export function AdminDecisionButtons({ applicationId, status }: Props) {
   };
 
   const deleteApplication = async () => {
-    if (!confirm("متأكد بدك تحذف هذا التقديم؟")) {
+    const confirmation = prompt("لحذف التقديم اكتب DELETE")?.trim();
+
+    if (confirmation !== "DELETE") {
       return;
     }
 

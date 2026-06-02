@@ -191,7 +191,7 @@ export default async function AdminMemberPage({ params }: Props) {
               </div>
             </section>
             <AdminWarningForm memberId={member.id} />
-            <AdminMemberActions memberId={member.id} currentRank={member.internalRank} currentScore={member.behaviorScore} />
+            <AdminMemberActions memberId={member.id} displayName={member.displayName} currentRank={member.internalRank} currentScore={member.behaviorScore} />
           </div>
 
           <section className="rounded-2xl border border-white/10 bg-zinc-950 p-5 md:rounded-3xl md:p-6">

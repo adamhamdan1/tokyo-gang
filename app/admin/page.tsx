@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getAdminContext } from "@/lib/admin-permissions";
 import { getDatabaseAdminIds } from "@/lib/admin-permissions";
+import { calculateApplicationQuality } from "@/lib/application-insights";
 import { calculateMemberRisk } from "@/lib/member-insights";
 import { syncTokyoMembersSafely } from "@/lib/tokyo-member-sync";
 import { syncWarningsSafely } from "@/lib/warning-sync";
@@ -18,6 +19,9 @@ import { AdminSignOutButton } from "./AdminSignOutButton";
 import { AdminSpotlightForm } from "./AdminSpotlightForm";
 import { AdminManagerForm } from "./AdminManagerForm";
 import { AdminWeeklyReportButton } from "./AdminWeeklyReportButton";
+import { AdminDiagnosticsButton } from "./AdminDiagnosticsButton";
+import { AdminEmptyState } from "./AdminEmptyState";
+import { AdminStatusBadge } from "./AdminStatusBadge";
 import { AdminSyncButton } from "./AdminSyncButton";
 import { AdminSummonDeleteButton } from "./AdminSummonDeleteButton";
 import { AdminSummonForm } from "./AdminSummonForm";
@@ -29,14 +33,6 @@ const statusStyles: Record<string, string> = {
   REJECTED: "border-red-500/40 bg-red-500/10 text-red-300 shadow-[0_0_24px_rgba(239,68,68,0.14)]",
   INTERVIEW: "border-yellow-400/40 bg-yellow-400/10 text-yellow-300 shadow-[0_0_24px_rgba(250,204,21,0.12)]",
   TRIAL: "border-cyan-400/40 bg-cyan-400/10 text-cyan-300 shadow-[0_0_24px_rgba(34,211,238,0.12)]",
-};
-
-const statusLabels: Record<string, string> = {
-  PENDING: "قيد المراجعة",
-  ACCEPTED: "مقبول",
-  REJECTED: "مرفوض",
-  INTERVIEW: "مقابلة",
-  TRIAL: "فترة تجربة",
 };
 
 const filterTabs = [
@@ -134,6 +130,7 @@ export default async function AdminPage({
     weeklyWarnings,
     weeklySummons,
     weeklyComplaints,
+    adminActivity,
   ] = await Promise.all([
     prisma.application.findMany({
       where: {
@@ -237,6 +234,16 @@ export default async function AdminPage({
     prisma.memberWarning.count({ where: { createdAt: { gte: weekAgo } } }),
     prisma.summon.count({ where: { createdAt: { gte: weekAgo } } }),
     prisma.complaint.count({ where: { createdAt: { gte: weekAgo } } }),
+    prisma.adminLog.groupBy({
+      by: ["adminDiscordId"],
+      where: {
+        createdAt: { gte: weekAgo },
+        adminDiscordId: { not: null },
+      },
+      _count: { _all: true },
+      orderBy: { _count: { adminDiscordId: "desc" } },
+      take: 6,
+    }),
   ]);
 
   const stats = [
@@ -273,6 +280,17 @@ export default async function AdminPage({
     ["DB", "CONNECTED"],
     ["Members Sync", tokyoSync ? `${tokyoSync.count} عضو` : "READY"],
     ["Warnings Sync", "30s"],
+  ];
+  const highRiskMemberCount = tokyoMembers.filter((member) => {
+    const risk = calculateMemberRisk(member);
+    return risk.level === "HIGH" || risk.level === "CRITICAL";
+  }).length;
+  const quickReviewItems = [
+    ["تقديمات للمراجعة", applications.filter((application) => application.status === "PENDING").length],
+    ["تحذيرات قرب الانتهاء", warningCount],
+    ["أعضاء Risk عالي", highRiskMemberCount],
+    ["شكاوي مفتوحة", complaints.filter((item) => item.status !== "RESOLVED" && item.status !== "DISMISSED").length],
+    ["إجازات معلقة", pendingLeaves.length],
   ];
 
   return (
@@ -318,6 +336,7 @@ export default async function AdminPage({
             الرجوع للرئيسية
           </Link>
           <AdminDiscordTestButton />
+          <AdminDiagnosticsButton />
           <AdminSyncButton />
           <AdminSignOutButton />
           <div className="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-5 py-3 text-center text-sm font-black text-cyan-300">
@@ -339,6 +358,18 @@ export default async function AdminPage({
               </p>
             </div>
           ))}
+        </section>
+
+        <section className="mb-8 rounded-2xl border border-white/10 bg-zinc-950 p-5 md:mb-10 md:rounded-3xl md:p-6">
+          <p className="text-xs font-black tracking-[5px] text-white">QUICK REVIEW</p>
+          <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-5">
+            {quickReviewItems.map(([label, value]) => (
+              <div key={label} className="rounded-2xl border border-white/10 bg-black/40 p-4">
+                <p className="text-xs text-gray-500">{label}</p>
+                <p className="mt-2 text-3xl font-black text-white">{value}</p>
+              </div>
+            ))}
+          </div>
         </section>
 
         <section className="mb-8 grid gap-4 md:mb-10 lg:grid-cols-[0.9fr_1.1fr]">
@@ -491,6 +522,18 @@ export default async function AdminPage({
                 </div>
               ))}
             </div>
+            <div className="mt-5 rounded-2xl border border-white/10 bg-black/40 p-4">
+              <p className="text-xs font-black tracking-[4px] text-cyan-300">ADMIN ACTIVITY SCORE</p>
+              <div className="mt-4 grid gap-2 md:grid-cols-3">
+                {adminActivity.map((item) => (
+                  <div key={item.adminDiscordId ?? "unknown"} className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                    <p className="break-all text-xs text-gray-500">{item.adminDiscordId}</p>
+                    <p className="mt-1 text-xl font-black text-white">{item._count._all}</p>
+                  </div>
+                ))}
+                {adminActivity.length === 0 && <p className="text-sm text-gray-500">لا يوجد نشاط إداري هذا الأسبوع.</p>}
+              </div>
+            </div>
           </section>
         )}
 
@@ -517,6 +560,11 @@ export default async function AdminPage({
             ))}
           </div>
           <div className="mt-5 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+            {filteredTokyoMembers.length === 0 && (
+              <div className="md:col-span-2 lg:col-span-3">
+                <AdminEmptyState title="لا يوجد أعضاء مطابقين" message="الفلاتر الحالية لا تحتوي نتائج. غيّر الفلتر أو البحث." />
+              </div>
+            )}
             {filteredTokyoMembers.map((member) => {
               const risk = calculateMemberRisk(member);
 
@@ -532,7 +580,7 @@ export default async function AdminPage({
                     <p className="mt-1 text-xs text-gray-500">@{member.username}</p>
                   </div>
                   <div className="text-left">
-                    <p className="text-xs font-black text-cyan-300">{member.status}</p>
+                    <AdminStatusBadge value={member.status} compact />
                     {member.warnings.length > 0 && (
                       <p className="mt-1 text-xs text-yellow-300">{member.warnings.length} تحذير</p>
                     )}
@@ -685,8 +733,10 @@ export default async function AdminPage({
         </section>}
 
         {mode === "APPLICATIONS" && <section className="grid gap-5 md:gap-6">
+          {applications.length === 0 && <AdminEmptyState title="لا توجد تقديمات" message="لا توجد طلبات مطابقة للفلاتر الحالية." />}
           {applications.map((app) => {
             const style = statusStyles[app.status] ?? statusStyles.PENDING;
+            const quality = calculateApplicationQuality(app);
             const submittedAt = new Intl.DateTimeFormat("ar", {
               dateStyle: "medium",
               timeStyle: "short",
@@ -719,8 +769,15 @@ export default async function AdminPage({
                   </div>
 
                   <div className="flex flex-wrap items-center gap-3">
-                    <span className="rounded-full border border-current px-4 py-2 text-sm font-black">
-                      {statusLabels[app.status] ?? app.status}
+                    <AdminStatusBadge value={app.status} />
+                    <span className={`rounded-full border px-4 py-2 text-sm font-black ${
+                      quality.level === "STRONG"
+                        ? "border-green-400/25 bg-green-400/10 text-green-300"
+                        : quality.level === "NORMAL"
+                          ? "border-yellow-400/25 bg-yellow-400/10 text-yellow-300"
+                          : "border-red-500/25 bg-red-500/10 text-red-300"
+                    }`}>
+                      QUALITY {quality.score} - {quality.label}
                     </span>
                     <span className="rounded-full border border-white/15 bg-black/35 px-4 py-2 text-sm text-gray-300">
                       {submittedAt}
@@ -747,6 +804,12 @@ export default async function AdminPage({
                     <div className="rounded-2xl border border-yellow-400/20 bg-yellow-400/10 p-4 md:col-span-3">
                       <p className="text-xs text-yellow-300">تنبيه مراجعة</p>
                       <p className="mt-2 leading-8 text-white">{app.reviewFlag}</p>
+                    </div>
+                  )}
+                  {quality.notes.length > 0 && (
+                    <div className="rounded-2xl border border-orange-400/20 bg-orange-400/10 p-4 md:col-span-3">
+                      <p className="text-xs text-orange-300">ملاحظات جودة التقديم</p>
+                      <p className="mt-2 leading-8 text-white">{quality.notes.join("، ")}</p>
                     </div>
                   )}
                   <div className="rounded-2xl border border-white/10 bg-black/30 p-4 md:col-span-2">
