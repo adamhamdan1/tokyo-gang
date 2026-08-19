@@ -1,4 +1,4 @@
-import { getConfiguredWarningRoleIds, getTokyoGuildMember } from "@/lib/discord";
+import { getConfiguredWarningRoleIds, getTokyoGuildMember, resolveTokyoGangRole } from "@/lib/discord";
 import { requireAdminCapability } from "@/lib/admin-permissions";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
@@ -8,10 +8,6 @@ type RouteContext = {
     id: string;
   }>;
 };
-
-function getTokyoRoleId() {
-  return process.env.DISCORD_TOKYO_ROLE_ID ?? process.env.DISCORD_TOKYO_ONLINE_ROLE_ID ?? "1490246428218494976";
-}
 
 export async function POST(_req: Request, context: RouteContext) {
   const admin = await requireAdminCapability("MEMBERS");
@@ -29,7 +25,8 @@ export async function POST(_req: Request, context: RouteContext) {
 
   const guildMember = await getTokyoGuildMember(member.discordId);
   const roles = guildMember?.roles ?? [];
-  const warningRoles = getConfiguredWarningRoleIds();
+  const tokyoRole = await resolveTokyoGangRole();
+  const warningRoles = await getConfiguredWarningRoleIds();
   const warningState = roles.includes(warningRoles.dismissal ?? "")
     ? "DISMISSAL"
     : roles.includes(warningRoles.high ?? "")
@@ -40,7 +37,7 @@ export async function POST(_req: Request, context: RouteContext) {
 
   return NextResponse.json({
     inServer: Boolean(guildMember),
-    hasTokyoRole: roles.includes(getTokyoRoleId()),
+    hasTokyoRole: roles.includes(tokyoRole.id),
     warningState,
     roleCount: roles.length,
   });

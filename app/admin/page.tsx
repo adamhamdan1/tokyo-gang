@@ -23,6 +23,10 @@ import { AdminStatusBadge } from "./AdminStatusBadge";
 import { AdminSyncButton } from "./AdminSyncButton";
 import { AdminSummonDeleteButton } from "./AdminSummonDeleteButton";
 import { AdminSummonForm } from "./AdminSummonForm";
+import { AdminDiscordRoleConfig } from "./AdminDiscordRoleConfig";
+import { AdminWebhookConfig } from "./AdminWebhookConfig";
+import { getTokyoRoleOverrides } from "@/lib/tokyo-role-settings";
+import { ensureTokyoWebhooksSafely } from "@/lib/discord";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -153,9 +157,9 @@ export default async function AdminPage({
     : "ALL";
   // eslint-disable-next-line react-hooks/purity
   const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-  const applicationPageSize = readBoundedInteger(process.env.ADMIN_DASHBOARD_PAGE_SIZE, 24, 8, 60);
-  const activityWindowDays = readBoundedInteger(process.env.ADMIN_ACTIVITY_WINDOW_DAYS, 7, 1, 30);
-  const memberSyncIntervalSeconds = readBoundedInteger(process.env.TOKYO_MEMBER_SYNC_INTERVAL_SECONDS, 60, 15, 300);
+  const applicationPageSize = readBoundedInteger(process.env.TOKYO_ADMIN_PAGE_SIZE, 24, 8, 60);
+  const activityWindowDays = readBoundedInteger(process.env.TOKYO_REPORT_DAYS, 7, 1, 30);
+  const memberSyncIntervalSeconds = readBoundedInteger(process.env.TOKYO_SYNC_SECONDS, 60, 15, 300);
   const applicationPage = readBoundedInteger(readSearchParam(params?.page), 1, 1, 10_000);
   // eslint-disable-next-line react-hooks/purity
   const activitySince = new Date(Date.now() - activityWindowDays * 24 * 60 * 60 * 1000);
@@ -177,7 +181,7 @@ export default async function AdminPage({
     );
   }
 
-  const shouldSyncMembers = mode === "MEMBERS" || mode === "DISCIPLINE";
+  const shouldSyncMembers = mode === "OVERVIEW" || mode === "MEMBERS" || mode === "DISCIPLINE";
   const tokyoSync = shouldSyncMembers ? await syncTokyoMembersSafely() : null;
 
   if (shouldSyncMembers) {
@@ -404,6 +408,8 @@ export default async function AdminPage({
         .map(([capability]) => capability);
   const activeModeDetails = modeDetails[mode ?? "OVERVIEW"] ?? modeDetails.OVERVIEW;
   const applicationPageCount = Math.max(1, Math.ceil(filteredApplicationCount / applicationPageSize));
+  const tokyoRoleOverrides = await getTokyoRoleOverrides();
+  const tokyoWebhookStatuses = mode === "SYSTEM" ? await ensureTokyoWebhooksSafely() : [];
   const moduleCards = [
     {
       mode: "APPLICATIONS",
@@ -616,6 +622,15 @@ export default async function AdminPage({
             <AdminSyncButton />
           </section>
         )}
+
+        {(mode === "MEMBERS" || mode === "SYSTEM") && (
+          <AdminDiscordRoleConfig
+            initialOverrides={tokyoRoleOverrides}
+            currentMemberCount={tokyoMembers.length}
+          />
+        )}
+
+        {mode === "SYSTEM" && <AdminWebhookConfig initialStatuses={tokyoWebhookStatuses} />}
 
         {mode === "SYSTEM" && <AdminAnnouncementForm />}
         {mode === "SYSTEM" && <AdminAlertForm />}

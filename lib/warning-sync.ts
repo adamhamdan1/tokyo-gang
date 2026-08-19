@@ -147,7 +147,7 @@ async function syncMemberWarnings(member: MemberWithWarnings) {
     return;
   }
 
-  const roleIds = getConfiguredWarningRoleIds();
+  const roleIds = await getConfiguredWarningRoleIds();
   const memberRoleIds = new Set(guildMember?.roles ?? []);
   const hasNormalRole = roleIds.normal ? memberRoleIds.has(roleIds.normal) : false;
   const hasHighRole = roleIds.high ? memberRoleIds.has(roleIds.high) : false;

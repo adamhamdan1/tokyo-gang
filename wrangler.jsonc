@@ -11,9 +11,9 @@
   "preview_urls": true,
   "minify": true,
   "vars": {
-    "ADMIN_DASHBOARD_PAGE_SIZE": "24",
-    "ADMIN_ACTIVITY_WINDOW_DAYS": "7",
-    "TOKYO_MEMBER_SYNC_INTERVAL_SECONDS": "60"
+    "TOKYO_ADMIN_PAGE_SIZE": "24",
+    "TOKYO_REPORT_DAYS": "7",
+    "TOKYO_SYNC_SECONDS": "60"
   },
   "assets": {
     "directory": ".open-next/assets",

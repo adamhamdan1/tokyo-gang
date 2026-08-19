@@ -1,38 +1,28 @@
-import { auth } from "@/auth";
+import { requireAdminCapability } from "@/lib/admin-permissions";
 import { sendAdminLog } from "@/lib/discord";
 import { syncTokyoMembers } from "@/lib/tokyo-member-sync";
 import { NextResponse } from "next/server";
 
-function getAdminIds() {
-  return process.env.ADMIN_DISCORD_IDS?.split(",").map((id) => id.trim()).filter(Boolean) || [];
-}
-
-async function requireAdmin() {
-  const session = await auth();
-  const adminIds = getAdminIds();
-
-  if (!session?.user?.id || !adminIds.includes(session.user.id)) {
-    return {
-      authorized: false as const,
-      response: NextResponse.json({ error: "Access Denied" }, { status: 403 }),
-    };
-  }
-
-  return { authorized: true as const, session };
-}
-
 export async function POST() {
-  const admin = await requireAdmin();
+  const admin = await requireAdminCapability("MEMBERS");
 
-  if (!admin.authorized) {
-    return admin.response;
+  if (!admin) {
+    return NextResponse.json({ error: "Access Denied" }, { status: 403 });
   }
 
-  const result = await syncTokyoMembers({ force: true });
+  try {
+    const result = await syncTokyoMembers({ force: true });
 
-  await sendAdminLog(
-    `مزامنة أعضاء TOKYO\nعدد الأعضاء: ${result.count}\nالأدمن: ${admin.session.user.name ?? admin.session.user.id}`
-  ).catch((error) => console.error("Admin log failed", error));
+    await sendAdminLog(
+      `مزامنة أعضاء TOKYO\nعدد الأعضاء: ${result.count}\nالأدمن: ${admin.name}`
+    ).catch((error) => console.error("Admin log failed", error));
 
-  return NextResponse.json({ success: true, count: result.count, syncedAt: result.syncedAt });
+    return NextResponse.json({ success: true, count: result.count, syncedAt: result.syncedAt });
+  } catch (error) {
+    console.error("TOKYO member sync failed", error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "فشلت مزامنة أعضاء العصابة" },
+      { status: 502 }
+    );
+  }
 }

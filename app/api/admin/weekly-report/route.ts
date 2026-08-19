@@ -10,7 +10,7 @@ export async function POST() {
     return NextResponse.json({ error: "Access Denied" }, { status: 403 });
   }
 
-  const configuredDays = Number(process.env.ADMIN_ACTIVITY_WINDOW_DAYS ?? 7);
+  const configuredDays = Number(process.env.TOKYO_REPORT_DAYS ?? 7);
   const activityWindowDays = Number.isInteger(configuredDays) ? Math.min(30, Math.max(1, configuredDays)) : 7;
   const activitySince = new Date(Date.now() - activityWindowDays * 24 * 60 * 60 * 1000);
   const [applications, accepted, rejected, warnings, summons, complaints, leaves] = await Promise.all([

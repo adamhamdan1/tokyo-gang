@@ -1,3 +1,7 @@
+import { getTokyoDiscordValue } from "@/lib/tokyo-env";
+import { prisma } from "@/lib/prisma";
+import { getTokyoRoleOverrides, saveTokyoRoleOverride } from "@/lib/tokyo-role-settings";
+
 const DISCORD_API_BASE = "https://discord.com/api/v10";
 
 type DiscordMember = {
@@ -37,13 +41,25 @@ let roleMembersCache: {
   expiresAt: number;
 } | null = null;
 
+let tokyoRoleCache: {
+  role: DiscordRole;
+  source: "AUTO" | "MANUAL";
+  expiresAt: number;
+} | null = null;
+
+let guildRolesCache: {
+  roles: DiscordRole[];
+  expiresAt: number;
+} | null = null;
+
 const ROLE_MEMBERS_CACHE_MS = 30 * 1000;
+const TOKYO_ROLE_CACHE_MS = 5 * 60 * 1000;
 
 function getBotHeaders() {
   const token = process.env.DISCORD_BOT_TOKEN;
 
   if (!token) {
-    throw new Error("DISCORD_BOT_TOKEN غير موجود في Vercel Environment Variables");
+    throw new Error("DISCORD_BOT_TOKEN غير موجود في Cloudflare Secrets");
   }
 
   return {
@@ -56,116 +72,210 @@ function getGuildId() {
   const guildId = process.env.DISCORD_GUILD_ID;
 
   if (!guildId) {
-    throw new Error("DISCORD_GUILD_ID غير موجود في Vercel Environment Variables");
+    throw new Error("DISCORD_GUILD_ID غير موجود في Cloudflare Secrets");
   }
 
   return guildId;
 }
 
-function getAcceptedRoleId() {
-  const roleId = process.env.DISCORD_ACCEPTED_ROLE_ID;
+async function getManagedRoleId(input: {
+  roleKey: string;
+  configKey?: Parameters<typeof getTokyoDiscordValue>[0];
+  legacyName?: string;
+  fallback?: string;
+  label: string;
+}) {
+  const overrides = await getTokyoRoleOverrides();
+  const overrideRoleId = overrides[input.roleKey];
+
+  if (overrideRoleId) {
+    const roles = await listGuildRoles();
+
+    if (!roles.some((role) => role.id === overrideRoleId)) {
+      throw new Error(`Role ID المحفوظ لرتبة ${input.label} لم يعد موجوداً في Discord`);
+    }
+
+    return overrideRoleId;
+  }
+
+  const configuredRoleId = input.configKey
+    ? getTokyoDiscordValue(input.configKey, input.legacyName)
+    : input.legacyName
+      ? process.env[input.legacyName]
+      : undefined;
+  const roleId = configuredRoleId ?? input.fallback;
 
   if (!roleId) {
-    throw new Error("DISCORD_ACCEPTED_ROLE_ID غير موجود في Vercel Environment Variables");
+    throw new Error(`رتبة ${input.label} غير مضبوطة. أضف Role ID من لوحة الإدارة`);
   }
 
   return roleId;
 }
 
-function getTokyoOnlineRoleId() {
-  return process.env.DISCORD_TOKYO_ONLINE_ROLE_ID ?? "1490246428218494976";
+function getAcceptedRoleId() {
+  return getManagedRoleId({
+    roleKey: "ACCEPTED",
+    configKey: "acceptedRoleId",
+    legacyName: "DISCORD_ACCEPTED_ROLE_ID",
+    label: "القبول",
+  });
 }
 
-function getTokyoRoleId() {
-  return process.env.DISCORD_TOKYO_ROLE_ID ?? getTokyoOnlineRoleId();
+export async function resolveTokyoGangRole() {
+  const now = Date.now();
+  const overrides = await getTokyoRoleOverrides();
+  let overrideRoleId: string | null = overrides.TOKYO_GANG || null;
+
+  if (
+    tokyoRoleCache &&
+    tokyoRoleCache.expiresAt > now &&
+    ((overrideRoleId && tokyoRoleCache.source === "MANUAL" && tokyoRoleCache.role.id === overrideRoleId) ||
+      (!overrideRoleId && tokyoRoleCache.source === "AUTO"))
+  ) {
+    return tokyoRoleCache.role;
+  }
+
+  const roles = await listGuildRoles();
+  let overrideRole = overrideRoleId ? roles.find((role) => role.id === overrideRoleId) : null;
+
+  if (overrideRoleId && !overrideRole) {
+    await saveTokyoRoleOverride({ roleKey: "TOKYO_GANG", adminId: "SYSTEM_REPAIR" });
+    overrideRoleId = null;
+    overrideRole = null;
+  }
+
+  const preferredNames = ["Tokyo Gang ش", "Tokyo Gang", "TOKYO GANG"].map(normalizeRoleLookup);
+  const roleByName =
+    roles.find((role) => preferredNames.includes(normalizeRoleLookup(role.name))) ??
+    roles.find((role) => {
+      const normalized = normalizeRoleLookup(role.name);
+      return normalized.includes("tokyo") && normalized.includes("gang") && !normalized.includes("online");
+    });
+  const role = overrideRole ?? roleByName;
+
+  if (!role) {
+    throw new Error("تعذر العثور على رتبة Tokyo Gang في Discord. تأكد من وجود رتبة باسم Tokyo Gang ش");
+  }
+
+  tokyoRoleCache = {
+    role,
+    source: overrideRole ? "MANUAL" : "AUTO",
+    expiresAt: now + TOKYO_ROLE_CACHE_MS,
+  };
+
+  return role;
+}
+
+export function invalidateTokyoRoleCache() {
+  tokyoRoleCache = null;
+  roleMembersCache = null;
+}
+
+export async function inspectDiscordRole(roleId: string) {
+  const roles = await listGuildRoles();
+  const role = roles.find((item) => item.id === roleId);
+
+  if (!role) return null;
+
+  const members = await listRoleMembers(roleId);
+  return {
+    id: role.id,
+    name: role.name,
+    memberCount: members.length,
+  };
+}
+
+async function getTokyoRoleId() {
+  return (await resolveTokyoGangRole()).id;
 }
 
 function getTrialRoleId() {
-  return process.env.DISCORD_TRIAL_ROLE_ID ?? "1490418431344906320";
+  return getManagedRoleId({
+    roleKey: "TRIAL",
+    configKey: "trialRoleId",
+    legacyName: "DISCORD_TRIAL_ROLE_ID",
+    fallback: "1490418431344906320",
+    label: "فترة التجربة",
+  });
 }
 
 function getSummonRoleId() {
-  const roleId = process.env.DISCORD_SUMMON_ROLE_ID;
-
-  if (!roleId) {
-    throw new Error("DISCORD_SUMMON_ROLE_ID غير موجود في Vercel Environment Variables");
-  }
-
-  return roleId;
+  return getManagedRoleId({
+    roleKey: "SUMMON",
+    configKey: "summonRoleId",
+    legacyName: "DISCORD_SUMMON_ROLE_ID",
+    label: "الاستدعاء",
+  });
 }
 
 function getWarningRoleId() {
-  const roleId = process.env.DISCORD_WARNING_ROLE_ID;
-
-  if (!roleId) {
-    throw new Error("DISCORD_WARNING_ROLE_ID غير موجود في Vercel Environment Variables");
-  }
-
-  return roleId;
+  return getManagedRoleId({
+    roleKey: "WARNING",
+    configKey: "warningRoleId",
+    legacyName: "DISCORD_WARNING_ROLE_ID",
+    label: "التحذير العادي",
+  });
 }
 
 function getStrongWarningRoleId() {
-  const roleId = process.env.DISCORD_STRONG_WARNING_ROLE_ID;
-
-  if (!roleId) {
-    throw new Error("DISCORD_STRONG_WARNING_ROLE_ID غير موجود في Vercel Environment Variables");
-  }
-
-  return roleId;
+  return getManagedRoleId({
+    roleKey: "STRONG_WARNING",
+    configKey: "strongWarningRoleId",
+    legacyName: "DISCORD_STRONG_WARNING_ROLE_ID",
+    label: "التحذير القوي",
+  });
 }
 
 function getDismissalRoleId() {
-  const roleId = process.env.DISCORD_DISMISSAL_ROLE_ID;
-
-  if (!roleId) {
-    throw new Error("DISCORD_DISMISSAL_ROLE_ID غير موجود في Vercel Environment Variables");
-  }
-
-  return roleId;
+  return getManagedRoleId({
+    roleKey: "DISMISSAL",
+    configKey: "dismissalRoleId",
+    legacyName: "DISCORD_DISMISSAL_ROLE_ID",
+    label: "الفصل",
+  });
 }
 
-export function getConfiguredWarningRoleIds() {
+export async function getConfiguredWarningRoleIds() {
   return {
-    normal: getOptionalRoleId("DISCORD_WARNING_ROLE_ID"),
-    high: getOptionalRoleId("DISCORD_STRONG_WARNING_ROLE_ID"),
-    dismissal: getOptionalRoleId("DISCORD_DISMISSAL_ROLE_ID"),
+    normal: await getWarningRoleId().catch(() => undefined),
+    high: await getStrongWarningRoleId().catch(() => undefined),
+    dismissal: await getDismissalRoleId().catch(() => undefined),
   };
 }
 
 function getLeaveRoleId() {
-  const roleId = process.env.DISCORD_LEAVE_ROLE_ID;
-
-  if (!roleId) {
-    throw new Error("DISCORD_LEAVE_ROLE_ID غير موجود في Vercel Environment Variables");
-  }
-
-  return roleId;
-}
-
-function getOptionalRoleId(key: string) {
-  return process.env[key];
+  return getManagedRoleId({
+    roleKey: "ON_LEAVE",
+    configKey: "leaveRoleId",
+    legacyName: "DISCORD_LEAVE_ROLE_ID",
+    label: "الإجازة",
+  });
 }
 
 function getRankRoleId(rank: string) {
-  return process.env[`DISCORD_RANK_ROLE_${rank}_ID`];
+  return getManagedRoleId({
+    roleKey: `RANK_${rank}`,
+    legacyName: `DISCORD_RANK_ROLE_${rank}_ID`,
+    label: `الرتبة الداخلية ${rank}`,
+  });
 }
 
 function getSummonChannelId() {
-  const channelId = process.env.DISCORD_SUMMON_CHANNEL_ID;
+  const channelId = getTokyoDiscordValue("summonChannelId", "DISCORD_SUMMON_CHANNEL_ID");
 
   if (!channelId) {
-    throw new Error("DISCORD_SUMMON_CHANNEL_ID غير موجود في Vercel Environment Variables");
+    throw new Error("summonChannelId غير موجود داخل TOKYO_DISCORD_CONFIG");
   }
 
   return channelId;
 }
 
 function getComplaintLogChannelId() {
-  return process.env.DISCORD_COMPLAINT_LOG_CHANNEL_ID;
+  return getTokyoDiscordValue("complaintLogChannelId", "DISCORD_COMPLAINT_LOG_CHANNEL_ID");
 }
 
 function getWarningLogChannelId() {
-  return process.env.DISCORD_WARNING_LOG_CHANNEL_ID ?? "1490246556857798817";
+  return getTokyoDiscordValue("warningLogChannelId", "DISCORD_WARNING_LOG_CHANNEL_ID") ?? "1490246556857798817";
 }
 
 async function fetchDiscord(path: string, init?: RequestInit) {
@@ -224,35 +334,39 @@ export async function requireTokyoGuildMember(discordId: string) {
 }
 
 export async function giveAcceptedRole(discordId: string) {
-  await giveRole(discordId, getAcceptedRoleId(), "القبول");
+  await giveRole(discordId, await getAcceptedRoleId(), "القبول");
 }
 
 export async function giveTrialRole(discordId: string) {
-  await giveRole(discordId, getTrialRoleId(), "فترة التجربة");
+  await giveRole(discordId, await getTrialRoleId(), "فترة التجربة");
 }
 
 export async function giveSummonRole(discordId: string) {
-  await giveRole(discordId, getSummonRoleId(), "الاستدعاء");
+  await giveRole(discordId, await getSummonRoleId(), "الاستدعاء");
 }
 
 export async function applyWarningRole(discordId: string, severity: "NORMAL" | "HIGH" | "DISMISSAL") {
+  const roleIds = await getConfiguredWarningRoleIds();
+
   if (severity === "NORMAL") {
-    await giveRole(discordId, getWarningRoleId(), "التحذير العادي");
+    if (!roleIds.normal) throw new Error("رتبة التحذير العادي غير مضبوطة من لوحة الإدارة");
+    await giveRole(discordId, roleIds.normal, "التحذير العادي");
     return;
   }
 
-  const warningRoleId = getOptionalRoleId("DISCORD_WARNING_ROLE_ID");
+  const warningRoleId = roleIds.normal;
 
   if (severity === "HIGH") {
     if (warningRoleId) {
       await removeRole(discordId, warningRoleId, "التحذير العادي");
     }
 
-    await giveRole(discordId, getStrongWarningRoleId(), "التحذير القوي");
+    if (!roleIds.high) throw new Error("رتبة التحذير القوي غير مضبوطة من لوحة الإدارة");
+    await giveRole(discordId, roleIds.high, "التحذير القوي");
     return;
   }
 
-  const strongWarningRoleId = getOptionalRoleId("DISCORD_STRONG_WARNING_ROLE_ID");
+  const strongWarningRoleId = roleIds.high;
 
   if (warningRoleId) {
     await removeRole(discordId, warningRoleId, "التحذير العادي");
@@ -263,22 +377,27 @@ export async function applyWarningRole(discordId: string, severity: "NORMAL" | "
   }
 
   await removeTokyoRole(discordId);
-  await giveRole(discordId, getDismissalRoleId(), "الفصل");
+  if (!roleIds.dismissal) throw new Error("رتبة الفصل غير مضبوطة من لوحة الإدارة");
+  await giveRole(discordId, roleIds.dismissal, "الفصل");
 }
 
 export async function downgradeStrongWarningRole(discordId: string) {
-  const strongWarningRoleId = getOptionalRoleId("DISCORD_STRONG_WARNING_ROLE_ID");
+  const roleIds = await getConfiguredWarningRoleIds();
+  const strongWarningRoleId = roleIds.high;
 
   if (strongWarningRoleId) {
     await removeRole(discordId, strongWarningRoleId, "التحذير القوي");
   }
 
-  await giveRole(discordId, getWarningRoleId(), "التحذير العادي");
+  if (!roleIds.normal) throw new Error("رتبة التحذير العادي غير مضبوطة من لوحة الإدارة");
+  await giveRole(discordId, roleIds.normal, "التحذير العادي");
 }
 
 export async function removeWarningRole(discordId: string, severity: "NORMAL" | "HIGH" | "DISMISSAL") {
+  const roleIds = await getConfiguredWarningRoleIds();
+
   if (severity === "NORMAL") {
-    const warningRoleId = getOptionalRoleId("DISCORD_WARNING_ROLE_ID");
+    const warningRoleId = roleIds.normal;
 
     if (warningRoleId) {
       await removeRole(discordId, warningRoleId, "التحذير العادي");
@@ -288,7 +407,7 @@ export async function removeWarningRole(discordId: string, severity: "NORMAL" | 
   }
 
   if (severity === "HIGH") {
-    const strongWarningRoleId = getOptionalRoleId("DISCORD_STRONG_WARNING_ROLE_ID");
+    const strongWarningRoleId = roleIds.high;
 
     if (strongWarningRoleId) {
       await removeRole(discordId, strongWarningRoleId, "التحذير القوي");
@@ -297,7 +416,7 @@ export async function removeWarningRole(discordId: string, severity: "NORMAL" | 
     return;
   }
 
-  const dismissalRoleId = getOptionalRoleId("DISCORD_DISMISSAL_ROLE_ID");
+  const dismissalRoleId = roleIds.dismissal;
 
   if (dismissalRoleId) {
     await removeRole(discordId, dismissalRoleId, "الفصل");
@@ -305,15 +424,14 @@ export async function removeWarningRole(discordId: string, severity: "NORMAL" | 
 }
 
 export async function removeAllWarningRoles(discordId: string) {
+  const configured = await getConfiguredWarningRoleIds();
   const roleIds = [
-    ["DISCORD_WARNING_ROLE_ID", "التحذير العادي"],
-    ["DISCORD_STRONG_WARNING_ROLE_ID", "التحذير القوي"],
-    ["DISCORD_DISMISSAL_ROLE_ID", "الفصل"],
+    [configured.normal, "التحذير العادي"],
+    [configured.high, "التحذير القوي"],
+    [configured.dismissal, "الفصل"],
   ] as const;
 
-  for (const [key, label] of roleIds) {
-    const roleId = getOptionalRoleId(key);
-
+  for (const [roleId, label] of roleIds) {
     if (roleId) {
       await removeRole(discordId, roleId, label);
     }
@@ -321,26 +439,21 @@ export async function removeAllWarningRoles(discordId: string) {
 }
 
 export async function removeTokyoRole(discordId: string) {
-  await removeRole(discordId, getTokyoRoleId(), "TOKYO");
+  await removeRole(discordId, await getTokyoRoleId(), "TOKYO");
 }
 
 export async function giveLeaveRole(discordId: string) {
-  await giveRole(discordId, getLeaveRoleId(), "الإجازة");
+  await giveRole(discordId, await getLeaveRoleId(), "الإجازة");
 }
 
 export async function removeLeaveRole(discordId: string) {
-  await removeRole(discordId, getLeaveRoleId(), "الإجازة");
+  await removeRole(discordId, await getLeaveRoleId(), "الإجازة");
 }
 
 export async function applyInternalRankRole(discordId: string, rank: string, previousRank?: string | null) {
   const normalizedRank = rank.toUpperCase();
-  const roleId = getRankRoleId(normalizedRank);
-
-  if (!roleId) {
-    throw new Error(`DISCORD_RANK_ROLE_${normalizedRank}_ID غير موجود في Vercel Environment Variables`);
-  }
-
-  const previousRoleId = previousRank ? getRankRoleId(previousRank.toUpperCase()) : null;
+  const roleId = await getRankRoleId(normalizedRank);
+  const previousRoleId = previousRank ? await getRankRoleId(previousRank.toUpperCase()).catch(() => null) : null;
 
   if (previousRoleId && previousRoleId !== roleId) {
     await removeRole(discordId, previousRoleId, `رتبة ${previousRank}`);
@@ -373,14 +486,21 @@ export async function removeCatalogRole(discordId: string, roleKey: string, role
   return roleId;
 }
 
-async function resolveCatalogRoleId(roleKey: string, roleName: string) {
-  const envRoleId = getOptionalRoleId(`DISCORD_ROLE_${roleKey}_ID`);
+export async function resolveCatalogRoleId(roleKey: string, roleName: string) {
+  const roles = await listGuildRoles();
+  const overrides = await getTokyoRoleOverrides();
+  const overrideRoleId = overrides[roleKey];
 
-  if (envRoleId) {
-    return envRoleId;
+  if (overrideRoleId) {
+    const overrideRole = roles.find((role) => role.id === overrideRoleId);
+
+    if (!overrideRole) {
+      throw new Error(`Role ID المحفوظ لرتبة ${roleName} لم يعد موجوداً في Discord`);
+    }
+
+    return overrideRole.id;
   }
 
-  const roles = await listGuildRoles();
   const exactRole = roles.find((role) => role.name === roleName);
 
   if (exactRole) {
@@ -394,17 +514,29 @@ async function resolveCatalogRoleId(roleKey: string, roleName: string) {
     return looseRole.id;
   }
 
-  throw new Error(`رتبة ${roleName} غير موجودة في Discord. أضفها بنفس الاسم أو ضع DISCORD_ROLE_${roleKey}_ID في Vercel`);
+  throw new Error(`رتبة ${roleName} غير موجودة في Discord. أضفها بنفس الاسم حتى يلتقطها نظام TOKYO تلقائياً`);
 }
 
 async function listGuildRoles() {
+  const now = Date.now();
+
+  if (guildRolesCache && guildRolesCache.expiresAt > now) {
+    return guildRolesCache.roles;
+  }
+
   const response = await fetchDiscord(`/guilds/${getGuildId()}/roles`);
 
   if (!response.ok) {
     throw new Error(`فشل جلب رتب السيرفر من Discord (${response.status})`);
   }
 
-  return (await response.json()) as DiscordRole[];
+  const roles = (await response.json()) as DiscordRole[];
+  guildRolesCache = {
+    roles,
+    expiresAt: now + TOKYO_ROLE_CACHE_MS,
+  };
+
+  return roles;
 }
 
 function normalizeRoleLookup(value: string) {
@@ -441,7 +573,7 @@ async function removeRole(discordId: string, roleId: string, roleLabel: string) 
 
 export async function listAcceptedRoleMembers() {
   const members = await listGuildMembers();
-  const acceptedRoleId = getAcceptedRoleId();
+  const acceptedRoleId = await getAcceptedRoleId();
 
   return members
     .filter((member) => member.roles?.includes(acceptedRoleId))
@@ -455,12 +587,13 @@ export async function listAcceptedRoleMembers() {
 }
 
 export async function listTokyoRoleMembers() {
-  return listRoleMembers(getTokyoRoleId());
+  return listRoleMembers(await getTokyoRoleId());
 }
 
 export async function listOnlineAcceptedRoleMembers() {
+  const tokyoRoleId = await getTokyoRoleId();
   const [roleMembers, widgetResponse] = await Promise.all([
-    listCachedRoleMembers(getTokyoOnlineRoleId()),
+    listCachedRoleMembers(tokyoRoleId),
     fetch(`${DISCORD_API_BASE}/guilds/${getGuildId()}/widget.json`, {
       cache: "no-store",
     }),
@@ -874,22 +1007,138 @@ export async function sendWarningSyncChannelEmbed(input: {
   }
 }
 
-export async function sendAdminLog(content: string) {
-  const webhookUrl = process.env.DISCORD_ADMIN_LOG_WEBHOOK_URL;
+export type TokyoWebhookKind = "APPLICATIONS" | "ADMIN_LOG";
 
-  if (!webhookUrl) {
-    return;
+const webhookSettings = {
+  APPLICATIONS: {
+    urlKey: "tokyoApplicationWebhookUrl",
+    channelKey: "tokyoApplicationWebhookChannelId",
+    name: "TOKYO Applications",
+    fallbackUrl: () => getTokyoDiscordValue("applicationWebhookUrl", "DISCORD_WEBHOOK_URL"),
+    fallbackChannel: () => getTokyoDiscordValue("complaintLogChannelId", "DISCORD_COMPLAINT_LOG_CHANNEL_ID"),
+  },
+  ADMIN_LOG: {
+    urlKey: "tokyoAdminLogWebhookUrl",
+    channelKey: "tokyoAdminLogWebhookChannelId",
+    name: "TOKYO Admin Logs",
+    fallbackUrl: () => getTokyoDiscordValue("adminLogWebhookUrl", "DISCORD_ADMIN_LOG_WEBHOOK_URL"),
+    fallbackChannel: () => getTokyoDiscordValue("warningLogChannelId", "DISCORD_WARNING_LOG_CHANNEL_ID"),
+  },
+} satisfies Record<TokyoWebhookKind, {
+  urlKey: string;
+  channelKey: string;
+  name: string;
+  fallbackUrl: () => string | undefined;
+  fallbackChannel: () => string | undefined;
+}>;
+
+export async function getTokyoWebhookStatuses() {
+  const settings = await prisma.siteSetting.findMany({
+    where: {
+      key: {
+        in: Object.values(webhookSettings).flatMap((setting) => [setting.urlKey, setting.channelKey]),
+      },
+    },
+    select: { key: true, value: true },
+  });
+  const values = new Map(settings.map((setting) => [setting.key, setting.value]));
+
+  return (Object.keys(webhookSettings) as TokyoWebhookKind[]).map((kind) => {
+    const config = webhookSettings[kind];
+    return {
+      kind,
+      configured: Boolean(values.get(config.urlKey) || config.fallbackUrl()),
+      managed: Boolean(values.get(config.urlKey)),
+      channelId: values.get(config.channelKey) || config.fallbackChannel() || "",
+    };
+  });
+}
+
+export async function ensureTokyoWebhooksSafely() {
+  const statuses = await getTokyoWebhookStatuses();
+
+  for (const status of statuses) {
+    if (status.managed || !status.channelId) continue;
+
+    try {
+      await createManagedWebhook(status.kind, status.channelId, "SYSTEM_SETUP");
+    } catch (error) {
+      console.error(`تعذر إنشاء Webhook تلقائياً من نوع ${status.kind}:`, error);
+    }
   }
 
-  await fetch(webhookUrl, {
+  return getTokyoWebhookStatuses();
+}
+
+export async function createManagedWebhook(kind: TokyoWebhookKind, channelId: string, adminId: string) {
+  const config = webhookSettings[kind];
+  const response = await fetchDiscord(`/channels/${channelId}/webhooks`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      content,
-    }),
+    body: JSON.stringify({ name: config.name }),
   });
+
+  if (!response.ok) {
+    throw new Error(`فشل إنشاء Webhook في القناة (${response.status}). تأكد أن البوت يملك Manage Webhooks`);
+  }
+
+  const webhook = (await response.json()) as { id?: string; token?: string; name?: string };
+
+  if (!webhook.id || !webhook.token) {
+    throw new Error("Discord لم يرجع رابط Webhook صالح");
+  }
+
+  const webhookUrl = `https://discord.com/api/webhooks/${webhook.id}/${webhook.token}`;
+
+  await prisma.$transaction([
+    prisma.siteSetting.upsert({
+      where: { key: config.urlKey },
+      update: { value: webhookUrl, updatedBy: adminId },
+      create: { key: config.urlKey, value: webhookUrl, updatedBy: adminId },
+    }),
+    prisma.siteSetting.upsert({
+      where: { key: config.channelKey },
+      update: { value: channelId, updatedBy: adminId },
+      create: { key: config.channelKey, value: channelId, updatedBy: adminId },
+    }),
+  ]);
+
+  return { name: webhook.name ?? config.name, channelId };
+}
+
+export async function sendManagedWebhook(kind: TokyoWebhookKind, payload: object) {
+  const config = webhookSettings[kind];
+  const stored = await prisma.siteSetting.findMany({
+    where: { key: { in: [config.urlKey, config.channelKey] } },
+    select: { key: true, value: true },
+  });
+  const values = new Map(stored.map((setting) => [setting.key, setting.value]));
+  let webhookUrl = values.get(config.urlKey) || config.fallbackUrl();
+  const send = (url: string) => fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (webhookUrl) {
+    const response = await send(webhookUrl).catch(() => null);
+    if (response?.ok) return true;
+  }
+
+  const channelId = values.get(config.channelKey) || config.fallbackChannel();
+  if (!channelId) return false;
+
+  await createManagedWebhook(kind, channelId, "SYSTEM");
+  const refreshed = await prisma.siteSetting.findUnique({ where: { key: config.urlKey }, select: { value: true } });
+  webhookUrl = refreshed?.value;
+
+  if (!webhookUrl) return false;
+
+  const retry = await send(webhookUrl);
+  return retry.ok;
+}
+
+export async function sendAdminLog(content: string) {
+  await sendManagedWebhook("ADMIN_LOG", { content });
 }
 
 export async function sendAdminEmbed(input: {
@@ -898,19 +1147,8 @@ export async function sendAdminEmbed(input: {
   color?: number;
   fields?: Array<{ name: string; value: string; inline?: boolean }>;
 }) {
-  const webhookUrl = process.env.DISCORD_ADMIN_LOG_WEBHOOK_URL;
-
-  if (!webhookUrl) {
-    return;
-  }
-
-  await fetch(webhookUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      embeds: [
+  await sendManagedWebhook("ADMIN_LOG", {
+    embeds: [
         {
           title: input.title,
           description: input.description,
@@ -921,8 +1159,7 @@ export async function sendAdminEmbed(input: {
             text: "TOKYO GANG Admin System",
           },
         },
-      ],
-    }),
+    ],
   });
 }
 
@@ -940,7 +1177,8 @@ export async function testDiscordSetup() {
   }
 
   const roles = (await roleResponse.json()) as Array<{ id: string; name: string }>;
-  const acceptedRole = roles.find((role) => role.id === getAcceptedRoleId());
+  const acceptedRoleId = await getAcceptedRoleId();
+  const acceptedRole = roles.find((role) => role.id === acceptedRoleId);
 
   if (!acceptedRole) {
     throw new Error("رتبة القبول غير موجودة داخل السيرفر");

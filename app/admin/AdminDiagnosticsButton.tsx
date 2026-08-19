@@ -22,6 +22,7 @@ export function AdminDiagnosticsButton() {
           `Bot: ${result.bot}`,
           `Guild: ${result.guild}`,
           `Accepted Role: ${result.acceptedRole}`,
+          `Tokyo Role: ${result.tokyoRole}`,
           `Warning Roles: ${result.warningRoles}`,
           `Widget: ${result.widget}`,
           result.error ? `Error: ${result.error}` : null,

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { isDiscordSnowflake, requireTokyoGuildMember } from "@/lib/discord";
+import { isDiscordSnowflake, requireTokyoGuildMember, sendManagedWebhook } from "@/lib/discord";
 import { prisma } from "@/lib/prisma";
 
 type ApplyBody = {
@@ -133,15 +133,9 @@ export async function POST(req: Request) {
     },
   });
 
-  if (process.env.DISCORD_WEBHOOK_URL) {
-    try {
-      await fetch(process.env.DISCORD_WEBHOOK_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          embeds: [
+  try {
+    await sendManagedWebhook("APPLICATIONS", {
+      embeds: [
             {
               title: "طلب تقديم جديد",
               color: 16711680,
@@ -185,12 +179,10 @@ export async function POST(req: Request) {
               ],
               timestamp: new Date().toISOString(),
             },
-          ],
-        }),
-      });
-    } catch (error) {
-      console.error("Discord webhook failed", error);
-    }
+      ],
+    });
+  } catch (error) {
+    console.error("Discord webhook failed", error);
   }
 
   return NextResponse.json({ success: true, application });

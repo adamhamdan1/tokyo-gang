@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
-import { getTokyoGuildMember } from "@/lib/discord";
+import { getTokyoGuildMember, resolveCatalogRoleId } from "@/lib/discord";
 import { prisma } from "@/lib/prisma";
+import { getTokyoRoleOption } from "@/lib/tokyo-content";
 
 export type AdminCapability = "ALL" | "APPLICATIONS" | "WARNINGS" | "MEMBERS" | "LOGS";
 
@@ -13,10 +14,10 @@ export type AdminContext = {
 };
 
 const capabilityRoleKeys: Record<Exclude<AdminCapability, "ALL">, string[]> = {
-  APPLICATIONS: ["DISCORD_ROLE_RECRUITMENT_MANAGER_ID", "DISCORD_ROLE_MANAGER_ID", "DISCORD_ROLE_STAFF_ID"],
-  WARNINGS: ["DISCORD_ROLE_WARNINGS_MANAGER_ID", "DISCORD_ROLE_MANAGER_ID", "DISCORD_ROLE_STAFF_ID"],
-  MEMBERS: ["DISCORD_ROLE_MANAGER_ID", "DISCORD_ROLE_STAFF_ID"],
-  LOGS: ["DISCORD_ROLE_MANAGER_ID", "DISCORD_ROLE_STAFF_ID"],
+  APPLICATIONS: ["RECRUITMENT_MANAGER", "MANAGER", "STAFF"],
+  WARNINGS: ["WARNINGS_MANAGER", "MANAGER", "STAFF"],
+  MEMBERS: ["MANAGER", "STAFF"],
+  LOGS: ["MANAGER", "STAFF"],
 };
 
 function getAdminIds() {
@@ -41,8 +42,18 @@ export function getOwnerAdminIds() {
   return getAdminIds();
 }
 
-function getEnvRoleIds(keys: string[]) {
-  return keys.map((key) => process.env[key]).filter(Boolean) as string[];
+async function getCapabilityRoleIds(keys: string[]) {
+  const roleIds = await Promise.all(
+    keys.map(async (key) => {
+      const option = getTokyoRoleOption(key);
+
+      if (!option) return null;
+
+      return resolveCatalogRoleId(option.key, option.discordName).catch(() => null);
+    })
+  );
+
+  return roleIds.filter(Boolean) as string[];
 }
 
 function hasAnyRole(memberRoleIds: string[], roleIds: string[]) {
@@ -93,12 +104,18 @@ export async function getAdminContext(): Promise<AdminContext | null> {
 
   const member = await getTokyoGuildMember(session.user.id).catch(() => null);
   const roles = member?.roles ?? [];
+  const [applicationRoleIds, warningRoleIds, memberRoleIds, logRoleIds] = await Promise.all([
+    getCapabilityRoleIds(capabilityRoleKeys.APPLICATIONS),
+    getCapabilityRoleIds(capabilityRoleKeys.WARNINGS),
+    getCapabilityRoleIds(capabilityRoleKeys.MEMBERS),
+    getCapabilityRoleIds(capabilityRoleKeys.LOGS),
+  ]);
   const capabilities = {
     ALL: false,
-    APPLICATIONS: hasAnyRole(roles, getEnvRoleIds(capabilityRoleKeys.APPLICATIONS)),
-    WARNINGS: hasAnyRole(roles, getEnvRoleIds(capabilityRoleKeys.WARNINGS)),
-    MEMBERS: hasAnyRole(roles, getEnvRoleIds(capabilityRoleKeys.MEMBERS)),
-    LOGS: hasAnyRole(roles, getEnvRoleIds(capabilityRoleKeys.LOGS)),
+    APPLICATIONS: hasAnyRole(roles, applicationRoleIds),
+    WARNINGS: hasAnyRole(roles, warningRoleIds),
+    MEMBERS: hasAnyRole(roles, memberRoleIds),
+    LOGS: hasAnyRole(roles, logRoleIds),
   };
 
   if (!Object.values(capabilities).some(Boolean)) {

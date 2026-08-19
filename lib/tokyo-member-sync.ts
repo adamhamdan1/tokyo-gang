@@ -19,7 +19,7 @@ const syncState: {
 };
 
 function getAutoSyncIntervalMs() {
-  const seconds = Number(process.env.TOKYO_MEMBER_SYNC_INTERVAL_SECONDS ?? 60);
+  const seconds = Number(process.env.TOKYO_SYNC_SECONDS ?? 60);
   const safeSeconds = Number.isFinite(seconds) ? Math.max(15, seconds) : 60;
 
   return safeSeconds * 1000;
@@ -29,6 +29,12 @@ async function runTokyoMemberSync() {
   await cleanupExpiredLeaves();
 
   const members = await listTokyoRoleMembers();
+  const activeMemberCount = await prisma.tokyoMember.count({ where: { inTokyoRole: true } });
+
+  if (members.length === 0 && activeMemberCount > 0) {
+    throw new Error("Discord أعاد قائمة أعضاء فارغة؛ تم إيقاف المزامنة لحماية بيانات الأعضاء الحالية");
+  }
+
   const now = new Date();
   const discordIds = members.map((member) => member.id);
 
