@@ -14,7 +14,6 @@ import { AdminComplaintVote } from "./AdminComplaintVote";
 import { AdminDiscordTestButton } from "./AdminDiscordTestButton";
 import { AdminLogDeleteButton } from "./AdminLogDeleteButton";
 import { AdminLeaveDecisionButtons } from "./AdminLeaveDecisionButtons";
-import { AdminWarningAutoRefresh } from "./AdminWarningAutoRefresh";
 import { AdminSignOutButton } from "./AdminSignOutButton";
 import { AdminSpotlightForm } from "./AdminSpotlightForm";
 import { AdminManagerForm } from "./AdminManagerForm";
@@ -26,6 +25,7 @@ import { AdminSyncButton } from "./AdminSyncButton";
 import { AdminSummonDeleteButton } from "./AdminSummonDeleteButton";
 import { AdminSummonForm } from "./AdminSummonForm";
 import Link from "next/link";
+import Image from "next/image";
 
 const statusStyles: Record<string, string> = {
   PENDING: "border-yellow-400/40 bg-yellow-400/10 text-yellow-300 shadow-[0_0_24px_rgba(250,204,21,0.12)]",
@@ -44,6 +44,37 @@ const filterTabs = [
   ["المقابلات", "INTERVIEW"],
   ["فترة التجربة", "TRIAL"],
 ];
+
+const capabilityLabels: Record<string, string> = {
+  ALL: "كامل الصلاحيات",
+  APPLICATIONS: "إدارة التقديمات",
+  WARNINGS: "إدارة التحذيرات",
+  MEMBERS: "إدارة الأعضاء",
+  LOGS: "سجل الإدارة",
+};
+
+const modeDetails: Record<string, { eyebrow: string; title: string; description: string }> = {
+  APPLICATIONS: {
+    eyebrow: "طلبات الانضمام",
+    title: "مراجعة التقديمات واتخاذ القرار",
+    description: "البحث والفلترة والمقابلات والقبول أو الرفض بدون تشتيت من أدوات الأقسام الأخرى.",
+  },
+  DISCIPLINE: {
+    eyebrow: "الانضباط الداخلي",
+    title: "الشكاوى والاستدعاءات والإجازات",
+    description: "كل ما يخص متابعة المخالفات والقرارات الإدارية وسجل الحالات المفتوحة.",
+  },
+  MEMBERS: {
+    eyebrow: "قاعدة الأعضاء",
+    title: "ملفات أعضاء TOKYO",
+    description: "افتح ملف أي عضو لمراجعة تقييمه وتحذيراته ورتبته وسجله الإداري.",
+  },
+  SYSTEM: {
+    eyebrow: "إدارة النظام",
+    title: "الإعدادات والتقارير والتكاملات",
+    description: "أدوات Discord والإعلانات والتنبيهات وفريق الإدارة والتقرير الأسبوعي.",
+  },
+};
 
 function buildAdminHref(status: string, query: string, logs?: string) {
   const params = new URLSearchParams();
@@ -96,16 +127,18 @@ export default async function AdminPage({
           <div className="mx-auto mt-6 h-1 w-56 overflow-hidden rounded-full bg-white/10">
             <div className="h-full w-2/3 bg-red-500 shadow-[0_0_18px_rgba(239,68,68,0.7)]" />
           </div>
-          <p className="mt-5 text-sm text-gray-300">
-            Discord ID الحالي: غير مصرح
-          </p>
+          <p className="mt-5 text-sm text-gray-300">هذا الحساب لا يملك صلاحية دخول لوحة الإدارة.</p>
         </div>
       </main>
     );
   }
 
-  const tokyoSync = await syncTokyoMembersSafely();
-  await syncWarningsSafely();
+  const shouldSyncMembers = mode === "MEMBERS" || mode === "DISCIPLINE" || mode === "SYSTEM";
+  const tokyoSync = shouldSyncMembers ? await syncTokyoMembersSafely() : null;
+
+  if (shouldSyncMembers) {
+    await syncWarningsSafely();
+  }
 
   const [
     applications,
@@ -131,6 +164,7 @@ export default async function AdminPage({
     weeklySummons,
     weeklyComplaints,
     adminActivity,
+    knownUsers,
   ] = await Promise.all([
     prisma.application.findMany({
       where: {
@@ -244,7 +278,24 @@ export default async function AdminPage({
       orderBy: { _count: { adminDiscordId: "desc" } },
       take: 6,
     }),
+    prisma.user.findMany({
+      orderBy: { username: "asc" },
+      select: {
+        discordId: true,
+        username: true,
+        image: true,
+      },
+    }),
   ]);
+
+  const memberByDiscordId = new Map(tokyoMembers.map((member) => [member.discordId, member]));
+  const userByDiscordId = new Map(knownUsers.map((user) => [user.discordId, user]));
+  const getAdminDisplayName = (discordId: string | null) => {
+    if (!discordId) return "النظام";
+    if (discordId === admin.id) return admin.name;
+
+    return memberByDiscordId.get(discordId)?.displayName ?? userByDiscordId.get(discordId)?.username ?? "إداري";
+  };
 
   const stats = [
     ["عدد التقديمات", totalApplications],
@@ -276,10 +327,10 @@ export default async function AdminPage({
     return true;
   });
   const healthItems = [
-    ["Bot", process.env.DISCORD_BOT_TOKEN ? "LINKED" : "MISSING"],
-    ["DB", "CONNECTED"],
-    ["Members Sync", tokyoSync ? `${tokyoSync.count} عضو` : "READY"],
-    ["Warnings Sync", "30s"],
+    ["بوت Discord", process.env.DISCORD_BOT_TOKEN ? "متصل" : "غير مربوط"],
+    ["قاعدة البيانات", "متصلة"],
+    ["مزامنة الأعضاء", tokyoSync ? `${tokyoSync.count} عضو` : "جاهزة"],
+    ["مزامنة التحذيرات", "عند الحاجة"],
   ];
   const highRiskMemberCount = tokyoMembers.filter((member) => {
     const risk = calculateMemberRisk(member);
@@ -292,33 +343,31 @@ export default async function AdminPage({
     ["شكاوي مفتوحة", complaints.filter((item) => item.status !== "RESOLVED" && item.status !== "DISMISSED").length],
     ["إجازات معلقة", pendingLeaves.length],
   ];
+  const visibleCapabilities = admin.capabilities.ALL
+    ? ["ALL"]
+    : Object.entries(admin.capabilities)
+        .filter(([, enabled]) => enabled)
+        .map(([capability]) => capability);
+  const activeModeDetails = modeDetails[mode ?? "APPLICATIONS"] ?? modeDetails.APPLICATIONS;
 
   return (
-    <main dir="rtl" className="relative min-h-screen overflow-hidden bg-black px-3 py-5 text-white sm:px-5 md:p-10">
-      <AdminWarningAutoRefresh />
+    <main dir="rtl" className="tokyo-dashboard relative min-h-screen overflow-hidden px-3 py-5 text-white sm:px-5 md:p-10">
       <div className="pointer-events-none fixed inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(to_right,rgba(255,255,255,0.035)_1px,transparent_1px)] bg-[length:100%_6px,80px_80px] opacity-55" />
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(239,68,68,0.16),transparent_28%),radial-gradient(circle_at_80%_20%,rgba(34,211,238,0.10),transparent_26%),radial-gradient(circle_at_center,transparent_42%,rgba(0,0,0,0.72)_100%)]" />
-      <Link
-        href="/"
-        className="fixed left-3 top-3 z-50 rounded-xl border border-white/20 bg-white px-4 py-2 text-xs font-black text-black shadow-[0_0_28px_rgba(255,255,255,0.2)] transition hover:bg-gray-300 md:left-5 md:top-5 md:rounded-2xl md:px-5 md:py-3 md:text-sm"
-      >
-        الرئيسية
-      </Link>
-
       <div className="relative z-10 mx-auto max-w-7xl">
         <div className="mb-6 overflow-hidden rounded-2xl border border-white/10 bg-zinc-950/80 p-5 shadow-[0_0_50px_rgba(255,255,255,0.05)] backdrop-blur-xl md:mb-10 md:rounded-3xl md:p-8">
           <div className="mb-5 flex flex-col gap-2 border-b border-white/10 pb-4 text-[10px] font-black tracking-[3px] text-gray-500 sm:flex-row sm:items-center sm:justify-between md:mb-6 md:text-xs md:tracking-[4px]">
-            <span>TOKYO COMMAND CENTER</span>
+            <span>مركز قيادة TOKYO</span>
             <span className="flex items-center gap-2 text-green-400">
               <span className="h-2 w-2 rounded-full bg-green-400 shadow-[0_0_14px_lime]" />
-              SYSTEM ARMED
+              النظام يعمل
             </span>
           </div>
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="text-xs font-black tracking-[5px] text-red-500 md:text-sm md:tracking-[6px]">TOKYO ADMIN</p>
             <h1 className="mt-3 text-3xl font-black leading-tight drop-shadow-[0_0_28px_rgba(255,255,255,0.35)] sm:text-4xl md:text-5xl">
-              لوحة إدارة التقديمات
+              لوحة الإدارة المركزية
             </h1>
           </div>
 
@@ -335,12 +384,9 @@ export default async function AdminPage({
           >
             الرجوع للرئيسية
           </Link>
-          <AdminDiscordTestButton />
-          <AdminDiagnosticsButton />
-          <AdminSyncButton />
           <AdminSignOutButton />
           <div className="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-5 py-3 text-center text-sm font-black text-cyan-300">
-            مزامنة TOKYO تلقائية{tokyoSync ? `: ${tokyoSync.count} عضو` : ""}
+            {tokyoSync ? `تمت مزامنة ${tokyoSync.count} عضو` : "البيانات مستقرة — بدون تحديث تلقائي"}
           </div>
         </div>
 
@@ -361,7 +407,7 @@ export default async function AdminPage({
         </section>
 
         <section className="mb-8 rounded-2xl border border-white/10 bg-zinc-950 p-5 md:mb-10 md:rounded-3xl md:p-6">
-          <p className="text-xs font-black tracking-[5px] text-white">QUICK REVIEW</p>
+          <p className="text-xs font-black tracking-[5px] text-white">نظرة سريعة</p>
           <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-5">
             {quickReviewItems.map(([label, value]) => (
               <div key={label} className="rounded-2xl border border-white/10 bg-black/40 p-4">
@@ -374,55 +420,83 @@ export default async function AdminPage({
 
         <section className="mb-8 grid gap-4 md:mb-10 lg:grid-cols-[0.9fr_1.1fr]">
           <div className="rounded-2xl border border-cyan-400/20 bg-zinc-950 p-5 md:rounded-3xl md:p-6">
-            <p className="text-xs font-black tracking-[5px] text-cyan-300">SYSTEM HEALTH</p>
+            <p className="text-xs font-black tracking-[5px] text-cyan-300">حالة النظام</p>
             <div className="mt-5 grid grid-cols-2 gap-3">
               {healthItems.map(([label, value]) => (
                 <div key={label} className="rounded-2xl border border-white/10 bg-black/40 p-4">
                   <p className="text-xs text-gray-500">{label}</p>
-                  <p className={`mt-2 font-black ${value === "MISSING" ? "text-red-300" : "text-green-300"}`}>{value}</p>
+                  <p className={`mt-2 font-black ${value === "غير مربوط" ? "text-red-300" : "text-green-300"}`}>{value}</p>
                 </div>
               ))}
             </div>
           </div>
           <div className="rounded-2xl border border-white/10 bg-zinc-950 p-5 md:rounded-3xl md:p-6">
-            <p className="text-xs font-black tracking-[5px] text-white">ADMIN PERMISSIONS</p>
+            <p className="text-xs font-black tracking-[5px] text-white">صلاحيات الحساب</p>
             <div className="mt-5 flex flex-wrap gap-2">
-              {Object.entries(admin.capabilities)
-                .filter(([, enabled]) => enabled)
-                .map(([capability]) => (
+              {visibleCapabilities.map((capability) => (
                   <span key={capability} className="rounded-full border border-green-400/25 bg-green-400/10 px-4 py-2 text-xs font-black text-green-300">
-                    {capability}
+                    {capabilityLabels[capability] ?? capability}
                   </span>
                 ))}
             </div>
           </div>
         </section>
 
-        <AdminAnnouncementForm />
-        <AdminAlertForm />
-        {admin.isOwner && <AdminManagerForm admins={extraAdmins} />}
-        <AdminSpotlightForm members={tokyoMembers} />
-
-        <AdminSummonForm members={tokyoMembers} />
-
-        <section className="mb-8 flex flex-wrap gap-2 rounded-2xl border border-white/10 bg-zinc-950/85 p-3 md:mb-10 md:rounded-3xl">
+        <section className="tokyo-scrollbar sticky top-2 z-40 mb-8 flex gap-2 overflow-x-auto rounded-2xl border border-white/10 bg-black/85 p-3 backdrop-blur-xl md:mb-10 md:flex-wrap md:rounded-3xl">
           {[
-            ["Applications Mode", "APPLICATIONS"],
-            ["Discipline Mode", "DISCIPLINE"],
-            ["Members Mode", "MEMBERS"],
-            ["System Mode", "SYSTEM"],
+            ["التقديمات", "APPLICATIONS"],
+            ["الانضباط والشكاوى", "DISCIPLINE"],
+            ["دليل الأعضاء", "MEMBERS"],
+            ["النظام والتقارير", "SYSTEM"],
           ].map(([label, value]) => (
             <Link
               key={value}
               href={`/admin?mode=${value}${query ? `&q=${encodeURIComponent(query)}` : ""}`}
-              className={`rounded-2xl border px-4 py-3 text-xs font-black transition ${
-                mode === value ? "border-white bg-white text-black" : "border-white/15 text-gray-300 hover:text-white"
+              className={`shrink-0 rounded-2xl border px-4 py-3 text-xs font-black transition ${
+                mode === value ? "border-white bg-white text-black" : "border-white/15 text-gray-300 hover:border-white/30 hover:text-white"
               }`}
             >
               {label}
             </Link>
           ))}
         </section>
+
+        <section className="tokyo-panel mb-8 p-5 md:mb-10 md:p-7">
+          <p className="text-xs font-black tracking-[4px] text-red-400">{activeModeDetails.eyebrow}</p>
+          <h2 className="mt-3 text-2xl font-black text-white md:text-3xl">{activeModeDetails.title}</h2>
+          <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-400">{activeModeDetails.description}</p>
+        </section>
+
+        {mode === "SYSTEM" && (
+          <section className="mb-8 grid gap-3 rounded-2xl border border-cyan-400/15 bg-cyan-400/[0.04] p-4 sm:grid-cols-2 lg:mb-10 lg:flex lg:flex-wrap">
+            <AdminDiscordTestButton />
+            <AdminDiagnosticsButton />
+            <AdminSyncButton />
+          </section>
+        )}
+
+        {mode === "SYSTEM" && <AdminAnnouncementForm />}
+        {mode === "SYSTEM" && <AdminAlertForm />}
+        {mode === "SYSTEM" && admin.isOwner && (
+          <AdminManagerForm
+            admins={extraAdmins.map((discordId) => ({
+              discordId,
+              name: getAdminDisplayName(discordId),
+              username: userByDiscordId.get(discordId)?.username ?? memberByDiscordId.get(discordId)?.username ?? null,
+              image: userByDiscordId.get(discordId)?.image ?? null,
+            }))}
+            candidates={knownUsers
+              .filter((user) => !extraAdmins.includes(user.discordId) && user.discordId !== admin.id)
+              .map((user) => ({
+                discordId: user.discordId,
+                name: memberByDiscordId.get(user.discordId)?.displayName ?? user.username,
+                username: user.username,
+                image: user.image,
+              }))}
+          />
+        )}
+        {mode === "SYSTEM" && <AdminSpotlightForm members={tokyoMembers} />}
+        {mode === "DISCIPLINE" && <AdminSummonForm members={tokyoMembers} />}
 
         {(mode === "DISCIPLINE" || mode === "MEMBERS" || mode === "SYSTEM") && pendingLeaves.length > 0 && (
           <section className="mb-8 rounded-2xl border border-emerald-400/20 bg-zinc-950 p-5 md:mb-10 md:rounded-3xl md:p-6">
@@ -527,7 +601,7 @@ export default async function AdminPage({
               <div className="mt-4 grid gap-2 md:grid-cols-3">
                 {adminActivity.map((item) => (
                   <div key={item.adminDiscordId ?? "unknown"} className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
-                    <p className="break-all text-xs text-gray-500">{item.adminDiscordId}</p>
+                    <p className="text-sm font-black text-gray-300">{getAdminDisplayName(item.adminDiscordId)}</p>
                     <p className="mt-1 text-xl font-black text-white">{item._count._all}</p>
                   </div>
                 ))}
@@ -693,7 +767,7 @@ export default async function AdminPage({
             <input
               name="q"
               defaultValue={query}
-              placeholder="ابحث بالاسم أو Discord ID..."
+              placeholder="ابحث بالاسم أو اسم المستخدم..."
               className="min-w-0 flex-1 rounded-2xl border border-white/15 bg-zinc-950 px-5 py-3 outline-none"
             />
             <button className="rounded-2xl bg-white px-6 py-3 font-black text-black transition hover:bg-gray-300">
@@ -750,8 +824,10 @@ export default async function AdminPage({
                 <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                   <div className="flex min-w-0 items-center gap-3 md:gap-4">
                     {app.user.image ? (
-                      <img
+                      <Image
                         src={app.user.image}
+                        width={64}
+                        height={64}
                         className="h-12 w-12 rounded-full border border-white/20 object-cover md:h-16 md:w-16"
                         alt={app.user.username}
                       />
@@ -763,8 +839,7 @@ export default async function AdminPage({
 
                     <div>
                         <h2 className="text-2xl font-black text-white md:text-3xl">{app.name}</h2>
-                      <p className="mt-1 text-sm text-gray-300">Discord: {app.user.username}</p>
-                      <p className="text-xs text-gray-500">ID: {app.user.discordId}</p>
+                      <p className="mt-1 text-sm text-gray-300">@{app.user.username}</p>
                     </div>
                   </div>
 

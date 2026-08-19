@@ -35,15 +35,15 @@ export default async function LeavePage() {
   }
 
   return (
-    <main dir="rtl" className="min-h-screen bg-black p-6 text-white md:p-10">
+    <main dir="rtl" className="tokyo-dashboard min-h-screen p-4 text-white md:p-10">
       <div className="pointer-events-none fixed inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(to_right,rgba(255,255,255,0.035)_1px,transparent_1px)] bg-[length:100%_6px,80px_80px] opacity-55" />
       <div className="relative mx-auto max-w-5xl">
         <Link href="/" className="rounded-2xl border border-white/15 bg-zinc-950 px-5 py-3 text-sm font-black text-gray-300">
           الرجوع للرئيسية
         </Link>
-        <header className="my-10 border-b border-white/10 pb-8 text-center">
+        <header className="tokyo-panel my-8 p-6 text-center md:my-10 md:p-8">
           <p className="text-sm font-black tracking-[6px] text-emerald-300">TOKYO LEAVE SYSTEM</p>
-          <h1 className="mt-3 text-5xl font-black">نظام الإجازات</h1>
+          <h1 className="mt-3 text-4xl font-black md:text-5xl">نظام الإجازات</h1>
           <p className="mx-auto mt-4 max-w-2xl leading-8 text-gray-400">
             اطلب إجازتك بوضوح، الإدارة تراجعها، وإذا انقبلت تنعطى رتبة الإجازة تلقائياً لحد نهاية المدة.
           </p>
@@ -51,7 +51,7 @@ export default async function LeavePage() {
 
         <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
           <LeaveRequestForm />
-          <section className="rounded-3xl border border-white/10 bg-zinc-950 p-6">
+          <section className="tokyo-panel p-6">
             <p className="text-xs font-black tracking-[5px] text-gray-400">LEAVE HISTORY</p>
             <div className="mt-5 grid gap-3">
               {member.leaveRequests.length === 0 ? (
@@ -82,7 +82,7 @@ export default async function LeavePage() {
 
 function Gate({ title }: { title: string }) {
   return (
-    <main dir="rtl" className="flex min-h-screen items-center justify-center bg-black p-8 text-white">
+    <main dir="rtl" className="tokyo-dashboard flex min-h-screen items-center justify-center p-5 text-white md:p-8">
       <div className="rounded-3xl border border-red-500/25 bg-red-500/10 p-8 text-center">
         <p className="text-sm font-black tracking-[5px] text-red-300">RESTRICTED</p>
         <h1 className="mt-3 text-4xl font-black">{title}</h1>

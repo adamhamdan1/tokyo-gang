@@ -20,11 +20,11 @@ export async function POST(req: Request) {
   const discordId = body.discordId?.trim();
 
   if (!discordId || !isDiscordSnowflake(discordId)) {
-    return NextResponse.json({ error: "Discord ID غير صحيح" }, { status: 400 });
+    return NextResponse.json({ error: "الحساب المحدد غير صالح" }, { status: 400 });
   }
 
   if (getOwnerAdminIds().includes(discordId)) {
-    return NextResponse.json({ error: "هذا الإداري أساسي من Vercel Env ولا ينحذف من الموقع" }, { status: 400 });
+    return NextResponse.json({ error: "هذا إداري أساسي من إعدادات الاستضافة ولا يمكن حذفه من الموقع" }, { status: 400 });
   }
 
   const currentAdmins = await getDatabaseAdminIds();

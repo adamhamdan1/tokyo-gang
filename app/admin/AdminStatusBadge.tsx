@@ -19,10 +19,26 @@ const badgeStyles: Record<string, string> = {
   INTERVIEW: "border-yellow-400/25 bg-yellow-400/10 text-yellow-300",
 };
 
+const badgeLabels: Record<string, string> = {
+  ACTIVE: "نشط",
+  WARNED: "عليه تحذير",
+  HIGH_RISK: "خطورة مرتفعة",
+  FINAL_WARNING: "تحذير نهائي",
+  ON_LEAVE: "في إجازة",
+  SUMMONED: "تحت الاستدعاء",
+  DISMISSED: "مفصول",
+  BLACKLISTED: "قائمة سوداء",
+  PENDING: "قيد المراجعة",
+  ACCEPTED: "مقبول",
+  REJECTED: "مرفوض",
+  TRIAL: "فترة تجربة",
+  INTERVIEW: "مقابلة",
+};
+
 export function AdminStatusBadge({ value, compact = false }: Props) {
   return (
     <span className={`inline-flex w-fit rounded-full border font-black ${badgeStyles[value] ?? "border-white/10 bg-white/5 text-gray-300"} ${compact ? "px-3 py-1 text-[10px]" : "px-4 py-2 text-xs"}`}>
-      {value}
+      {badgeLabels[value] ?? value}
     </span>
   );
 }

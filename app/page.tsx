@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { signIn, signOut, useSession } from "next-auth/react";
+import Image from "next/image";
 import { ApplicationForm } from "./ApplicationForm";
 import { AnnouncementsFeed } from "./AnnouncementsFeed";
 import { MobileMenu } from "./MobileMenu";
@@ -60,7 +61,7 @@ const timeline = [
 ];
 
 const loadingSteps = [
-  "LINKING DISCORD IDENTITY",
+  "CONNECTING DISCORD ACCOUNT",
   "VERIFYING TOKYO CLEARANCE",
   "SYNCING ACTIVE MEMBERS",
   "ARMING ADMIN CONSOLE",
@@ -269,12 +270,18 @@ export default function Home() {
       if (active) setHonors(data?.honors ?? []);
     };
 
-    loadSpotlight();
-    const interval = window.setInterval(loadSpotlight, 30000);
+    const loadWhenVisible = () => {
+      if (document.visibilityState === "visible") void loadSpotlight();
+    };
+
+    loadWhenVisible();
+    const interval = window.setInterval(loadWhenVisible, 60_000);
+    document.addEventListener("visibilitychange", loadWhenVisible);
 
     return () => {
       active = false;
       window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", loadWhenVisible);
     };
   }, []);
 
@@ -340,12 +347,18 @@ export default function Home() {
       setLastDiscordSync(new Date());
     };
 
-    loadDiscordMembers();
-    const interval = window.setInterval(loadDiscordMembers, 10000);
+    const loadWhenVisible = () => {
+      if (document.visibilityState === "visible") void loadDiscordMembers();
+    };
+
+    loadWhenVisible();
+    const interval = window.setInterval(loadWhenVisible, 30_000);
+    document.addEventListener("visibilitychange", loadWhenVisible);
 
     return () => {
       active = false;
       window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", loadWhenVisible);
     };
   }, []);
 
@@ -358,12 +371,18 @@ export default function Home() {
       if (active) setSiteAlert(data?.alert ?? null);
     };
 
-    loadAlert();
-    const interval = window.setInterval(loadAlert, 30000);
+    const loadWhenVisible = () => {
+      if (document.visibilityState === "visible") void loadAlert();
+    };
+
+    loadWhenVisible();
+    const interval = window.setInterval(loadWhenVisible, 60_000);
+    document.addEventListener("visibilitychange", loadWhenVisible);
 
     return () => {
       active = false;
       window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", loadWhenVisible);
     };
   }, []);
 
@@ -604,8 +623,10 @@ export default function Home() {
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-3 rounded-full border border-white/15 bg-black/50 px-3 py-2 shadow-[0_0_20px_rgba(255,255,255,0.08)]">
                 {session.data.user.image && (
-                  <img
+                  <Image
                     src={session.data.user.image}
+                    width={40}
+                    height={40}
                     className="h-10 w-10 rounded-full border border-white/20 object-cover"
                     alt={session.data.user.name ?? "Discord user"}
                   />
@@ -887,7 +908,13 @@ export default function Home() {
             <p className="text-xs font-black tracking-[5px] text-red-300">MEMBER SPOTLIGHT</p>
             <div className="mt-5 flex items-center gap-5">
               {spotlightMember.image ? (
-                <img src={spotlightMember.image} alt={spotlightMember.name} className="h-24 w-24 rounded-full border border-white/20 object-cover shadow-[0_0_28px_rgba(255,255,255,0.18)]" />
+                <Image
+                  src={spotlightMember.image}
+                  alt={spotlightMember.name}
+                  width={96}
+                  height={96}
+                  className="h-24 w-24 rounded-full border border-white/20 object-cover shadow-[0_0_28px_rgba(255,255,255,0.18)]"
+                />
               ) : (
                 <div className="flex h-24 w-24 items-center justify-center rounded-full bg-white text-3xl font-black text-black shadow-[0_0_28px_rgba(255,255,255,0.2)]">
                   {spotlightMember.name[0]}
@@ -943,9 +970,11 @@ export default function Home() {
                   <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-red-400 to-transparent" />
                   <p className="text-[10px] font-black tracking-[5px] text-red-300">{honor.label}</p>
                   {honor.member.image ? (
-                    <img
+                    <Image
                       src={honor.member.image}
                       alt={honor.member.displayName}
+                      width={96}
+                      height={96}
                       className="mx-auto mt-6 h-24 w-24 rounded-full border border-white/20 object-cover shadow-[0_0_28px_rgba(255,255,255,0.18)]"
                     />
                   ) : (
@@ -990,9 +1019,12 @@ export default function Home() {
               transition={{ duration: 3.8, repeat: Infinity, ease: "easeInOut" }}
               className="absolute h-44 w-44 rounded-full bg-white/10 blur-3xl md:h-56 md:w-56"
             />
-            <img
+            <Image
               src="/justice-city.gif"
               alt="Justice City"
+              width={288}
+              height={288}
+              unoptimized
               className="relative z-10 w-56 object-contain grayscale drop-shadow-[0_0_34px_rgba(255,255,255,0.35)] transition duration-500 group-hover:scale-105 group-hover:grayscale-0 md:w-72"
             />
           </motion.div>
@@ -1119,11 +1151,13 @@ export default function Home() {
 
               <div className="relative z-10">
                 <div className="mx-auto mb-6 w-28 h-28 rounded-full bg-white/10 border border-white/20 overflow-hidden shadow-[0_0_30px_white]">
-  <img
-    src={streamer.logo}
-    alt={streamer.name}
-    className="w-full h-full object-cover"
-  />
+                  <Image
+                    src={streamer.logo}
+                    alt={streamer.name}
+                    width={112}
+                    height={112}
+                    className="h-full w-full object-cover"
+                  />
 </div>
 
                 <p className="text-xs tracking-[5px] text-gray-500 mb-3">LIVE CREATOR</p>
@@ -1190,7 +1224,13 @@ export default function Home() {
                     className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-green-300/10 to-transparent"
                   />
                   {member.image ? (
-                    <img src={member.image} alt={member.name} className="relative z-10 h-14 w-14 rounded-full border border-white/20 object-cover shadow-[0_0_18px_rgba(74,222,128,0.20)]" />
+                    <Image
+                      src={member.image}
+                      alt={member.name}
+                      width={56}
+                      height={56}
+                      className="relative z-10 h-14 w-14 rounded-full border border-white/20 object-cover shadow-[0_0_18px_rgba(74,222,128,0.20)]"
+                    />
                   ) : (
                     <div className="relative z-10 flex h-14 w-14 items-center justify-center rounded-full bg-white text-xl font-black text-black">
                       {member.name[0]}

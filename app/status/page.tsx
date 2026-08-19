@@ -23,7 +23,7 @@ export default async function StatusPage() {
 
   if (!session?.user?.id) {
     return (
-      <main dir="rtl" className="min-h-screen bg-black p-8 text-white">
+      <main dir="rtl" className="tokyo-dashboard min-h-screen p-5 text-white md:p-10">
         <div className="mx-auto max-w-2xl rounded-3xl border border-white/15 bg-zinc-950 p-8 text-center">
           <h1 className="text-4xl font-black">سجل دخول أولاً</h1>
           <Link href="/" className="mt-6 inline-block rounded-2xl bg-white px-6 py-3 font-black text-black">
@@ -47,15 +47,16 @@ export default async function StatusPage() {
   const application = user?.applications[0];
 
   return (
-    <main dir="rtl" className="min-h-screen bg-black p-8 text-white">
+    <main dir="rtl" className="tokyo-dashboard min-h-screen p-5 text-white md:p-10">
       <div className="mx-auto max-w-3xl">
         <Link href="/" className="mb-8 inline-block rounded-2xl border border-white/15 bg-zinc-950 px-5 py-3 font-black text-gray-300">
           الرجوع للرئيسية
         </Link>
 
-        <section className="rounded-3xl border border-white/15 bg-zinc-950 p-8 shadow-[0_0_50px_rgba(255,255,255,0.06)]">
+        <section className="tokyo-panel p-6 md:p-8">
           <p className="text-sm font-black tracking-[6px] text-red-500">TOKYO APPLICATION</p>
-          <h1 className="mt-3 text-5xl font-black">حالة الطلب</h1>
+          <h1 className="mt-3 text-4xl font-black md:text-5xl">حالة الطلب</h1>
+          <p className="mt-3 text-sm leading-7 text-gray-400">تابع آخر تحديث لتقديمك وموعد المقابلة أو سبب القرار من مكان واحد.</p>
 
           {!application ? (
             <p className="mt-8 text-gray-300">ما عندك أي طلب تقديم حالياً.</p>

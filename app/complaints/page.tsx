@@ -9,7 +9,7 @@ export default async function ComplaintsPage() {
 
   if (!session?.user?.id) {
     return (
-      <main dir="rtl" className="min-h-screen bg-black p-8 text-white">
+      <main dir="rtl" className="tokyo-dashboard min-h-screen p-5 text-white md:p-10">
         <div className="mx-auto max-w-2xl rounded-3xl border border-white/15 bg-zinc-950 p-8 text-center">
           <h1 className="text-4xl font-black">نظام شكاوي TOKYO</h1>
           <p className="mt-4 text-gray-400">سجل دخول بالديسكورد أولاً.</p>
@@ -29,7 +29,7 @@ export default async function ComplaintsPage() {
 
   if (!reporter?.inTokyoRole) {
     return (
-      <main dir="rtl" className="min-h-screen bg-black p-8 text-white">
+      <main dir="rtl" className="tokyo-dashboard min-h-screen p-5 text-white md:p-10">
         <div className="mx-auto max-w-2xl rounded-3xl border border-red-500/25 bg-red-500/10 p-8 text-center">
           <p className="text-sm font-black tracking-[5px] text-red-300">ACCESS DENIED</p>
           <h1 className="mt-3 text-4xl font-black">النظام مخصص لأعضاء TOKYO فقط</h1>
@@ -64,15 +64,15 @@ export default async function ComplaintsPage() {
   ]);
 
   return (
-    <main dir="rtl" className="min-h-screen bg-black p-6 text-white md:p-10">
+    <main dir="rtl" className="tokyo-dashboard min-h-screen p-4 text-white md:p-10">
       <div className="mx-auto max-w-6xl">
         <Link href="/" className="rounded-2xl border border-white/15 bg-zinc-950 px-5 py-3 text-sm font-black text-gray-300">
           الرجوع للرئيسية
         </Link>
 
-        <header className="my-10 border-b border-white/10 pb-8 text-center">
+        <header className="tokyo-panel my-8 p-6 text-center md:my-10 md:p-8">
           <p className="text-sm font-black tracking-[6px] text-red-500">TOKYO INTERNAL</p>
-          <h1 className="mt-3 text-5xl font-black">نظام شكاوي الأعضاء</h1>
+          <h1 className="mt-3 text-4xl font-black md:text-5xl">نظام شكاوي الأعضاء</h1>
           <p className="mx-auto mt-4 max-w-2xl leading-8 text-gray-400">
             ارفع شكوى واضحة مع سبب وتفاصيل. رابط التصوير اختياري لكنه يساعد الإدارة تحسم القرار بسرعة.
           </p>
@@ -81,7 +81,7 @@ export default async function ComplaintsPage() {
         <ComplaintForm members={members} />
 
         {myComplaints.length > 0 && (
-          <section className="mx-auto mt-10 max-w-3xl rounded-3xl border border-white/10 bg-zinc-950 p-6">
+          <section className="tokyo-panel mx-auto mt-10 max-w-3xl p-6">
             <p className="text-xs font-black tracking-[5px] text-green-400">MY REPORTS</p>
             <div className="mt-5 grid gap-3">
               {myComplaints.map((complaint) => (

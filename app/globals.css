@@ -1,8 +1,11 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #050505;
+  --foreground: #f5f5f5;
+  --tokyo-red: #ef4444;
+  --tokyo-cyan: #67e8f9;
+  --tokyo-panel: rgba(9, 9, 11, 0.88);
 }
 
 @theme inline {
@@ -12,17 +15,61 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
+  min-width: 320px;
   font-family: Arial, Helvetica, sans-serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: rgba(239, 68, 68, 0.35);
+  color: white;
+}
+
+:where(a, button, input, select, textarea):focus-visible {
+  outline: 2px solid rgba(103, 232, 249, 0.85);
+  outline-offset: 3px;
+}
+
+button,
+a,
+select {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tokyo-dashboard {
+  background:
+    radial-gradient(circle at 12% 6%, rgba(239, 68, 68, 0.14), transparent 25rem),
+    radial-gradient(circle at 88% 14%, rgba(34, 211, 238, 0.09), transparent 24rem),
+    linear-gradient(180deg, #070707 0%, #020202 100%);
+}
+
+.tokyo-panel {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1.5rem;
+  background: linear-gradient(145deg, rgba(24, 24, 27, 0.9), var(--tokyo-panel));
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.32), inset 0 1px rgba(255, 255, 255, 0.035);
+  backdrop-filter: blur(18px);
+}
+
+.tokyo-panel::before {
+  content: "";
+  position: absolute;
+  inset-inline: 2rem;
+  top: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+  pointer-events: none;
+}
+
+.tokyo-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(239, 68, 68, 0.55) rgba(255, 255, 255, 0.05);
 }
 
 .tokyo-glitch::before,

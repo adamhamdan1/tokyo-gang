@@ -5,11 +5,11 @@ import type { ReactNode } from "react";
 import { AdminMemberActions } from "../../AdminMemberActions";
 import { AdminWarningForm } from "../../AdminWarningForm";
 import { AdminWarningDeleteButton } from "../../AdminWarningDeleteButton";
-import { AdminWarningAutoRefresh } from "../../AdminWarningAutoRefresh";
 import { AdminDiscordCheckButton } from "../../AdminDiscordCheckButton";
 import { WarningCountdown } from "../../WarningCountdown";
 import { getWarningExpiryDate, syncWarningsSafely } from "@/lib/warning-sync";
 import { buildMemberIntelligence, buildMemberTimeline, calculateMemberRisk } from "@/lib/member-insights";
+import Image from "next/image";
 
 type Props = {
   params: Promise<{
@@ -36,6 +36,18 @@ const warningLabels: Record<string, string> = {
   FINAL: "تحذير نهائي",
 };
 
+const memberStatusLabels: Record<string, string> = {
+  ACTIVE: "نشط",
+  WARNED: "عليه تحذير",
+  FINAL_WARNING: "تحذير نهائي",
+  SUMMONED: "تحت الاستدعاء",
+  DISMISSED: "مفصول",
+  SUSPENDED: "موقوف",
+  ON_LEAVE: "في إجازة",
+  HIGH_RISK: "خطورة مرتفعة",
+  BLACKLISTED: "قائمة سوداء",
+};
+
 function getAdminIds() {
   return process.env.ADMIN_DISCORD_IDS?.split(",").map((id) => id.trim()).filter(Boolean) || [];
 }
@@ -56,7 +68,7 @@ export default async function AdminMemberPage({ params }: Props) {
   }
 
   const { id } = await params;
-  await syncWarningsSafely({ memberId: id, force: true });
+  await syncWarningsSafely({ memberId: id });
 
   const member = await prisma.tokyoMember.findUnique({
     where: { id },
@@ -127,18 +139,23 @@ export default async function AdminMemberPage({ params }: Props) {
           : "border-green-400/30 bg-green-400/10 text-green-200";
 
   return (
-    <main dir="rtl" className="min-h-screen bg-black px-3 py-5 text-white sm:px-5 md:p-10">
-      <AdminWarningAutoRefresh memberId={member.id} />
+    <main dir="rtl" className="tokyo-dashboard min-h-screen px-3 py-5 text-white sm:px-5 md:p-10">
       <div className="mx-auto max-w-7xl">
         <Link href="/admin" className="inline-block rounded-2xl border border-white/15 bg-zinc-950 px-5 py-3 text-sm font-black text-gray-300">
           الرجوع للوحة الإدارة
         </Link>
 
-        <header className="my-6 rounded-2xl border border-white/10 bg-zinc-950 p-5 md:my-10 md:rounded-3xl md:p-6">
+        <header className="tokyo-panel my-6 p-5 md:my-10 md:p-7">
           <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
             <div className="flex min-w-0 items-center gap-3 md:gap-4">
               {member.image ? (
-                <img src={member.image} alt={member.username} className="h-16 w-16 rounded-full border border-white/20 object-cover md:h-20 md:w-20" />
+                <Image
+                  src={member.image}
+                  alt={member.username}
+                  width={80}
+                  height={80}
+                  className="h-16 w-16 rounded-full border border-white/20 object-cover md:h-20 md:w-20"
+                />
               ) : (
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white text-2xl font-black text-black md:h-20 md:w-20 md:text-3xl">
                   {member.displayName[0]}
@@ -147,13 +164,11 @@ export default async function AdminMemberPage({ params }: Props) {
               <div className="min-w-0">
                 <p className="text-[10px] font-black tracking-[4px] text-red-500 md:text-xs md:tracking-[5px]">TOKYO MEMBER PROFILE</p>
                 <h1 className="mt-2 truncate text-3xl font-black md:text-5xl">{member.displayName}</h1>
-                <p className="mt-2 break-all text-xs text-gray-400 md:text-sm">
-                  @{member.username} - {member.discordId}
-                </p>
+                <p className="mt-2 text-xs text-gray-400 md:text-sm">@{member.username}</p>
               </div>
             </div>
             <div className={`w-fit rounded-2xl border px-5 py-3 text-sm font-black ${statusClass}`}>
-              {member.status}
+              {memberStatusLabels[member.status] ?? member.status}
             </div>
             <AdminDiscordCheckButton memberId={member.id} />
           </div>

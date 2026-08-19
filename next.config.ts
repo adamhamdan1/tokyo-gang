@@ -33,6 +33,7 @@ const nextConfig: NextConfig = {
     "/*": ["./node_modules/pg-cloudflare/dist/**/*", "./node_modules/pg-cloudflare/esm/**/*"],
   },
   images: {
+    unoptimized: true,
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 60 * 60 * 24 * 30,
     remotePatterns: [
