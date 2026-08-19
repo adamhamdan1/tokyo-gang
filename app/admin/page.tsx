@@ -25,6 +25,7 @@ import { AdminSummonForm } from "./AdminSummonForm";
 import { AdminDiscordRoleConfig } from "./AdminDiscordRoleConfig";
 import { AdminWebhookConfig } from "./AdminWebhookConfig";
 import { AdminSiteContent } from "./AdminSiteContent";
+import { AdminAnalyticsPanel } from "./AdminAnalyticsPanel";
 import { TokyoCommandPalette } from "../TokyoCommandPalette";
 import { getTokyoRoleOverrides } from "@/lib/tokyo-role-settings";
 import { ensureTokyoWebhooksSafely } from "@/lib/discord";
@@ -234,6 +235,7 @@ export default async function AdminPage({
     extraAdmins,
     weeklyApplications,
     weeklyAccepted,
+    weeklyRejected,
     weeklyWarnings,
     weeklySummons,
     weeklyComplaints,
@@ -325,6 +327,7 @@ export default async function AdminPage({
     getDatabaseAdminIds(),
     prisma.application.count({ where: { createdAt: { gte: activitySince } } }),
     prisma.application.count({ where: { status: "ACCEPTED", decidedAt: { gte: activitySince } } }),
+    prisma.application.count({ where: { status: "REJECTED", decidedAt: { gte: activitySince } } }),
     prisma.memberWarning.count({ where: { createdAt: { gte: activitySince } } }),
     prisma.summon.count({ where: { createdAt: { gte: activitySince } } }),
     prisma.complaint.count({ where: { createdAt: { gte: activitySince } } }),
@@ -403,6 +406,7 @@ export default async function AdminPage({
   });
   const healthItems = [
     ["بوت Discord", process.env.DISCORD_BOT_TOKEN ? "متصل" : "غير مربوط"],
+    ["Kick Live", process.env.KICK_CLIENT_ID && process.env.KICK_CLIENT_SECRET ? "متصل" : "جاهز للربط"],
     ["قاعدة البيانات", "متصلة"],
     ["مزامنة الأعضاء", tokyoSync ? `${tokyoSync.count} عضو` : `كل ${memberSyncIntervalSeconds} ثانية`],
     ["مزامنة التحذيرات", "عند الحاجة"],
@@ -784,32 +788,18 @@ export default async function AdminPage({
               </div>
               <AdminWeeklyReportButton />
             </div>
-            <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-5">
-              {[
-                ["تقديمات", weeklyApplications],
-                ["قبول", weeklyAccepted],
-                ["تحذيرات", weeklyWarnings],
-                ["استدعاءات", weeklySummons],
-                ["شكاوي", weeklyComplaints],
-              ].map(([label, value]) => (
-                <div key={label} className="rounded-2xl border border-white/10 bg-black/40 p-4">
-                  <p className="text-xs text-gray-500">{label}</p>
-                  <p className="mt-2 text-3xl font-black text-white">{value}</p>
-                </div>
-              ))}
-            </div>
-            <div className="mt-5 rounded-2xl border border-white/10 bg-black/40 p-4">
-              <p className="text-xs font-black tracking-[4px] text-cyan-300">ADMIN ACTIVITY SCORE</p>
-              <div className="mt-4 grid gap-2 md:grid-cols-3">
-                {adminActivity.map((item) => (
-                  <div key={item.adminDiscordId ?? "unknown"} className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
-                    <p className="text-sm font-black text-gray-300">{getAdminDisplayName(item.adminDiscordId)}</p>
-                    <p className="mt-1 text-xl font-black text-white">{item._count._all}</p>
-                  </div>
-                ))}
-                {adminActivity.length === 0 && <p className="text-sm text-gray-500">لا يوجد نشاط إداري خلال الفترة المحددة.</p>}
-              </div>
-            </div>
+            <AdminAnalyticsPanel
+              applications={weeklyApplications}
+              accepted={weeklyAccepted}
+              rejected={weeklyRejected}
+              warnings={weeklyWarnings}
+              summons={weeklySummons}
+              complaints={weeklyComplaints}
+              adminScores={adminActivity.map((item) => ({
+                name: getAdminDisplayName(item.adminDiscordId),
+                value: item._count._all,
+              }))}
+            />
           </section>
         )}
 

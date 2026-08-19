@@ -12,6 +12,7 @@ import { ScrollCommandHud } from "./ScrollCommandHud";
 import { TokyoCommandCenter } from "./TokyoCommandCenter";
 import { TokyoRulesCenter } from "./TokyoRulesCenter";
 import { TokyoWarArchive } from "./TokyoWarArchive";
+import { PwaInstallButton } from "./PwaInstallButton";
 import { DEFAULT_SITE_CONTENT } from "@/lib/site-content";
 import type { TokyoSiteContent } from "@/lib/site-content";
 
@@ -36,7 +37,26 @@ type SiteAlert = {
   message: string;
 };
 
+type ExperienceMode = "AUTO" | "CINEMATIC" | "LITE";
+
+type StreamerLiveStatus = {
+  slug: string;
+  isLive: boolean;
+  title: string;
+  viewers: number;
+  thumbnail: string;
+  startedAt: string | null;
+};
+
 const discordInviteUrl = "https://discord.gg/xTxcswpzNN";
+
+function getKickSlug(url: string, handle: string) {
+  try {
+    return new URL(url).pathname.split("/").filter(Boolean)[0]?.toLowerCase() ?? handle.replace(/^@/, "").toLowerCase();
+  } catch {
+    return handle.replace(/^@/, "").trim().toLowerCase();
+  }
+}
 
 function RevealSection({
   id,
@@ -140,8 +160,12 @@ export default function Home() {
   const [lastDiscordSync, setLastDiscordSync] = useState<Date | null>(null);
   const [siteAlert, setSiteAlert] = useState<SiteAlert | null>(null);
   const [loadHeroVideo, setLoadHeroVideo] = useState(false);
-  const [performanceMode, setPerformanceMode] = useState(false);
+  const [autoPerformanceMode, setAutoPerformanceMode] = useState(false);
+  const [experienceMode, setExperienceMode] = useState<ExperienceMode>("AUTO");
+  const [streamerStatuses, setStreamerStatuses] = useState<Record<string, StreamerLiveStatus>>({});
+  const [kickStatusConfigured, setKickStatusConfigured] = useState(false);
   const [siteContent, setSiteContent] = useState<TokyoSiteContent>(DEFAULT_SITE_CONTENT);
+  const performanceMode = experienceMode === "LITE" || (experienceMode === "AUTO" && autoPerformanceMode);
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), performanceMode ? 1400 : 3000);
@@ -158,7 +182,11 @@ export default function Home() {
       };
       const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       const lowCoreDevice = typeof connection.hardwareConcurrency === "number" && connection.hardwareConcurrency <= 4;
-      setPerformanceMode(Boolean(connection.connection?.saveData || prefersReducedMotion || lowCoreDevice || window.innerWidth < 768));
+      setAutoPerformanceMode(Boolean(connection.connection?.saveData || prefersReducedMotion || lowCoreDevice || window.innerWidth < 768));
+      const savedMode = window.localStorage.getItem("tokyo-experience-mode");
+      if (savedMode === "AUTO" || savedMode === "CINEMATIC" || savedMode === "LITE") {
+        setExperienceMode(savedMode);
+      }
     }, 0);
 
     return () => window.clearTimeout(timer);
@@ -253,6 +281,37 @@ export default function Home() {
   useEffect(() => {
     let active = true;
 
+    const loadStreamerStatuses = async () => {
+      const response = await fetch(`/api/streamers/status?t=${Date.now()}`, { cache: "no-store" });
+      const data = (await response.json().catch(() => null)) as {
+        configured?: boolean;
+        statuses?: StreamerLiveStatus[];
+      } | null;
+      if (!active || !response.ok) return;
+
+      setKickStatusConfigured(Boolean(data?.configured));
+      setStreamerStatuses(
+        Object.fromEntries((data?.statuses ?? []).map((status) => [status.slug.toLowerCase(), status]))
+      );
+    };
+
+    const loadWhenVisible = () => {
+      if (document.visibilityState === "visible") void loadStreamerStatuses();
+    };
+
+    loadWhenVisible();
+    const interval = window.setInterval(loadWhenVisible, 60_000);
+    document.addEventListener("visibilitychange", loadWhenVisible);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", loadWhenVisible);
+    };
+  }, [siteContent]);
+
+  useEffect(() => {
+    let active = true;
+
     const loadSiteContent = async () => {
       const response = await fetch(`/api/site-content?t=${Date.now()}`, { cache: "no-store" });
       const data = (await response.json().catch(() => null)) as { content?: TokyoSiteContent } | null;
@@ -307,6 +366,20 @@ export default function Home() {
     setVolume(value);
     if (audioRef.current) audioRef.current.volume = value / 100;
   };
+
+  const cycleExperienceMode = () => {
+    const nextMode: ExperienceMode = experienceMode === "AUTO" ? "CINEMATIC" : experienceMode === "CINEMATIC" ? "LITE" : "AUTO";
+    setExperienceMode(nextMode);
+    window.localStorage.setItem("tokyo-experience-mode", nextMode);
+  };
+
+  const visibleStreamers = siteContent.streamers
+    .filter((streamer) => streamer.visible)
+    .map((streamer) => ({
+      streamer,
+      status: streamerStatuses[getKickSlug(streamer.kick, streamer.handle)],
+    }))
+    .sort((left, right) => Number(Boolean(right.status?.isLive)) - Number(Boolean(left.status?.isLive)));
 
   return (
     <main dir="rtl" data-performance={performanceMode ? "lite" : "full"} className="min-h-screen overflow-hidden bg-black text-white">
@@ -388,6 +461,7 @@ export default function Home() {
                   src="/tokyo-logo-clean.png"
                   alt=""
                   aria-hidden="true"
+                  loading="eager"
                   animate={{ x: [-1, 2, -2, 0], opacity: [0, 0.22, 0, 0] }}
                   transition={{ duration: 0.24, repeat: Infinity, repeatDelay: 2.1 }}
                   className="absolute z-10 h-36 w-36 object-contain [mask-image:radial-gradient(circle_at_center,black_0%,black_48%,transparent_76%)] [-webkit-mask-image:radial-gradient(circle_at_center,black_0%,black_48%,transparent_76%)] opacity-0 drop-shadow-[0_0_18px_rgba(239,68,68,0.8)] md:h-48 md:w-48"
@@ -485,6 +559,22 @@ export default function Home() {
           className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-lg font-black text-black transition hover:bg-gray-300 md:h-12 md:w-12 md:text-xl"
         >
           {playing ? "Ⅱ" : "▶"}
+        </button>
+
+        <button
+          type="button"
+          onClick={cycleExperienceMode}
+          aria-label="تغيير وضع عرض الموقع"
+          title="AUTO: تلقائي — CINE: سينمائي — LITE: خفيف"
+          className={`flex h-10 min-w-14 items-center justify-center rounded-full border px-3 font-mono text-[9px] font-black tracking-[1px] transition md:h-12 ${
+            experienceMode === "CINEMATIC"
+              ? "border-red-400/40 bg-red-400/15 text-red-200"
+              : experienceMode === "LITE"
+                ? "border-cyan-400/35 bg-cyan-400/10 text-cyan-200"
+                : "border-white/15 bg-white/[0.04] text-zinc-300"
+          }`}
+        >
+          {experienceMode === "CINEMATIC" ? "CINE" : experienceMode}
         </button>
 
         <div className="grid w-0 overflow-hidden opacity-0 transition-all duration-300 group-hover:w-44 group-hover:opacity-100">
@@ -845,7 +935,7 @@ export default function Home() {
         </div>
 
         <div className="relative mx-auto grid max-w-7xl grid-cols-1 gap-7 md:grid-cols-2 lg:grid-cols-6">
-          {siteContent.streamers.filter((streamer) => streamer.visible).map((streamer, index) => (
+          {visibleStreamers.map(({ streamer, status }, index) => (
             <motion.div
               key={streamer.id}
               initial={{ opacity: 0, y: 70 }}
@@ -857,9 +947,9 @@ export default function Home() {
               <div className="absolute left-6 top-6 font-mono text-xs font-black tracking-[0.24em] text-red-500/65">
                 CREATOR {String(index + 1).padStart(2, "0")}
               </div>
-              <div className="absolute right-6 top-6 flex items-center gap-2 rounded-full border border-white/10 bg-black/60 px-3 py-1.5 text-[9px] font-black tracking-[0.22em] text-zinc-400 backdrop-blur-md">
-                KICK UNIT
-                <span className="h-1.5 w-1.5 rounded-full bg-[#53fc18] shadow-[0_0_10px_#53fc18]" />
+              <div className={`absolute right-6 top-6 flex items-center gap-2 rounded-full border bg-black/70 px-3 py-1.5 text-[9px] font-black tracking-[0.18em] backdrop-blur-md ${status?.isLive ? "border-red-400/35 text-red-200" : "border-white/10 text-zinc-500"}`}>
+                {status?.isLive ? "LIVE NOW" : kickStatusConfigured ? "OFFLINE" : "KICK PROFILE"}
+                <span className={`h-1.5 w-1.5 rounded-full ${status?.isLive ? "animate-pulse bg-red-500 shadow-[0_0_12px_#ef4444]" : "bg-zinc-700"}`} />
               </div>
 
               <div className="relative z-10 flex h-full flex-col items-center pt-12">
@@ -896,6 +986,16 @@ export default function Home() {
                 <p className={`tokyo-streamer-partner mt-4 text-lg font-semibold tracking-wide ${streamer.verified ? "text-[#53fc18]" : "text-zinc-400"}`}>
                   {streamer.role}
                 </p>
+
+                {status?.isLive && (
+                  <div className="mt-5 w-full rounded-2xl border border-red-400/20 bg-red-500/[0.07] px-4 py-3 text-right shadow-[0_0_24px_rgba(239,68,68,0.08)]">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="rounded-full bg-red-500 px-2.5 py-1 font-mono text-[9px] font-black tracking-[1px] text-white">ON AIR</span>
+                      <span className="text-xs font-black text-red-200">{status.viewers.toLocaleString("ar")} مشاهد</span>
+                    </div>
+                    <p className="mt-2 line-clamp-1 text-sm font-bold text-white">{status.title || "بث TOKYO مباشر"}</p>
+                  </div>
+                )}
 
                 <div className="mt-auto flex w-full justify-center gap-3 pt-7">
                   <a
@@ -998,6 +1098,7 @@ export default function Home() {
           <div>
             <p className="text-2xl font-black tracking-[7px] text-white">TOKYO GANG</p>
             <p className="mt-3 text-sm leading-7">Official command portal. Built for control, loyalty, and presence.</p>
+            <PwaInstallButton />
           </div>
           <div className="grid gap-2 text-sm">
             <a href="#apply" className="hover:text-white">التقديم</a>

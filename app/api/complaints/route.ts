@@ -4,6 +4,7 @@ import { sendAdminEmbed, sendAdminLog, sendComplaintLogMessage } from "@/lib/dis
 import { prisma } from "@/lib/prisma";
 import { syncTokyoMembersSafely } from "@/lib/tokyo-member-sync";
 import { NextResponse } from "next/server";
+import { cleanBoundedText, cleanOptionalText, isSafeHttpUrl, validateJsonWriteRequest } from "@/lib/request-security";
 
 type ComplaintBody = {
   accusedId?: string;
@@ -14,6 +15,9 @@ type ComplaintBody = {
 };
 
 export async function POST(req: Request) {
+  const requestError = validateJsonWriteRequest(req, 20_000);
+  if (requestError) return NextResponse.json({ error: requestError }, { status: 400 });
+
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -30,14 +34,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "نظام الشكاوي متاح فقط لأعضاء TOKYO" }, { status: 403 });
   }
 
-  const body = (await req.json()) as ComplaintBody;
-  const category = body.category?.trim();
-  const reason = body.reason?.trim();
-  const evidenceUrl = body.evidenceUrl?.trim();
-  const details = body.details?.trim();
+  const body = (await req.json().catch(() => null)) as ComplaintBody | null;
+  const category = cleanBoundedText(body?.category, 80);
+  const reason = cleanBoundedText(body?.reason, 1_000);
+  const evidenceUrl = cleanOptionalText(body?.evidenceUrl, 700);
+  const details = cleanOptionalText(body?.details, 2_000);
 
-  if (!body.accusedId || !category || !reason) {
+  if (!body?.accusedId || !category || !reason || evidenceUrl === null || details === null) {
     return NextResponse.json({ error: "اختار العضو ونوع الشكوى واكتب السبب" }, { status: 400 });
+  }
+
+  if (evidenceUrl && !isSafeHttpUrl(evidenceUrl)) {
+    return NextResponse.json({ error: "رابط الدليل لازم يكون رابط HTTP أو HTTPS صحيح" }, { status: 400 });
   }
 
   const accused = await prisma.tokyoMember.findUnique({
@@ -72,14 +80,24 @@ export async function POST(req: Request) {
     );
   }
 
+  const recentComplaintCount = await prisma.complaint.count({
+    where: {
+      reporterId: reporter.id,
+      createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+    },
+  });
+  if (recentComplaintCount >= 3) {
+    return NextResponse.json({ error: "وصلت للحد اليومي للشكاوى. راجع الإدارة إذا كانت الحالة طارئة" }, { status: 429 });
+  }
+
   const complaint = await prisma.complaint.create({
     data: {
       reporterId: reporter.id,
       accusedId: accused.id,
       category,
       reason,
-      evidenceUrl,
-      details,
+      evidenceUrl: evidenceUrl || null,
+      details: details || null,
     },
   });
 

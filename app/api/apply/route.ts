@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { isDiscordSnowflake, requireTokyoGuildMember, sendManagedWebhook } from "@/lib/discord";
 import { prisma } from "@/lib/prisma";
+import { cleanBoundedText, validateJsonWriteRequest } from "@/lib/request-security";
 
 type ApplyBody = {
   name?: string;
@@ -15,6 +16,9 @@ type ApplyBody = {
 };
 
 export async function POST(req: Request) {
+  const requestError = validateJsonWriteRequest(req, 16_000);
+  if (requestError) return NextResponse.json({ error: requestError }, { status: 400 });
+
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -24,18 +28,25 @@ export async function POST(req: Request) {
     );
   }
 
-  const body = (await req.json()) as ApplyBody;
+  const body = (await req.json().catch(() => null)) as ApplyBody | null;
 
-  if (!body.name || !body.age || !body.city || !body.experience || !body.reason || !body.dailyHours) {
+  const name = cleanBoundedText(body?.name, 80);
+  const ageText = cleanBoundedText(body?.age, 3);
+  const city = cleanBoundedText(body?.city, 80);
+  const experience = cleanBoundedText(body?.experience, 1_000);
+  const reason = cleanBoundedText(body?.reason, 1_000);
+  const dailyHours = cleanBoundedText(body?.dailyHours, 80);
+
+  if (!body || !name || !ageText || !city || !experience || !reason || !dailyHours) {
     return NextResponse.json(
       { error: "بيانات التقديم ناقصة" },
       { status: 400 }
     );
   }
 
-  const age = Number(body.age);
+  const age = Number(ageText);
 
-  if (!Number.isFinite(age) || age < 16) {
+  if (!Number.isFinite(age) || age < 16 || age > 99) {
     return NextResponse.json(
       { error: "الحد الأدنى للعمر هو 16" },
       { status: 400 }
@@ -120,12 +131,12 @@ export async function POST(req: Request) {
 
   const application = await prisma.application.create({
     data: {
-      name: body.name,
-      age: body.age,
-      city: body.city,
-      experience: body.experience,
-      reason: body.reason,
-      dailyHours: body.dailyHours,
+      name,
+      age: ageText,
+      city,
+      experience,
+      reason,
+      dailyHours,
       hasMic: body.hasMic ?? false,
       acceptedRules: body.acceptedRules,
       reviewFlag: age < 18 || !body.hasMic ? "Needs Review" : null,
@@ -142,15 +153,15 @@ export async function POST(req: Request) {
               fields: [
                 {
                   name: "الاسم",
-                  value: body.name,
+                  value: name,
                 },
                 {
                   name: "العمر",
-                  value: body.age,
+                  value: ageText,
                 },
                 {
                   name: "المدينة",
-                  value: body.city,
+                  value: city,
                 },
                 {
                   name: "حساب الديسكورد",
@@ -162,11 +173,11 @@ export async function POST(req: Request) {
                 },
                 {
                   name: "الخبرة",
-                  value: body.experience,
+                  value: experience,
                 },
                 {
                   name: "ساعات اللعب اليومية",
-                  value: body.dailyHours,
+                  value: dailyHours,
                 },
                 {
                   name: "المايك",
@@ -174,7 +185,7 @@ export async function POST(req: Request) {
                 },
                 {
                   name: "السبب",
-                  value: body.reason,
+                  value: reason,
                 },
               ],
               timestamp: new Date().toISOString(),

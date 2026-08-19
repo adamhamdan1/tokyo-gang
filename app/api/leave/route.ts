@@ -4,6 +4,7 @@ import { sendAdminEmbed } from "@/lib/discord";
 import { prisma } from "@/lib/prisma";
 import { syncTokyoMembersSafely } from "@/lib/tokyo-member-sync";
 import { NextResponse } from "next/server";
+import { cleanBoundedText, validateJsonWriteRequest } from "@/lib/request-security";
 
 type LeaveBody = {
   reason?: string;
@@ -12,6 +13,9 @@ type LeaveBody = {
 };
 
 export async function POST(req: Request) {
+  const requestError = validateJsonWriteRequest(req, 12_000);
+  if (requestError) return NextResponse.json({ error: requestError }, { status: 400 });
+
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -28,9 +32,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "طلبات الإجازة لأعضاء TOKYO فقط" }, { status: 403 });
   }
 
-  const body = (await req.json()) as LeaveBody;
-  const reason = body.reason?.trim();
-  const durationDays = Number(body.durationDays);
+  const body = (await req.json().catch(() => null)) as LeaveBody | null;
+  const reason = cleanBoundedText(body?.reason, 1_200);
+  const durationDays = Number(body?.durationDays);
 
   if (!reason) {
     return NextResponse.json({ error: "اكتب سبب الإجازة" }, { status: 400 });
@@ -40,10 +44,23 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "مدة الإجازة لازم تكون بين 1 و 60 يوم" }, { status: 400 });
   }
 
-  const startsAt = body.startsAt ? new Date(body.startsAt) : new Date();
+  const startsAt = body?.startsAt ? new Date(body.startsAt) : new Date();
 
   if (Number.isNaN(startsAt.getTime())) {
     return NextResponse.json({ error: "وقت بداية الإجازة غير صحيح" }, { status: 400 });
+  }
+
+
+  if (startsAt.getTime() > Date.now() + 180 * 24 * 60 * 60 * 1_000) {
+    return NextResponse.json({ error: "تاريخ بداية الإجازة بعيد أكثر من المسموح" }, { status: 400 });
+  }
+
+  const existingPendingLeave = await prisma.leaveRequest.findFirst({
+    where: { memberId: member.id, status: "PENDING" },
+    select: { id: true },
+  });
+  if (existingPendingLeave) {
+    return NextResponse.json({ error: "عندك طلب إجازة قيد المراجعة بالفعل" }, { status: 409 });
   }
 
   const leave = await prisma.leaveRequest.create({
