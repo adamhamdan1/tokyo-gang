@@ -237,6 +237,7 @@ export default async function AdminPage({
     weeklyComplaints,
     adminActivity,
     knownUsers,
+    activeSiteAlerts,
   ] = await Promise.all([
     prisma.application.findMany({
       where: applicationWhere,
@@ -342,6 +343,21 @@ export default async function AdminPage({
         image: true,
       },
     }),
+    mode === "SYSTEM"
+      ? prisma.siteAlert.findMany({
+          where: {
+            active: true,
+            OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+          },
+          orderBy: { createdAt: "desc" },
+          select: {
+            id: true,
+            title: true,
+            message: true,
+            expiresAt: true,
+          },
+        })
+      : Promise.resolve([]),
   ]);
 
   const memberByDiscordId = new Map(tokyoMembers.map((member) => [member.discordId, member]));
@@ -633,7 +649,22 @@ export default async function AdminPage({
         {mode === "SYSTEM" && <AdminWebhookConfig initialStatuses={tokyoWebhookStatuses} />}
 
         {mode === "SYSTEM" && <AdminAnnouncementForm />}
-        {mode === "SYSTEM" && <AdminAlertForm />}
+        {mode === "SYSTEM" && (
+          <AdminAlertForm
+            activeAlerts={activeSiteAlerts.map((alert) => ({
+              id: alert.id,
+              title: alert.title,
+              message: alert.message,
+              expiresLabel: alert.expiresAt
+                ? new Intl.DateTimeFormat("ar-JO", {
+                    dateStyle: "short",
+                    timeStyle: "short",
+                    timeZone: "Europe/Stockholm",
+                  }).format(alert.expiresAt)
+                : null,
+            }))}
+          />
+        )}
         {mode === "SYSTEM" && admin.isOwner && (
           <AdminManagerForm
             admins={extraAdmins.map((discordId) => ({

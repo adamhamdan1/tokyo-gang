@@ -1,5 +1,5 @@
-import { auth } from "@/auth";
 import { createAdminLog } from "@/lib/admin-log";
+import { requireAdminCapability } from "@/lib/admin-permissions";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
@@ -9,15 +9,10 @@ type AlertBody = {
   durationMinutes?: number;
 };
 
-function getAdminIds() {
-  return process.env.ADMIN_DISCORD_IDS?.split(",").map((id) => id.trim()).filter(Boolean) || [];
-}
-
 export async function POST(req: Request) {
-  const session = await auth();
-  const adminIds = getAdminIds();
+  const admin = await requireAdminCapability("LOGS");
 
-  if (!session?.user?.id || !adminIds.includes(session.user.id)) {
+  if (!admin) {
     return NextResponse.json({ error: "Access Denied" }, { status: 403 });
   }
 
@@ -35,7 +30,7 @@ export async function POST(req: Request) {
       title,
       message,
       expiresAt: new Date(Date.now() + duration * 60 * 1000),
-      createdBy: session.user.id,
+      createdBy: admin.id,
     },
   });
 
@@ -43,7 +38,7 @@ export async function POST(req: Request) {
     action: "SITE_ALERT",
     title: `تنبيه موقع: ${title}`,
     details: message,
-    adminDiscordId: session.user.id,
+    adminDiscordId: admin.id,
     targetType: "SITE_ALERT",
     targetId: alert.id,
   }).catch(() => null);
