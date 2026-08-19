@@ -1,5 +1,5 @@
-const TOKYO_CACHE = "tokyo-shell-v2";
-const TOKYO_SHELL = ["/", "/server-logo.png", "/manifest.webmanifest"];
+const TOKYO_CACHE = "tokyo-shell-v3";
+const TOKYO_SHELL = ["/offline.html", "/server-logo.png", "/tokyo-logo-clean.webp", "/manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(TOKYO_CACHE).then((cache) => cache.addAll(TOKYO_SHELL)));
@@ -25,14 +25,7 @@ self.addEventListener("fetch", (event) => {
   if (request.mode === "navigate") {
     event.respondWith(
       fetch(request)
-        .then((response) => {
-          if (response.ok && url.pathname === "/") {
-            const copy = response.clone();
-            void caches.open(TOKYO_CACHE).then((cache) => cache.put("/", copy));
-          }
-          return response;
-        })
-        .catch(() => caches.match("/").then((response) => response || Response.error()))
+        .catch(() => caches.match("/offline.html").then((response) => response || Response.error()))
     );
     return;
   }
@@ -48,4 +41,20 @@ self.addEventListener("fetch", (event) => {
       }))
     );
   }
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const destination = new URL(event.notification.data?.url || "/", self.location.origin).href;
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(async (clients) => {
+      for (const client of clients) {
+        if ("focus" in client) {
+          await client.navigate(destination);
+          return client.focus();
+        }
+      }
+      return self.clients.openWindow(destination);
+    })
+  );
 });

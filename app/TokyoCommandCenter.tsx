@@ -162,7 +162,7 @@ export function TokyoCommandCenter({
                 ))}
 
                 <div className="absolute left-1/2 top-1/2 z-20 flex h-24 w-24 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-red-400/40 bg-black/80 shadow-[0_0_38px_rgba(239,68,68,0.25)] sm:h-28 sm:w-28">
-                  <Image src="/tokyo-logo-clean.png" alt="TOKYO command node" width={78} height={78} className="h-16 w-16 object-contain sm:h-20 sm:w-20" />
+                  <Image src="/tokyo-logo-clean.webp" alt="TOKYO command node" width={78} height={78} className="h-16 w-16 object-contain sm:h-20 sm:w-20" />
                 </div>
 
                 <div dir="ltr" className="absolute bottom-[8%] left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded-full border border-green-400/20 bg-black/70 px-4 py-2 font-mono text-[8px] tracking-[0.25em] text-green-300 backdrop-blur-md sm:text-[10px]">

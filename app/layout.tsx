@@ -51,7 +51,7 @@ export const metadata: Metadata = {
     siteName: "T O K Y O G A N G",
     images: [
       {
-        url: "/preview.png",
+        url: "/preview.jpg",
         width: 1200,
         height: 630,
         alt: "T O K Y O G A N G",
@@ -63,7 +63,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "T O K Y O G A N G",
     description: "هيبة، سيطرة، ولاء — الموقع الرسمي لعصابة TOKYO GANG",
-    images: ["/preview.png"],
+    images: ["/preview.jpg"],
   },
 };
 

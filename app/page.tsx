@@ -13,6 +13,8 @@ import { TokyoCommandCenter } from "./TokyoCommandCenter";
 import { TokyoRulesCenter } from "./TokyoRulesCenter";
 import { TokyoWarArchive } from "./TokyoWarArchive";
 import { PwaInstallButton } from "./PwaInstallButton";
+import { TokyoLiveTakeover } from "./TokyoLiveTakeover";
+import type { TokyoLiveStatus } from "./TokyoLiveTakeover";
 import { DEFAULT_SITE_CONTENT } from "@/lib/site-content";
 import type { TokyoSiteContent } from "@/lib/site-content";
 
@@ -39,14 +41,7 @@ type SiteAlert = {
 
 type ExperienceMode = "AUTO" | "CINEMATIC" | "LITE";
 
-type StreamerLiveStatus = {
-  slug: string;
-  isLive: boolean;
-  title: string;
-  viewers: number;
-  thumbnail: string;
-  startedAt: string | null;
-};
+type StreamerLiveStatus = TokyoLiveStatus;
 
 const discordInviteUrl = "https://discord.gg/xTxcswpzNN";
 
@@ -380,6 +375,7 @@ export default function Home() {
       status: streamerStatuses[getKickSlug(streamer.kick, streamer.handle)],
     }))
     .sort((left, right) => Number(Boolean(right.status?.isLive)) - Number(Boolean(left.status?.isLive)));
+  const liveStreamer = visibleStreamers.find((entry) => entry.status?.isLive);
 
   return (
     <main dir="rtl" data-performance={performanceMode ? "lite" : "full"} className="min-h-screen overflow-hidden bg-black text-white">
@@ -458,7 +454,7 @@ export default function Home() {
                   className="absolute inset-8 rounded-full bg-gradient-to-r from-transparent via-white/35 to-transparent blur-sm [mask-image:radial-gradient(circle_at_center,black_0%,black_58%,transparent_76%)] [-webkit-mask-image:radial-gradient(circle_at_center,black_0%,black_58%,transparent_76%)]"
                 />
                 <motion.img
-                  src="/tokyo-logo-clean.png"
+                  src="/tokyo-logo-clean.webp"
                   alt=""
                   aria-hidden="true"
                   loading="eager"
@@ -467,7 +463,7 @@ export default function Home() {
                   className="absolute z-10 h-36 w-36 object-contain [mask-image:radial-gradient(circle_at_center,black_0%,black_48%,transparent_76%)] [-webkit-mask-image:radial-gradient(circle_at_center,black_0%,black_48%,transparent_76%)] opacity-0 drop-shadow-[0_0_18px_rgba(239,68,68,0.8)] md:h-48 md:w-48"
                 />
                 <motion.img
-                  src="/tokyo-logo-clean.png"
+                  src="/tokyo-logo-clean.webp"
                   alt="TOKYO GANG"
                   loading="eager"
                   initial={{ opacity: 0, filter: "blur(12px)" }}
@@ -673,7 +669,7 @@ export default function Home() {
       </aside>
 
       <section id="home" className="relative flex min-h-[100svh] flex-col items-center justify-center overflow-hidden px-4 text-center md:h-screen md:px-6">
-        <div className="absolute inset-0 bg-[url('/bg.jpg')] bg-cover bg-center opacity-35 grayscale md:opacity-15" />
+        <div className="absolute inset-0 bg-[url('/bg-optimized.webp')] bg-cover bg-center opacity-35 grayscale md:opacity-15" />
         <motion.div
           initial={{ opacity: 0, scale: 1.8 }}
           animate={{ opacity: loading ? 0 : [0.85, 0], scale: loading ? 1.8 : [1.8, 1] }}
@@ -829,6 +825,10 @@ export default function Home() {
           <span>POWER / LOYALTY / RESPECT</span>
         </motion.div>
       </section>
+
+      {liveStreamer?.status && (
+        <TokyoLiveTakeover streamer={liveStreamer.streamer} status={liveStreamer.status} />
+      )}
 
       <section className="relative overflow-hidden border-y border-white/10 bg-black px-6 py-14">
         <motion.div
@@ -1004,8 +1004,8 @@ export default function Home() {
                     rel="noreferrer"
                     className="group/kick inline-flex min-w-32 items-center justify-center gap-2 rounded-xl bg-[#53fc18] px-7 py-3.5 font-black text-black shadow-[0_0_26px_rgba(83,252,24,0.24)] transition hover:bg-white hover:shadow-[0_0_34px_rgba(83,252,24,0.45)]"
                   >
-                    Kick
-                    <span aria-hidden="true" className="transition-transform group-hover/kick:-translate-y-0.5 group-hover/kick:translate-x-0.5">↗</span>
+                    <span aria-hidden="true" className="text-xl font-black leading-none tracking-[-0.18em] transition-transform group-hover/kick:scale-110">K</span>
+                    <span>Kick</span>
                   </a>
 
                   {streamer.tiktok && (

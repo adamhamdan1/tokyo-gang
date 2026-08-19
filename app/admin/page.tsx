@@ -26,6 +26,7 @@ import { AdminDiscordRoleConfig } from "./AdminDiscordRoleConfig";
 import { AdminWebhookConfig } from "./AdminWebhookConfig";
 import { AdminSiteContent } from "./AdminSiteContent";
 import { AdminAnalyticsPanel } from "./AdminAnalyticsPanel";
+import { AdminBackupCenter } from "./AdminBackupCenter";
 import { TokyoCommandPalette } from "../TokyoCommandPalette";
 import { getTokyoRoleOverrides } from "@/lib/tokyo-role-settings";
 import { ensureTokyoWebhooksSafely } from "@/lib/discord";
@@ -666,6 +667,8 @@ export default async function AdminPage({
         {mode === "SYSTEM" && <AdminWebhookConfig initialStatuses={tokyoWebhookStatuses} />}
 
         {mode === "SYSTEM" && <AdminSiteContent initialContent={siteContent} />}
+
+        {mode === "SYSTEM" && admin.isOwner && <AdminBackupCenter />}
 
         {mode === "SYSTEM" && <AdminAnnouncementForm />}
         {mode === "SYSTEM" && (

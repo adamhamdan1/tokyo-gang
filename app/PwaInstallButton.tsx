@@ -14,7 +14,7 @@ export function PwaInstallButton() {
   );
 
   useEffect(() => {
-    if ("serviceWorker" in navigator) {
+    if (process.env.NODE_ENV === "production" && "serviceWorker" in navigator) {
       void navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch((error) => {
         console.error("TOKYO service worker registration failed", error);
       });

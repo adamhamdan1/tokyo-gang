@@ -56,7 +56,7 @@ export function AdminSiteContent({ initialContent }: { initialContent: TokyoSite
     const item = section === "leadership"
       ? { id: newId("leader"), name: "اسم جديد", role: "المنصب", code: `HC-${String(content.leadership.length + 1).padStart(2, "0")}`, visible: true }
       : section === "streamers"
-        ? { id: newId("creator"), name: "ستريمر جديد", role: "ستريمر رسمي", handle: "@username", kick: "https://kick.com/", logo: "/tokyo-logo-clean.png", verified: false, visible: true }
+        ? { id: newId("creator"), name: "ستريمر جديد", role: "ستريمر رسمي", handle: "@username", kick: "https://kick.com/", logo: "/tokyo-logo-clean.webp", verified: false, visible: true }
         : section === "timeline"
           ? { id: newId("timeline"), title: "مرحلة جديدة", description: "اكتب تفاصيل المرحلة هنا.", visible: true }
           : { id: newId("operation"), code: `OP-${String(content.wars.length + 1).padStart(3, "0")}`, title: "عملية جديدة", summary: "ملخص العملية.", outcome: "نتيجة العملية.", year: new Date().getFullYear().toString(), type: "عملية ميدانية", status: "CLOSED" as const, visible: true };

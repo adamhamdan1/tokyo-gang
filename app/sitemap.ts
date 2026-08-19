@@ -6,7 +6,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: "https://www.tokyo-gang.com",
       changeFrequency: "daily",
       priority: 1,
-      images: ["https://www.tokyo-gang.com/preview.png"],
+      images: ["https://www.tokyo-gang.com/preview.jpg"],
     },
   ];
 }

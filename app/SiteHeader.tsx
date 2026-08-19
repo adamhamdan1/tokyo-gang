@@ -8,6 +8,7 @@ import Link from "next/link";
 import { MEMBER_NAVIGATION, PRIMARY_NAVIGATION } from "@/lib/site-navigation";
 import { MobileMenu } from "./MobileMenu";
 import { TokyoCommandPalette } from "./TokyoCommandPalette";
+import { TokyoNotificationCenter } from "./TokyoNotificationCenter";
 
 type SiteAlert = {
   id: string;
@@ -79,7 +80,7 @@ export function SiteHeader({ siteAlert }: { siteAlert: SiteAlert | null }) {
         <a href="#home" className="group flex min-w-0 items-center gap-3 xl:w-[220px] 2xl:w-[250px]" aria-label="TOKYO GANG الرئيسية">
           <span className="tokyo-brand-mark relative flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] border border-white/15 bg-white/[0.045]">
             <span className="absolute inset-[3px] rounded-[14px] border border-red-500/15" />
-            <Image src="/tokyo-logo-clean.png" alt="" width={38} height={38} priority className="relative h-9 w-9 object-contain transition duration-500 group-hover:scale-110" />
+            <Image src="/tokyo-logo-clean.webp" alt="" width={38} height={38} priority className="relative h-9 w-9 object-contain transition duration-500 group-hover:scale-110" />
             <span className="absolute -bottom-0.5 -left-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full border-[3px] border-[#050505] bg-emerald-400 shadow-[0_0_14px_rgba(74,222,128,0.95)]">
               <span className="h-1 w-1 rounded-full bg-white" />
             </span>
@@ -149,6 +150,10 @@ export function SiteHeader({ siteAlert }: { siteAlert: SiteAlert | null }) {
 
             <TokyoCommandPalette variant="public" />
           </div>
+        </div>
+
+        <div className="mr-auto xl:mr-0">
+          <TokyoNotificationCenter />
         </div>
 
         <div className="hidden shrink-0 items-center justify-end xl:flex xl:w-[220px] 2xl:w-[250px]">
