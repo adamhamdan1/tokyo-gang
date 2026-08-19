@@ -3,11 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { signIn, signOut, useSession } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import Image from "next/image";
 import { ApplicationForm } from "./ApplicationForm";
 import { AnnouncementsFeed } from "./AnnouncementsFeed";
-import { MobileMenu } from "./MobileMenu";
+import { SiteHeader } from "./SiteHeader";
 import { ScrollCommandHud } from "./ScrollCommandHud";
 import { TokyoCommandCenter } from "./TokyoCommandCenter";
 import { TOKYO_RULES } from "@/lib/tokyo-content";
@@ -463,85 +463,7 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      <nav className="fixed left-0 right-0 top-0 z-[90] overflow-hidden border-b border-white/10 bg-black/75 shadow-[0_18px_60px_rgba(0,0,0,0.35)] backdrop-blur-2xl">
-        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-red-500/70 to-transparent" />
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-5 px-4 py-3 md:px-6">
-          <a href="#home" className="group flex items-center gap-3" aria-label="TOKYO GANG الرئيسية">
-            <span className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-white/[0.06] shadow-[0_0_24px_rgba(239,68,68,0.12)]">
-              <Image src="/tokyo-logo-clean.png" alt="" width={32} height={32} className="h-8 w-8 object-contain" />
-              <span className="absolute -bottom-1 -right-1 h-2.5 w-2.5 rounded-full border-2 border-black bg-green-400 shadow-[0_0_10px_lime]" />
-            </span>
-            <span>
-              <span className="block text-sm font-black tracking-[4px] text-white">TOKYO</span>
-              <span className="block text-[9px] font-black tracking-[3px] text-red-400">GANG PORTAL</span>
-            </span>
-          </a>
-          <MobileMenu />
-          <div className="hidden items-center gap-1 rounded-2xl border border-white/10 bg-white/[0.035] p-1 text-xs font-bold text-gray-400 md:flex lg:text-sm">
-            <a href="#home" className="rounded-xl px-3 py-2 transition hover:bg-white/10 hover:text-white">الرئيسية</a>
-            <a href="#command" className="rounded-xl px-3 py-2 transition hover:bg-white/10 hover:text-white">القيادة</a>
-            <a href="#operations" className="rounded-xl px-3 py-2 transition hover:bg-white/10 hover:text-white">العمليات</a>
-            <a href="#streamers" className="rounded-xl px-3 py-2 transition hover:bg-white/10 hover:text-white">الستريمرز</a>
-            <a href="#rules" className="rounded-xl px-3 py-2 transition hover:bg-white/10 hover:text-white">القوانين</a>
-            <a href="#wars" className="rounded-xl px-3 py-2 transition hover:bg-white/10 hover:text-white">الحروب</a>
-            <a href="#apply" className="rounded-xl px-3 py-2 transition hover:bg-white/10 hover:text-white">التقديم</a>
-            {session.data?.user && (
-              <>
-                <a href="/status" className="text-green-400 hover:text-green-300">طلبي</a>
-                <a href="/complaints" className="text-cyan-300 hover:text-cyan-200">الشكاوي</a>
-                <a href="/leave" className="text-emerald-300 hover:text-emerald-200">الإجازات</a>
-                <a href="/rules-internal" className="text-yellow-300 hover:text-yellow-200">القوانين الداخلية</a>
-                <a href="/admin" className="text-red-400 hover:text-red-300">الإدارة</a>
-              </>
-            )}
-          </div>
-          {session.data?.user ? (
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-3 rounded-full border border-white/15 bg-black/50 px-3 py-2 shadow-[0_0_20px_rgba(255,255,255,0.08)]">
-                {session.data.user.image && (
-                  <Image
-                    src={session.data.user.image}
-                    width={40}
-                    height={40}
-                    className="h-10 w-10 rounded-full border border-white/20 object-cover"
-                    alt={session.data.user.name ?? "Discord user"}
-                  />
-                )}
-                <p className="hidden max-w-28 truncate text-sm font-bold text-white sm:block">
-                  {session.data.user.name}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => signOut()}
-                className="rounded-full border border-white/15 bg-black/50 px-4 py-2 text-sm font-bold text-gray-300 transition hover:text-white"
-              >
-                خروج
-              </button>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => signIn("discord")}
-              className="rounded-xl border border-red-400/30 bg-red-500 px-5 py-2.5 text-sm font-black text-white shadow-[0_0_28px_rgba(239,68,68,0.22)] transition hover:-translate-y-0.5 hover:bg-red-400"
-            >
-              Discord
-            </button>
-          )}
-        </div>
-        {siteAlert && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="border-t border-red-500/30 bg-red-950/85 px-4 py-2 text-center text-white shadow-[0_0_35px_rgba(239,68,68,0.18)]"
-          >
-            <p className="text-[10px] font-black tracking-[4px] text-red-200 md:text-xs">{siteAlert.title}</p>
-            <p className="mx-auto mt-1 max-w-5xl overflow-hidden text-ellipsis whitespace-nowrap text-xs font-bold md:text-sm">
-              {siteAlert.message}
-            </p>
-          </motion.div>
-        )}
-      </nav>
+      <SiteHeader siteAlert={siteAlert} />
 
       <div className="group fixed bottom-4 left-4 z-50 flex items-center gap-3 rounded-full border border-white/15 bg-black/70 p-2 backdrop-blur-md shadow-[0_0_28px_rgba(255,255,255,0.08)] transition hover:rounded-2xl md:bottom-6 md:left-6 md:p-3">
         <button

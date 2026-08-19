@@ -1,6 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { getAdminContext } from "@/lib/admin-permissions";
-import { getDatabaseAdminIds } from "@/lib/admin-permissions";
+import { getAdminContext, getDatabaseAdminIds, getOwnerAdminIds } from "@/lib/admin-permissions";
 import { calculateApplicationQuality } from "@/lib/application-insights";
 import { calculateMemberRisk } from "@/lib/member-insights";
 import { syncTokyoMembersSafely } from "@/lib/tokyo-member-sync";
@@ -181,7 +180,7 @@ export default async function AdminPage({
     );
   }
 
-  const shouldSyncMembers = mode === "OVERVIEW" || mode === "MEMBERS" || mode === "DISCIPLINE";
+  const shouldSyncMembers = mode === "OVERVIEW" || mode === "MEMBERS" || mode === "DISCIPLINE" || mode === "SYSTEM";
   const tokyoSync = shouldSyncMembers ? await syncTokyoMembersSafely() : null;
 
   if (shouldSyncMembers) {
@@ -266,6 +265,7 @@ export default async function AdminPage({
         displayName: true,
         username: true,
         discordId: true,
+        image: true,
         status: true,
         behaviorScore: true,
         summons: {
@@ -673,13 +673,13 @@ export default async function AdminPage({
               username: userByDiscordId.get(discordId)?.username ?? memberByDiscordId.get(discordId)?.username ?? null,
               image: userByDiscordId.get(discordId)?.image ?? null,
             }))}
-            candidates={knownUsers
-              .filter((user) => !extraAdmins.includes(user.discordId) && user.discordId !== admin.id)
-              .map((user) => ({
-                discordId: user.discordId,
-                name: memberByDiscordId.get(user.discordId)?.displayName ?? user.username,
-                username: user.username,
-                image: user.image,
+            candidates={tokyoMembers
+              .filter((member) => !extraAdmins.includes(member.discordId) && !getOwnerAdminIds().includes(member.discordId))
+              .map((member) => ({
+                discordId: member.discordId,
+                name: member.displayName,
+                username: member.username,
+                image: member.image,
               }))}
           />
         )}
