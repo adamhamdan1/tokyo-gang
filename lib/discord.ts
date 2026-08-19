@@ -467,7 +467,12 @@ export async function listOnlineAcceptedRoleMembers() {
   ]);
 
   if (!widgetResponse.ok) {
-    throw new Error(`فشل جلب أعضاء الديسكورد الأونلاين. فعل Server Widget من إعدادات السيرفر (${widgetResponse.status})`);
+    console.warn(`Discord Server Widget unavailable (${widgetResponse.status}); using role totals without member presence.`);
+
+    return {
+      members: [],
+      roleMemberCount: roleMembers.length,
+    };
   }
 
   const widget = (await widgetResponse.json()) as {

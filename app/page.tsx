@@ -241,7 +241,7 @@ export default function Home() {
     };
 
     loadWhenVisible();
-    const interval = window.setInterval(loadWhenVisible, 30_000);
+    const interval = window.setInterval(loadWhenVisible, 60_000);
     document.addEventListener("visibilitychange", loadWhenVisible);
 
     return () => {

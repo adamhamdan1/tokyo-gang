@@ -16,7 +16,7 @@ let cachedPayload: {
   expiresAt: number;
 } | null = null;
 
-const DISCORD_MEMBERS_CACHE_MS = 30 * 1000;
+const DISCORD_MEMBERS_CACHE_MS = 60 * 1000;
 
 export async function GET() {
   try {
@@ -25,7 +25,7 @@ export async function GET() {
     if (cachedPayload && cachedPayload.expiresAt > now) {
       return NextResponse.json(cachedPayload.data, {
         headers: {
-          "Cache-Control": "public, max-age=0, s-maxage=30, stale-while-revalidate=60",
+          "Cache-Control": "public, max-age=0, s-maxage=60, stale-while-revalidate=120",
         },
       });
     }
@@ -51,7 +51,7 @@ export async function GET() {
 
     return NextResponse.json(data, {
       headers: {
-        "Cache-Control": "public, max-age=0, s-maxage=30, stale-while-revalidate=60",
+        "Cache-Control": "public, max-age=0, s-maxage=60, stale-while-revalidate=120",
       },
     });
   } catch (error) {
