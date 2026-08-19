@@ -150,6 +150,68 @@ select {
   pointer-events: none;
 }
 
+.tokyo-command-panel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.13;
+  background: repeating-linear-gradient(
+    180deg,
+    transparent 0,
+    transparent 5px,
+    rgba(255, 255, 255, 0.08) 6px
+  );
+}
+
+.tokyo-radar-grid {
+  background-image:
+    linear-gradient(rgba(239, 68, 68, 0.09) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(239, 68, 68, 0.09) 1px, transparent 1px),
+    radial-gradient(circle at center, rgba(239, 68, 68, 0.08), transparent 66%);
+  background-size: 36px 36px, 36px 36px, 100% 100%;
+  background-position: center;
+}
+
+.tokyo-radar-sweep {
+  background: conic-gradient(from 0deg, transparent 0deg 300deg, rgba(239, 68, 68, 0.02) 314deg, rgba(239, 68, 68, 0.42) 359deg, transparent 360deg);
+  animation: tokyo-radar-spin 5.8s linear infinite;
+  transform-origin: center;
+}
+
+.tokyo-radar-signal {
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  border-radius: 999px;
+  background: #4ade80;
+  box-shadow: 0 0 18px rgba(74, 222, 128, 0.95);
+}
+
+.tokyo-radar-signal::before,
+.tokyo-radar-signal::after {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  border: 1px solid rgba(74, 222, 128, 0.65);
+  border-radius: inherit;
+  animation: tokyo-radar-ping 2.8s ease-out infinite;
+  animation-delay: inherit;
+}
+
+.tokyo-radar-signal::after {
+  animation-delay: 1.4s;
+}
+
+@keyframes tokyo-radar-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes tokyo-radar-ping {
+  0% { transform: scale(0.55); opacity: 0.9; }
+  75%, 100% { transform: scale(3.5); opacity: 0; }
+}
+
 .tokyo-glitch::before,
 .tokyo-glitch::after {
   content: attr(data-text);
@@ -197,4 +259,16 @@ select {
   .tokyo-admin-stat:hover {
     transform: none;
   }
+
+  .tokyo-radar-sweep,
+  .tokyo-radar-signal::before,
+  .tokyo-radar-signal::after {
+    animation: none;
+  }
+}
+
+[data-performance="lite"] .tokyo-radar-sweep,
+[data-performance="lite"] .tokyo-radar-signal::before,
+[data-performance="lite"] .tokyo-radar-signal::after {
+  animation: none;
 }

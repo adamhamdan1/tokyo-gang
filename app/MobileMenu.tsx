@@ -10,6 +10,7 @@ export function MobileMenu() {
   const links = [
     ["الرئيسية", "#home"],
     ["القيادة", "#command"],
+    ["مركز العمليات", "#operations"],
     ["الستريمرز", "#streamers"],
     ["القوانين", "#rules"],
     ["التقديم", "#apply"],

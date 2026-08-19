@@ -8,6 +8,8 @@ import Image from "next/image";
 import { ApplicationForm } from "./ApplicationForm";
 import { AnnouncementsFeed } from "./AnnouncementsFeed";
 import { MobileMenu } from "./MobileMenu";
+import { ScrollCommandHud } from "./ScrollCommandHud";
+import { TokyoCommandCenter } from "./TokyoCommandCenter";
 import { TOKYO_RULES } from "@/lib/tokyo-content";
 
 const killfeed = [
@@ -296,6 +298,7 @@ export default function Home() {
 
   return (
     <main dir="rtl" data-performance={performanceMode ? "lite" : "full"} className="min-h-screen overflow-hidden bg-black text-white">
+      <ScrollCommandHud performanceMode={performanceMode} />
       {!performanceMode && <AmbientParticles />}
 
       <div className="pointer-events-none fixed inset-0 z-[9997] opacity-[0.035] bg-[linear-gradient(to_bottom,white_1px,transparent_1px)] bg-[length:100%_4px]" />
@@ -477,6 +480,7 @@ export default function Home() {
           <div className="hidden items-center gap-1 rounded-2xl border border-white/10 bg-white/[0.035] p-1 text-xs font-bold text-gray-400 md:flex lg:text-sm">
             <a href="#home" className="rounded-xl px-3 py-2 transition hover:bg-white/10 hover:text-white">الرئيسية</a>
             <a href="#command" className="rounded-xl px-3 py-2 transition hover:bg-white/10 hover:text-white">القيادة</a>
+            <a href="#operations" className="rounded-xl px-3 py-2 transition hover:bg-white/10 hover:text-white">العمليات</a>
             <a href="#streamers" className="rounded-xl px-3 py-2 transition hover:bg-white/10 hover:text-white">الستريمرز</a>
             <a href="#rules" className="rounded-xl px-3 py-2 transition hover:bg-white/10 hover:text-white">القوانين</a>
             <a href="#wars" className="rounded-xl px-3 py-2 transition hover:bg-white/10 hover:text-white">الحروب</a>
@@ -838,6 +842,13 @@ export default function Home() {
           ))}
         </div>
       </RevealSection>
+
+      <TokyoCommandCenter
+        onlineCount={onlineCount}
+        roleMemberCount={roleMemberCount}
+        lastDiscordSync={lastDiscordSync}
+        performanceMode={performanceMode}
+      />
 
       <RevealSection id="streamers" className="relative overflow-hidden border-y border-red-950/80 bg-[#030303] px-5 py-28 sm:px-8">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(127,29,29,0.32),transparent_32%),radial-gradient(circle_at_12%_70%,rgba(83,252,24,0.055),transparent_25%),linear-gradient(180deg,#070707_0%,#020202_100%)]" />
