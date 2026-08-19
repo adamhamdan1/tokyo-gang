@@ -58,7 +58,7 @@ export function AdminManagerForm({ admins, candidates }: Props) {
   };
 
   return (
-    <section className="tokyo-panel mb-8 p-5 md:mb-10 md:p-6">
+    <section className="tokyo-panel tokyo-admin-manager-panel relative z-30 mb-8 p-5 md:mb-10 md:p-6">
       <div>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>

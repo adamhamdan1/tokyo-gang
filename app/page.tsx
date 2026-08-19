@@ -488,43 +488,87 @@ export default function Home() {
         </div>
       </div>
 
-      {session.data?.user && (
-        <motion.a
-          href="/admin"
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          whileHover={{ scale: 1.04, x: -4 }}
-          className="fixed right-6 top-1/2 z-50 hidden -translate-y-1/2 rounded-full border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs font-black tracking-[3px] text-red-300 shadow-[0_0_24px_rgba(239,68,68,0.18)] backdrop-blur-md lg:block"
-        >
-          ADMIN CONSOLE
-        </motion.a>
-      )}
-
-      <div
-        tabIndex={0}
-        aria-label="TOKYO NETWORK — مرر المؤشر لعرض الحالة"
-        className={`group fixed right-4 z-40 hidden w-14 overflow-hidden rounded-2xl border border-green-400/20 bg-black/80 p-4 text-left shadow-[0_18px_60px_rgba(0,0,0,0.5)] backdrop-blur-xl transition-[width,border-color,box-shadow] duration-500 hover:w-72 hover:border-green-400/40 hover:shadow-[0_20px_70px_rgba(0,0,0,0.7),0_0_24px_rgba(74,222,128,0.1)] focus:w-72 focus:border-green-400/40 focus:outline-none xl:block ${siteAlert ? "top-40" : "top-24"}`}
+      <aside
+        aria-label="أدوات TOKYO السريعة"
+        className={`fixed right-4 z-50 hidden flex-col items-end gap-3 xl:flex ${siteAlert ? "top-40" : "top-24"}`}
       >
-        <span className="absolute right-[1.15rem] top-[1.15rem] h-2.5 w-2.5 animate-pulse rounded-full bg-green-400 shadow-[0_0_14px_lime]" />
-        <div className="w-56 translate-x-6 opacity-0 transition duration-500 group-hover:translate-x-0 group-hover:opacity-100 group-focus:translate-x-0 group-focus:opacity-100">
-          <p className="mb-3 whitespace-nowrap text-xs font-black tracking-[3px] text-green-400">TOKYO NETWORK</p>
-          <p className="text-sm text-gray-300">SERVER: TOKYO GANG</p>
-          <p className="text-sm text-gray-300">BOT: LINKED</p>
-          <p className="flex items-center gap-2 text-sm text-gray-300">
-            <span className="h-2 w-2 rounded-full bg-green-400 shadow-[0_0_12px_lime]" />
-            ONLINE SERVER: {onlineCount ?? "SYNCING"}
-          </p>
-          <p className="text-sm text-gray-300">ROLE MEMBERS: {roleMemberCount ?? "SYNCING"}</p>
-          <p className="text-xs text-green-400/70">
-            LAST SYNC: {lastDiscordSync ? lastDiscordSync.toLocaleTimeString("en-GB") : "WAITING"}
-          </p>
-          <div className="mt-4 space-y-2 text-xs text-gray-400">
-            {killfeed.slice(0, 3).map((item) => (
-              <p key={item} className="border-t border-white/10 pt-2">{item}</p>
-            ))}
+        <div
+          tabIndex={0}
+          aria-label="TOKYO NETWORK — مرر المؤشر لعرض الحالة"
+          className="group relative h-14 w-14 overflow-hidden rounded-[20px] border border-emerald-400/20 bg-[#030806]/95 text-left shadow-[0_18px_55px_rgba(0,0,0,0.58),0_0_22px_rgba(74,222,128,0.06)] backdrop-blur-2xl transition-[width,height,border-color,box-shadow] duration-500 ease-out hover:h-[19rem] hover:w-72 hover:border-emerald-400/35 hover:shadow-[0_24px_75px_rgba(0,0,0,0.72),0_0_30px_rgba(74,222,128,0.1)] focus:h-[19rem] focus:w-72 focus:border-emerald-400/35 focus:outline-none"
+        >
+          <div className="pointer-events-none absolute inset-0 opacity-30 [background-image:linear-gradient(rgba(74,222,128,0.09)_1px,transparent_1px),linear-gradient(90deg,rgba(74,222,128,0.07)_1px,transparent_1px)] [background-size:24px_24px]" />
+          <div className="absolute right-[11px] top-[11px] flex h-8 w-8 items-center justify-center rounded-xl border border-emerald-400/15 bg-emerald-400/[0.07]">
+            <span className="absolute h-4 w-4 animate-ping rounded-full border border-emerald-400/30" />
+            <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_14px_rgba(74,222,128,0.95)]" />
+          </div>
+
+          <div className="absolute inset-x-4 top-4 w-60 translate-x-5 opacity-0 transition duration-500 group-hover:translate-x-0 group-hover:opacity-100 group-focus:translate-x-0 group-focus:opacity-100">
+            <div className="flex items-start justify-between gap-4 border-b border-emerald-400/15 pb-4 pr-11">
+              <div>
+                <p className="whitespace-nowrap text-[10px] font-black tracking-[3px] text-emerald-400">TOKYO NETWORK</p>
+                <p className="mt-1 text-xs font-bold text-zinc-500">LIVE SYSTEM STATUS</p>
+              </div>
+              <span className="mt-0.5 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2 py-1 text-[8px] font-black tracking-[1px] text-emerald-300">ONLINE</span>
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              {[
+                ["SERVER", "TOKYO GANG"],
+                ["BOT LINK", "ACTIVE"],
+                ["ONLINE", onlineCount ?? "SYNCING"],
+                ["MEMBERS", roleMemberCount ?? "SYNCING"],
+              ].map(([label, value]) => (
+                <div key={label} className="rounded-xl border border-white/[0.07] bg-white/[0.025] px-3 py-2.5">
+                  <p className="text-[8px] font-black tracking-[1px] text-zinc-600">{label}</p>
+                  <p className="mt-1 truncate text-[11px] font-black text-zinc-200">{value}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-4 flex items-center justify-between rounded-xl border border-emerald-400/10 bg-emerald-400/[0.035] px-3 py-2 text-[9px] font-black tracking-[1px] text-emerald-400/70">
+              <span>LAST SYNC</span>
+              <span>{lastDiscordSync ? lastDiscordSync.toLocaleTimeString("en-GB") : "WAITING"}</span>
+            </div>
+
+            <div className="mt-3 space-y-1.5">
+              {killfeed.slice(0, 2).map((item) => (
+                <p key={item} className="flex items-center gap-2 truncate text-[10px] text-zinc-500">
+                  <span className="h-1 w-1 shrink-0 rounded-full bg-emerald-400" />
+                  {item}
+                </p>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+
+        {session.data?.user && (
+          <motion.a
+            href="/admin"
+            initial={{ opacity: 0, x: 18 }}
+            animate={{ opacity: 1, x: 0 }}
+            whileHover={{ x: -4 }}
+            className="group/admin relative flex h-14 w-[230px] items-center gap-3 overflow-hidden rounded-[20px] border border-red-400/20 bg-[#0a0506]/95 px-2.5 text-right shadow-[0_18px_55px_rgba(0,0,0,0.55),0_0_24px_rgba(239,68,68,0.07)] backdrop-blur-2xl transition-colors hover:border-red-400/40"
+          >
+            <span className="pointer-events-none absolute inset-0 bg-[linear-gradient(105deg,transparent_15%,rgba(239,68,68,0.07)_50%,transparent_85%)] opacity-0 transition duration-500 group-hover/admin:opacity-100" />
+            <span className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-red-400/20 bg-red-400/[0.08] text-red-300 shadow-[0_0_18px_rgba(239,68,68,0.07)]">
+              <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4.5 w-4.5">
+                <path d="M12 3 5.5 5.6v5.5c0 4.1 2.6 7.8 6.5 9.9 3.9-2.1 6.5-5.8 6.5-9.9V5.6L12 3Z" fill="none" stroke="currentColor" strokeLinejoin="round" strokeWidth="1.6" />
+                <path d="m9.2 12 1.8 1.8 3.9-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" />
+              </svg>
+            </span>
+            <span className="relative min-w-0 flex-1 leading-none">
+              <span className="block text-[8px] font-black tracking-[2.5px] text-red-400/70">SECURE ACCESS</span>
+              <span className="mt-1.5 block text-sm font-black text-zinc-100">لوحة الإدارة</span>
+            </span>
+            <span className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.07] text-zinc-600 transition group-hover/admin:border-red-400/20 group-hover/admin:text-red-300">
+              <svg viewBox="0 0 20 20" aria-hidden="true" className="h-3.5 w-3.5 rotate-180">
+                <path d="m7 4 6 6-6 6" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" />
+              </svg>
+            </span>
+          </motion.a>
+        )}
+      </aside>
 
       <section id="home" className="relative flex min-h-[100svh] flex-col items-center justify-center overflow-hidden px-4 text-center md:h-screen md:px-6">
         <div className="absolute inset-0 bg-[url('/bg.jpg')] bg-cover bg-center opacity-35 grayscale md:opacity-15" />
