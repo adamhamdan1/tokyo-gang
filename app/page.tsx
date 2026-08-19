@@ -38,7 +38,7 @@ type SiteAlert = {
   message: string;
 };
 
-const discordInviteUrl = "https://discord.gg/u7G6E6nvS7";
+const discordInviteUrl = "https://discord.gg/xTxcswpzNN";
 
 function RevealSection({
   id,
@@ -380,6 +380,7 @@ export default function Home() {
                 <motion.img
                   src="/tokyo-logo-clean.png"
                   alt="TOKYO GANG"
+                  loading="eager"
                   initial={{ opacity: 0, filter: "blur(12px)" }}
                   animate={{
                     opacity: 1,
@@ -701,7 +702,7 @@ export default function Home() {
               ["∞", "نفوذ"],
             ].map(([num, label], index) => (
               <motion.div
-                key={label}
+                key={`${num}-${label}`}
                 initial={{ opacity: 0, y: 24, rotateX: 18 }}
                 animate={{ opacity: 1, y: 0, rotateX: 0 }}
                 transition={{ delay: 1.45 + index * 0.1, duration: 0.65 }}
@@ -834,30 +835,51 @@ export default function Home() {
         </div>
       </RevealSection>
 
-      <RevealSection id="streamers" className="py-24 px-6 bg-zinc-950 border-y border-white/10">
-        <h2 className="text-5xl font-black text-center mb-4">ستريمرز العصابة</h2>
-        <p className="text-center text-gray-400 mb-14 tracking-[4px]">TOKYO MEDIA UNIT</p>
+      <RevealSection id="streamers" className="relative overflow-hidden border-y border-red-950/80 bg-[#030303] px-5 py-28 sm:px-8">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(127,29,29,0.32),transparent_32%),radial-gradient(circle_at_12%_70%,rgba(83,252,24,0.055),transparent_25%),linear-gradient(180deg,#070707_0%,#020202_100%)]" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-red-500/80 to-transparent" />
+        <div className="pointer-events-none absolute -left-24 top-32 h-72 w-72 rounded-full border border-red-500/10" />
+        <div className="pointer-events-none absolute -right-32 bottom-12 h-96 w-96 rounded-full border border-white/5" />
 
-        <div className="max-w-7xl mx-auto grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="relative mx-auto mb-16 max-w-3xl text-center">
+          <div className="mb-5 flex items-center justify-center gap-3 text-[10px] font-black tracking-[0.45em] text-red-400 sm:text-xs">
+            <span className="h-px w-10 bg-gradient-to-l from-red-500 to-transparent sm:w-20" />
+            MEDIA DIVISION // 05
+            <span className="h-px w-10 bg-gradient-to-r from-red-500 to-transparent sm:w-20" />
+          </div>
+          <h2 className="tokyo-streamer-name text-5xl font-extrabold text-white sm:text-6xl lg:text-7xl">ستريمرز العصابة</h2>
+          <p className="mx-auto mt-5 max-w-xl text-sm leading-7 text-zinc-400 sm:text-base">
+            الواجهة الإعلامية الرسمية لـ TOKYO — بث، حضور، وهيبة بلا انقطاع.
+          </p>
+          <div className="mx-auto mt-8 flex w-fit items-center gap-3 rounded-full border border-white/10 bg-white/[0.035] px-5 py-2 text-[10px] font-black tracking-[0.28em] text-zinc-400 backdrop-blur-xl">
+            <span className="h-2 w-2 animate-pulse rounded-full bg-[#53fc18] shadow-[0_0_14px_#53fc18]" />
+            OFFICIAL TOKYO CREATORS
+          </div>
+        </div>
+
+        <div className="relative mx-auto grid max-w-7xl grid-cols-1 gap-7 md:grid-cols-2 lg:grid-cols-6">
           {[
   {
     name: "بابلو كروز",
-    role: "ستريمر رسمي",
-    kick: "https://kick.com/pablo-jo",
+    role: "Kick Partner",
+    handle: "@pablo_jo",
+    kick: "https://kick.com/pablo_jo",
     tiktok: "https://tiktok.com/@pablo",
-    logo: "/pablo.webp",
+    logo: "https://files.kick.com/images/user/48433338/profile_image/conversion/10176733-182a-48aa-9a6a-0b0834559265-fullsize.webp",
     verified: true,
   },
   {
     name: "برلين كروز",
-    role: "ستريمر رسمي",
-    kick: "https://kick.com/br-berlin",
-    logo: "/berlin.webp",
+    role: "Kick Partner",
+    handle: "@berlin_br",
+    kick: "https://kick.com/berlin_br",
+    logo: "https://files.kick.com/images/user/38323508/profile_image/conversion/efd96238-b82f-43c1-a358-f838ef5b1df0-fullsize.webp",
     verified: true,
   },
   {
     name: "آدم كروز",
     role: "Kick Partner",
+    handle: "@adamx052",
     kick: "https://kick.com/adamx052",
     logo: "https://files.kick.com/images/user/97693230/profile_image/conversion/dc044615-712d-46e8-89ff-4caef746dbd5-fullsize.webp",
     verified: true,
@@ -865,6 +887,7 @@ export default function Home() {
   {
     name: "زورو كروز",
     role: "Kick Partner",
+    handle: "@zr_zoro1",
     kick: "https://kick.com/zr_zoro1",
     logo: "https://files.kick.com/images/user/51811338/profile_image/conversion/7ff27f0f-fb91-4c65-aba5-14b45847edb5-fullsize.webp",
     verified: true,
@@ -872,6 +895,7 @@ export default function Home() {
   {
     name: "سيلفادور كروز",
     role: "ستريمر رسمي",
+    handle: "@selvadoor1",
     kick: "https://kick.com/selvadoor1",
     logo: "https://files.kick.com/images/user/67102940/profile_image/conversion/cf78f425-3b8c-4acb-af48-660b839de87d-fullsize.webp",
     verified: false,
@@ -882,30 +906,40 @@ export default function Home() {
               initial={{ opacity: 0, y: 70 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.15 }}
-              whileHover={{ scale: 1.04, y: -8 }}
-              className="relative overflow-hidden rounded-[35px] bg-black border border-white/20 p-8 text-center group shadow-[0_0_45px_rgba(255,255,255,0.08)]"
+              whileHover={{ y: -10 }}
+              className={`tokyo-streamer-card group relative min-h-[480px] overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-b from-zinc-900/85 via-[#070707] to-black p-7 text-center shadow-[0_28px_80px_rgba(0,0,0,0.55)] transition-[border-color,box-shadow] duration-500 hover:border-red-500/45 hover:shadow-[0_32px_100px_rgba(0,0,0,0.7),0_0_45px_rgba(239,68,68,0.12)] lg:col-span-2 ${index === 3 ? "lg:col-start-2" : ""} ${index === 4 ? "lg:col-start-4" : ""}`}
             >
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-500 bg-gradient-to-br from-white/10 to-transparent" />
+              <div className="absolute left-6 top-6 font-mono text-xs font-black tracking-[0.24em] text-red-500/65">
+                CREATOR {String(index + 1).padStart(2, "0")}
+              </div>
+              <div className="absolute right-6 top-6 flex items-center gap-2 rounded-full border border-white/10 bg-black/60 px-3 py-1.5 text-[9px] font-black tracking-[0.22em] text-zinc-400 backdrop-blur-md">
+                KICK UNIT
+                <span className="h-1.5 w-1.5 rounded-full bg-[#53fc18] shadow-[0_0_10px_#53fc18]" />
+              </div>
 
-              <div className="relative z-10">
-                <div className="mx-auto mb-6 w-28 h-28 rounded-full bg-white/10 border border-white/20 overflow-hidden shadow-[0_0_30px_white]">
+              <div className="relative z-10 flex h-full flex-col items-center pt-12">
+                <div className="relative mx-auto mb-7 h-36 w-36">
+                  <div className="absolute inset-[-9px] rounded-full border border-red-500/35 shadow-[0_0_35px_rgba(239,68,68,0.24)] transition duration-500 group-hover:scale-105 group-hover:border-red-400/70" />
+                  <div className="absolute inset-[-2px] animate-pulse rounded-full bg-[conic-gradient(from_20deg,transparent,rgba(239,68,68,0.85),transparent_38%,rgba(83,252,24,0.4),transparent_72%)] opacity-65" />
+                  <div className="relative h-36 w-36 overflow-hidden rounded-full border-4 border-black bg-zinc-900 shadow-[0_0_38px_rgba(255,255,255,0.16)]">
                   <Image
                     src={streamer.logo}
                     alt={streamer.name}
-                    width={112}
-                    height={112}
-                    className="h-full w-full object-cover"
+                    width={144}
+                    height={144}
+                    className="h-full w-full object-cover transition duration-700 group-hover:scale-110"
                   />
+                  </div>
 </div>
 
-                <p className="text-xs tracking-[5px] text-gray-500 mb-3">LIVE CREATOR</p>
-                <div className="flex items-center justify-center gap-2" dir="rtl">
-                  <h3 className="text-3xl font-black text-white drop-shadow-[0_0_20px_white]">{streamer.name}</h3>
+                <p className="mb-2 font-mono text-[10px] tracking-[0.5em] text-zinc-500">LIVE CREATOR</p>
+                <div className="flex items-center justify-center gap-2.5" dir="rtl">
+                  <h3 className="tokyo-streamer-name text-4xl font-extrabold leading-tight text-white drop-shadow-[0_0_18px_rgba(255,255,255,0.24)]">{streamer.name}</h3>
                   {streamer.verified && (
                     <span
                       aria-label="Kick Partner موثّق"
                       title="Kick Partner موثّق"
-                      className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#53fc18] text-black shadow-[0_0_18px_rgba(83,252,24,0.55)]"
+                      className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#53fc18] text-black shadow-[0_0_20px_rgba(83,252,24,0.7)]"
                     >
                       <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 fill-none stroke-current stroke-[3]">
                         <path d="m6.5 12.5 3.3 3.2 7.7-8" strokeLinecap="round" strokeLinejoin="round" />
@@ -913,16 +947,20 @@ export default function Home() {
                     </span>
                   )}
                 </div>
-                <p className="mt-3 text-gray-400">{streamer.role}</p>
+                <p dir="ltr" className="mt-1 font-mono text-[10px] tracking-[0.18em] text-zinc-600">{streamer.handle}</p>
+                <p className={`tokyo-streamer-partner mt-4 text-lg font-semibold tracking-wide ${streamer.verified ? "text-[#53fc18]" : "text-zinc-400"}`}>
+                  {streamer.role}
+                </p>
 
-                <div className="flex gap-3 justify-center mt-7 flex-wrap">
+                <div className="mt-auto flex w-full justify-center gap-3 pt-7">
                   <a
                     href={streamer.kick}
                     target="_blank"
                     rel="noreferrer"
-                    className="px-8 py-3 bg-[#53fc18] text-black rounded-2xl font-black hover:bg-[#45df12] transition shadow-[0_0_22px_rgba(83,252,24,0.25)]"
+                    className="group/kick inline-flex min-w-32 items-center justify-center gap-2 rounded-xl bg-[#53fc18] px-7 py-3.5 font-black text-black shadow-[0_0_26px_rgba(83,252,24,0.24)] transition hover:bg-white hover:shadow-[0_0_34px_rgba(83,252,24,0.45)]"
                   >
                     Kick
+                    <span aria-hidden="true" className="transition-transform group-hover/kick:-translate-y-0.5 group-hover/kick:translate-x-0.5">↗</span>
                   </a>
 
                   {streamer.tiktok && (
@@ -930,12 +968,13 @@ export default function Home() {
                       href={streamer.tiktok}
                       target="_blank"
                       rel="noreferrer"
-                      className="px-8 py-3 border border-pink-500 text-pink-400 rounded-2xl font-bold hover:bg-pink-500 hover:text-white transition shadow-[0_0_18px_rgba(236,72,153,0.4)]"
+                      className="inline-flex min-w-32 items-center justify-center rounded-xl border border-pink-500/70 bg-pink-500/5 px-7 py-3.5 font-bold text-pink-400 shadow-[0_0_18px_rgba(236,72,153,0.16)] transition hover:bg-pink-500 hover:text-white"
                     >
                       TikTok
                     </a>
                   )}
                 </div>
+                <div className="mt-7 h-px w-full bg-gradient-to-r from-transparent via-red-500/45 to-transparent" />
               </div>
             </motion.div>
           ))}

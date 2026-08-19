@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Cairo } from "next/font/google";
+import { Cairo, Changa } from "next/font/google";
 import { Providers } from "./providers";
 import { PageTransitionOverlay } from "./PageTransitionOverlay";
 import { ToastProvider } from "./ToastProvider";
@@ -7,6 +7,11 @@ import "./globals.css";
 
 const cairo = Cairo({
   subsets: ["arabic"],
+});
+
+const changa = Changa({
+  subsets: ["arabic", "latin"],
+  variable: "--font-changa",
 });
 
 export const metadata: Metadata = {
@@ -43,7 +48,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ar">
-      <body className={cairo.className}>
+      <body className={`${cairo.className} ${changa.variable}`}>
         <Providers>
           <ToastProvider>
             <PageTransitionOverlay />
