@@ -7,6 +7,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { MEMBER_NAVIGATION, PRIMARY_NAVIGATION } from "@/lib/site-navigation";
 import { MobileMenu } from "./MobileMenu";
+import { TokyoCommandPalette } from "./TokyoCommandPalette";
 
 type SiteAlert = {
   id: string;
@@ -27,27 +28,43 @@ export function SiteHeader({ siteAlert }: { siteAlert: SiteAlert | null }) {
   const [activeSection, setActiveSection] = useState("home");
 
   useEffect(() => {
-    const sections = PRIMARY_NAVIGATION.map((item) => document.getElementById(item.id)).filter(
-      (section): section is HTMLElement => Boolean(section)
-    );
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const marker = window.scrollY + Math.min(180, window.innerHeight * 0.24);
+      let next: (typeof PRIMARY_NAVIGATION)[number]["id"] = PRIMARY_NAVIGATION[0]?.id ?? "home";
 
-    if (sections.length === 0) return;
+      for (const item of PRIMARY_NAVIGATION) {
+        const section = document.getElementById(item.id);
+        if (section && section.offsetTop <= marker) next = item.id;
+      }
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visibleSection = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((first, second) => second.intersectionRatio - first.intersectionRatio)[0];
+      setActiveSection(next);
+    };
+    const schedule = () => {
+      if (!frame) frame = window.requestAnimationFrame(update);
+    };
 
-        if (visibleSection?.target.id) {
-          setActiveSection(visibleSection.target.id);
-        }
-      },
-      { rootMargin: "-18% 0px -70% 0px", threshold: [0, 0.01, 0.1] }
-    );
+    update();
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    window.addEventListener("hashchange", schedule);
+    return () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      window.removeEventListener("hashchange", schedule);
+    };
+  }, []);
 
-    sections.forEach((section) => observer.observe(section));
-    return () => observer.disconnect();
+  useEffect(() => {
+    const updateFromCommand = (event: Event) => {
+      const section = (event as CustomEvent<string>).detail;
+      if (section) setActiveSection(section);
+    };
+
+    window.addEventListener("tokyo:navigate", updateFromCommand);
+    return () => window.removeEventListener("tokyo:navigate", updateFromCommand);
   }, []);
 
   const user = session.data?.user;
@@ -129,6 +146,8 @@ export function SiteHeader({ siteAlert }: { siteAlert: SiteAlert | null }) {
                 </div>
               </details>
             )}
+
+            <TokyoCommandPalette variant="public" />
           </div>
         </div>
 

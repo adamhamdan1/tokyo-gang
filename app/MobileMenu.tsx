@@ -119,6 +119,22 @@ export function MobileMenu() {
                     </a>
                   ))}
                 </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpen(false);
+                    window.setTimeout(() => {
+                      window.dispatchEvent(new CustomEvent("tokyo:command-open", { detail: "public" }));
+                    }, 180);
+                  }}
+                  className="mt-2 flex w-full items-center justify-between rounded-2xl border border-red-400/20 bg-red-400/[0.06] px-4 py-3.5 text-sm font-black text-red-200"
+                >
+                  <span>بحث سريع داخل TOKYO</span>
+                  <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4">
+                    <circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" strokeWidth="1.7" />
+                    <path d="m16 16 4 4" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.7" />
+                  </svg>
+                </button>
               </div>
 
               {user && (

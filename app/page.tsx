@@ -10,7 +10,10 @@ import { AnnouncementsFeed } from "./AnnouncementsFeed";
 import { SiteHeader } from "./SiteHeader";
 import { ScrollCommandHud } from "./ScrollCommandHud";
 import { TokyoCommandCenter } from "./TokyoCommandCenter";
-import { TOKYO_RULES } from "@/lib/tokyo-content";
+import { TokyoRulesCenter } from "./TokyoRulesCenter";
+import { TokyoWarArchive } from "./TokyoWarArchive";
+import { DEFAULT_SITE_CONTENT } from "@/lib/site-content";
+import type { TokyoSiteContent } from "@/lib/site-content";
 
 const killfeed = [
   "TOKYO secured North Side",
@@ -18,13 +21,6 @@ const killfeed = [
   "Territory updated",
   "High command online",
   "Recruit file encrypted",
-];
-
-const timeline = [
-  ["مرحلة التأسيس", "بداية TOKYO GANG وبناء القيادة الأساسية."],
-  ["أول سيطرة", "فرض الحضور داخل المدينة وإثبات الاسم."],
-  ["توسّع النفوذ", "تنظيم الأعضاء وتقوية الملفات الداخلية."],
-  ["نظام الإدارة", "تحويل العصابة لمنظومة تقديمات ورتب ومتابعة."],
 ];
 
 const loadingSteps = [
@@ -56,7 +52,7 @@ function RevealSection({
       id={id}
       initial={{ opacity: 0, y: 42, filter: "blur(10px)" }}
       whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-      viewport={{ once: true, amount: 0.16 }}
+      viewport={{ once: true, amount: 0.04 }}
       transition={{ duration: 0.75, ease: "easeOut" }}
       className={className}
     >
@@ -145,6 +141,7 @@ export default function Home() {
   const [siteAlert, setSiteAlert] = useState<SiteAlert | null>(null);
   const [loadHeroVideo, setLoadHeroVideo] = useState(false);
   const [performanceMode, setPerformanceMode] = useState(false);
+  const [siteContent, setSiteContent] = useState<TokyoSiteContent>(DEFAULT_SITE_CONTENT);
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), performanceMode ? 1400 : 3000);
@@ -250,6 +247,21 @@ export default function Home() {
       active = false;
       window.clearInterval(interval);
       document.removeEventListener("visibilitychange", loadWhenVisible);
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadSiteContent = async () => {
+      const response = await fetch(`/api/site-content?t=${Date.now()}`, { cache: "no-store" });
+      const data = (await response.json().catch(() => null)) as { content?: TokyoSiteContent } | null;
+      if (active && response.ok && data?.content) setSiteContent(data.content);
+    };
+
+    void loadSiteContent();
+    return () => {
+      active = false;
     };
   }, []);
 
@@ -765,15 +777,9 @@ export default function Home() {
         </div>
 
         <div className="relative mx-auto grid max-w-7xl gap-6 sm:grid-cols-2 lg:grid-cols-5">
-          {[
-            ["سيلفادور كروز", "القائد الأعلى"],
-            ["توتي كروز", "الزعيم"],
-            ["حمدان كروز", "نائب القائد"],
-            ["برلين كروز", "نائب القائد"],
-            ["سنتياغو كروز", "العقل المدبر"],
-          ].map(([name, role], index) => (
+          {siteContent.leadership.filter((member) => member.visible).map((member, index) => (
             <motion.div
-              key={name}
+              key={member.id}
               initial={{ opacity: 0, y: 80, scale: 0.9 }}
               whileInView={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ delay: index * 0.15, duration: 0.8 }}
@@ -787,17 +793,17 @@ export default function Home() {
                 className="absolute inset-y-0 w-1/2 bg-gradient-to-r from-transparent via-white/10 to-transparent"
               />
               <div className="absolute left-4 top-4 rounded-full border border-red-500/30 px-3 py-1 text-[10px] font-black tracking-[3px] text-red-300">
-                HC-{String(index + 1).padStart(2, "0")}
+                {member.code}
               </div>
 
               <div className="relative z-10">
                 <div className="mx-auto mb-5 w-24 h-24 rounded-full bg-white text-black flex items-center justify-center text-4xl font-black shadow-[0_0_35px_white] ring-4 ring-white/10 group-hover:ring-red-500/20 transition">
-                  {name[0]}
+                  {member.name[0]}
                 </div>
 
                 <p className="text-xs tracking-[5px] text-gray-500 mb-3">HIGH COMMAND</p>
-                <h3 className="text-3xl font-black text-white drop-shadow-[0_0_20px_white]">{name}</h3>
-                <p className="mt-3 text-gray-400">{role}</p>
+                <h3 className="text-3xl font-black text-white drop-shadow-[0_0_20px_white]">{member.name}</h3>
+                <p className="mt-3 text-gray-400">{member.role}</p>
                 <div className="mt-6 h-[2px] bg-gradient-to-r from-transparent via-white to-transparent" />
 
                 <p className="mt-5 text-red-500 font-black tracking-[3px] drop-shadow-[0_0_12px_red]">
@@ -839,51 +845,9 @@ export default function Home() {
         </div>
 
         <div className="relative mx-auto grid max-w-7xl grid-cols-1 gap-7 md:grid-cols-2 lg:grid-cols-6">
-          {[
-  {
-    name: "بابلو كروز",
-    role: "Kick Partner",
-    handle: "@pablo_jo",
-    kick: "https://kick.com/pablo_jo",
-    tiktok: "https://tiktok.com/@pablo",
-    logo: "https://files.kick.com/images/user/48433338/profile_image/conversion/10176733-182a-48aa-9a6a-0b0834559265-fullsize.webp",
-    verified: true,
-  },
-  {
-    name: "برلين كروز",
-    role: "Kick Partner",
-    handle: "@berlin_br",
-    kick: "https://kick.com/berlin_br",
-    logo: "https://files.kick.com/images/user/38323508/profile_image/conversion/efd96238-b82f-43c1-a358-f838ef5b1df0-fullsize.webp",
-    verified: true,
-  },
-  {
-    name: "آدم كروز",
-    role: "Kick Partner",
-    handle: "@adamx052",
-    kick: "https://kick.com/adamx052",
-    logo: "https://files.kick.com/images/user/97693230/profile_image/conversion/dc044615-712d-46e8-89ff-4caef746dbd5-fullsize.webp",
-    verified: true,
-  },
-  {
-    name: "زورو كروز",
-    role: "Kick Partner",
-    handle: "@zr_zoro1",
-    kick: "https://kick.com/zr_zoro1",
-    logo: "https://files.kick.com/images/user/51811338/profile_image/conversion/7ff27f0f-fb91-4c65-aba5-14b45847edb5-fullsize.webp",
-    verified: true,
-  },
-  {
-    name: "سيلفادور كروز",
-    role: "ستريمر رسمي",
-    handle: "@selvadoor1",
-    kick: "https://kick.com/selvadoor1",
-    logo: "https://files.kick.com/images/user/67102940/profile_image/conversion/cf78f425-3b8c-4acb-af48-660b839de87d-fullsize.webp",
-    verified: false,
-  },
-].map((streamer, index) => (
+          {siteContent.streamers.filter((streamer) => streamer.visible).map((streamer, index) => (
             <motion.div
-              key={streamer.name}
+              key={streamer.id}
               initial={{ opacity: 0, y: 70 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.15 }}
@@ -962,19 +926,16 @@ export default function Home() {
         </div>
       </RevealSection>
 
-      <RevealSection id="rules" className="py-24 px-6 bg-black">
-        <h2 className="text-5xl font-black text-center mb-14">قوانين العصابة</h2>
-        <p className="mx-auto -mt-8 mb-10 max-w-2xl text-center leading-8 text-gray-400">
+      <RevealSection id="rules" className="relative overflow-visible bg-black px-4 py-24 sm:px-6">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(239,68,68,0.1),transparent_30%)]" />
+        <div className="relative mx-auto mb-12 max-w-3xl text-center">
+          <p className="text-[10px] font-black tracking-[5px] text-red-400">TOKYO INTERNAL CODE // 25</p>
+          <h2 className="tokyo-section-title mt-4 text-5xl font-black md:text-6xl">قوانين العصابة</h2>
+          <p className="mx-auto mt-5 max-w-2xl leading-8 text-gray-400">
           القوانين إلزامية لكل عضو، وسيتم سؤال المتقدم عنها أثناء المقابلة.
-        </p>
-        <div className="max-w-6xl mx-auto grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {TOKYO_RULES.map((rule, i) => (
-            <div key={rule} className="border border-white/20 bg-zinc-950 rounded-3xl p-5 hover:border-white transition">
-              <p className="mb-3 text-xs font-black tracking-[3px] text-red-400">RULE {String(i + 1).padStart(2, "0")}</p>
-              <p className="leading-8 text-gray-200">{rule}</p>
-            </div>
-          ))}
+          </p>
         </div>
+        <TokyoRulesCenter />
       </RevealSection>
 
       <RevealSection id="timeline" className="py-24 px-6 bg-zinc-950 border-y border-white/10">
@@ -984,9 +945,9 @@ export default function Home() {
         <div className="mx-auto max-w-5xl">
           <div className="relative grid gap-6 md:grid-cols-4">
             <div className="absolute left-0 right-0 top-10 hidden h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent md:block" />
-            {timeline.map(([title, desc], index) => (
+            {siteContent.timeline.filter((entry) => entry.visible).map((entry, index) => (
               <motion.div
-                key={title}
+                key={entry.id}
                 initial={{ opacity: 0, y: 40 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.12 }}
@@ -995,30 +956,22 @@ export default function Home() {
                 <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-white text-xl font-black text-black shadow-[0_0_22px_rgba(255,255,255,0.35)]">
                   {index + 1}
                 </div>
-                <h3 className="text-2xl font-black text-white">{title}</h3>
-                <p className="mt-4 leading-8 text-gray-400">{desc}</p>
+                <h3 className="text-2xl font-black text-white">{entry.title}</h3>
+                <p className="mt-4 leading-8 text-gray-400">{entry.description}</p>
               </motion.div>
             ))}
           </div>
         </div>
       </RevealSection>
 
-      <RevealSection id="wars" className="py-24 px-6 bg-zinc-950">
-        <h2 className="text-5xl font-black text-center mb-14">سجل الحروب</h2>
-
-        <div className="max-w-4xl mx-auto space-y-4">
-          {["TOKYO GANG صار عالمي والقادم أعظم", "إعدام أول خائن", "فرضت السيطرة المباشرة بأراضي أنفنتي"].map((war, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, x: 80 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              className="bg-black border border-white/20 rounded-2xl p-5 flex justify-between"
-            >
-              <span>{war}</span>
-              <span className="text-gray-500">2026</span>
-            </motion.div>
-          ))}
+      <RevealSection id="wars" className="relative overflow-hidden border-y border-white/10 bg-zinc-950 px-4 py-24 sm:px-6">
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(239,68,68,0.05)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[length:80px_80px]" />
+        <div className="relative mx-auto mb-14 max-w-3xl text-center">
+          <p className="text-[10px] font-black tracking-[5px] text-red-400">TACTICAL ARCHIVE</p>
+          <h2 className="tokyo-section-title mt-4 text-5xl font-black md:text-6xl">أرشيف العمليات</h2>
+          <p className="mt-5 leading-8 text-zinc-500">ملفات موثّقة لأبرز محطات السيطرة والعمليات الداخلية لـ TOKYO.</p>
         </div>
+        <div className="relative"><TokyoWarArchive entries={siteContent.wars} /></div>
       </RevealSection>
 
       <RevealSection id="apply" className="py-24 px-6 bg-black">

@@ -24,8 +24,11 @@ import { AdminSummonDeleteButton } from "./AdminSummonDeleteButton";
 import { AdminSummonForm } from "./AdminSummonForm";
 import { AdminDiscordRoleConfig } from "./AdminDiscordRoleConfig";
 import { AdminWebhookConfig } from "./AdminWebhookConfig";
+import { AdminSiteContent } from "./AdminSiteContent";
+import { TokyoCommandPalette } from "../TokyoCommandPalette";
 import { getTokyoRoleOverrides } from "@/lib/tokyo-role-settings";
 import { ensureTokyoWebhooksSafely } from "@/lib/discord";
+import { parseStoredSiteContent } from "@/lib/site-content";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -426,6 +429,10 @@ export default async function AdminPage({
   const applicationPageCount = Math.max(1, Math.ceil(filteredApplicationCount / applicationPageSize));
   const tokyoRoleOverrides = await getTokyoRoleOverrides();
   const tokyoWebhookStatuses = mode === "SYSTEM" ? await ensureTokyoWebhooksSafely() : [];
+  const siteContentSetting = mode === "SYSTEM"
+    ? await prisma.siteSetting.findUnique({ where: { key: "siteContentV2" }, select: { value: true } })
+    : null;
+  const siteContent = parseStoredSiteContent(siteContentSetting?.value);
   const moduleCards = [
     {
       mode: "APPLICATIONS",
@@ -521,6 +528,12 @@ export default async function AdminPage({
             الرجوع للرئيسية
           </Link>
           <AdminSignOutButton />
+          <TokyoCommandPalette
+            variant="admin"
+            label="بحث سريع"
+            members={tokyoMembers.map((member) => ({ id: member.id, name: member.displayName, username: member.username }))}
+            className="flex items-center justify-center gap-2 rounded-2xl border border-red-400/20 bg-red-400/[0.07] px-5 py-3 text-sm font-black text-red-200 transition hover:border-red-400/40 hover:bg-red-400/15"
+          />
           <div className="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-5 py-3 text-center text-sm font-black text-cyan-300">
             {tokyoSync ? `تمت مزامنة ${tokyoSync.count} عضو` : "البيانات مستقرة — بدون تحديث تلقائي"}
           </div>
@@ -647,6 +660,8 @@ export default async function AdminPage({
         )}
 
         {mode === "SYSTEM" && <AdminWebhookConfig initialStatuses={tokyoWebhookStatuses} />}
+
+        {mode === "SYSTEM" && <AdminSiteContent initialContent={siteContent} />}
 
         {mode === "SYSTEM" && <AdminAnnouncementForm />}
         {mode === "SYSTEM" && (
