@@ -574,25 +574,29 @@ export default function Home() {
         </motion.a>
       )}
 
-      <div className={`fixed right-6 z-40 hidden w-72 border border-green-400/20 bg-black/70 p-4 text-left backdrop-blur-md lg:block ${siteAlert ? "top-40" : "top-24"}`}>
-        <div className="mb-3 flex items-center justify-between">
-          <p className="text-xs font-black tracking-[3px] text-green-400">TOKYO NETWORK</p>
-          <span className="h-2 w-2 rounded-full bg-green-400 shadow-[0_0_12px_lime]" />
-        </div>
-        <p className="text-sm text-gray-300">SERVER: TOKYO GANG</p>
-        <p className="text-sm text-gray-300">BOT: LINKED</p>
-        <p className="flex items-center gap-2 text-sm text-gray-300">
-          <span className="h-2 w-2 rounded-full bg-green-400 shadow-[0_0_12px_lime]" />
-          ONLINE SERVER: {onlineCount ?? "SYNCING"}
-        </p>
-        <p className="text-sm text-gray-300">ROLE MEMBERS: {roleMemberCount ?? "SYNCING"}</p>
-        <p className="text-xs text-green-400/70">
-          LAST SYNC: {lastDiscordSync ? lastDiscordSync.toLocaleTimeString("en-GB") : "WAITING"}
-        </p>
-        <div className="mt-4 space-y-2 text-xs text-gray-400">
-          {killfeed.slice(0, 3).map((item) => (
-            <p key={item} className="border-t border-white/10 pt-2">{item}</p>
-          ))}
+      <div
+        tabIndex={0}
+        aria-label="TOKYO NETWORK — مرر المؤشر لعرض الحالة"
+        className={`group fixed right-4 z-40 hidden w-14 overflow-hidden rounded-2xl border border-green-400/20 bg-black/80 p-4 text-left shadow-[0_18px_60px_rgba(0,0,0,0.5)] backdrop-blur-xl transition-[width,border-color,box-shadow] duration-500 hover:w-72 hover:border-green-400/40 hover:shadow-[0_20px_70px_rgba(0,0,0,0.7),0_0_24px_rgba(74,222,128,0.1)] focus:w-72 focus:border-green-400/40 focus:outline-none xl:block ${siteAlert ? "top-40" : "top-24"}`}
+      >
+        <span className="absolute right-[1.15rem] top-[1.15rem] h-2.5 w-2.5 animate-pulse rounded-full bg-green-400 shadow-[0_0_14px_lime]" />
+        <div className="w-56 translate-x-6 opacity-0 transition duration-500 group-hover:translate-x-0 group-hover:opacity-100 group-focus:translate-x-0 group-focus:opacity-100">
+          <p className="mb-3 whitespace-nowrap text-xs font-black tracking-[3px] text-green-400">TOKYO NETWORK</p>
+          <p className="text-sm text-gray-300">SERVER: TOKYO GANG</p>
+          <p className="text-sm text-gray-300">BOT: LINKED</p>
+          <p className="flex items-center gap-2 text-sm text-gray-300">
+            <span className="h-2 w-2 rounded-full bg-green-400 shadow-[0_0_12px_lime]" />
+            ONLINE SERVER: {onlineCount ?? "SYNCING"}
+          </p>
+          <p className="text-sm text-gray-300">ROLE MEMBERS: {roleMemberCount ?? "SYNCING"}</p>
+          <p className="text-xs text-green-400/70">
+            LAST SYNC: {lastDiscordSync ? lastDiscordSync.toLocaleTimeString("en-GB") : "WAITING"}
+          </p>
+          <div className="mt-4 space-y-2 text-xs text-gray-400">
+            {killfeed.slice(0, 3).map((item) => (
+              <p key={item} className="border-t border-white/10 pt-2">{item}</p>
+            ))}
+          </div>
         </div>
       </div>
 
