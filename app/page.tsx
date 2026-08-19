@@ -4,8 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { signIn, signOut, useSession } from "next-auth/react";
-import { SpeedInsights } from "@vercel/speed-insights/next";
-import { Analytics } from "@vercel/analytics/next";
 import { ApplicationForm } from "./ApplicationForm";
 import { AnnouncementsFeed } from "./AnnouncementsFeed";
 import { MobileMenu } from "./MobileMenu";
@@ -415,8 +413,6 @@ export default function Home() {
 
   return (
     <main dir="rtl" data-performance={performanceMode ? "lite" : "full"} className="min-h-screen overflow-hidden bg-black text-white">
-      <SpeedInsights />
-      <Analytics />
       {!performanceMode && <AmbientParticles />}
 
       <div className="pointer-events-none fixed inset-0 z-[9997] opacity-[0.035] bg-[linear-gradient(to_bottom,white_1px,transparent_1px)] bg-[length:100%_4px]" />

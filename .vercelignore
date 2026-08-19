@@ -1,0 +1,8 @@
+.git
+.next
+.open-next
+.wrangler
+.env*
+node_modules
+cloudflare-env.d.ts
+*.log
