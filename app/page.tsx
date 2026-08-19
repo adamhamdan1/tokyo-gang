@@ -838,7 +838,7 @@ export default function Home() {
         <h2 className="text-5xl font-black text-center mb-4">ستريمرز العصابة</h2>
         <p className="text-center text-gray-400 mb-14 tracking-[4px]">TOKYO MEDIA UNIT</p>
 
-        <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+        <div className="max-w-7xl mx-auto grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {[
   {
     name: "بابلو كروز",
@@ -846,12 +846,35 @@ export default function Home() {
     kick: "https://kick.com/pablo-jo",
     tiktok: "https://tiktok.com/@pablo",
     logo: "/pablo.webp",
+    verified: true,
   },
   {
     name: "برلين كروز",
     role: "ستريمر رسمي",
     kick: "https://kick.com/br-berlin",
     logo: "/berlin.webp",
+    verified: true,
+  },
+  {
+    name: "آدم كروز",
+    role: "Kick Partner",
+    kick: "https://kick.com/adamx052",
+    logo: "https://files.kick.com/images/user/97693230/profile_image/conversion/dc044615-712d-46e8-89ff-4caef746dbd5-fullsize.webp",
+    verified: true,
+  },
+  {
+    name: "زورو كروز",
+    role: "Kick Partner",
+    kick: "https://kick.com/zr_zoro1",
+    logo: "https://files.kick.com/images/user/51811338/profile_image/conversion/7ff27f0f-fb91-4c65-aba5-14b45847edb5-fullsize.webp",
+    verified: true,
+  },
+  {
+    name: "سيلفادور كروز",
+    role: "ستريمر رسمي",
+    kick: "https://kick.com/selvadoor1",
+    logo: "https://files.kick.com/images/user/67102940/profile_image/conversion/cf78f425-3b8c-4acb-af48-660b839de87d-fullsize.webp",
+    verified: false,
   },
 ].map((streamer, index) => (
             <motion.div
@@ -876,14 +899,28 @@ export default function Home() {
 </div>
 
                 <p className="text-xs tracking-[5px] text-gray-500 mb-3">LIVE CREATOR</p>
-                <h3 className="text-3xl font-black text-white drop-shadow-[0_0_20px_white]">{streamer.name}</h3>
+                <div className="flex items-center justify-center gap-2" dir="rtl">
+                  <h3 className="text-3xl font-black text-white drop-shadow-[0_0_20px_white]">{streamer.name}</h3>
+                  {streamer.verified && (
+                    <span
+                      aria-label="Kick Partner موثّق"
+                      title="Kick Partner موثّق"
+                      className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#53fc18] text-black shadow-[0_0_18px_rgba(83,252,24,0.55)]"
+                    >
+                      <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 fill-none stroke-current stroke-[3]">
+                        <path d="m6.5 12.5 3.3 3.2 7.7-8" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </span>
+                  )}
+                </div>
                 <p className="mt-3 text-gray-400">{streamer.role}</p>
 
                 <div className="flex gap-3 justify-center mt-7 flex-wrap">
                   <a
                     href={streamer.kick}
                     target="_blank"
-                    className="px-8 py-3 bg-white text-black rounded-2xl font-bold hover:bg-gray-300 transition"
+                    rel="noreferrer"
+                    className="px-8 py-3 bg-[#53fc18] text-black rounded-2xl font-black hover:bg-[#45df12] transition shadow-[0_0_22px_rgba(83,252,24,0.25)]"
                   >
                     Kick
                   </a>
@@ -892,6 +929,7 @@ export default function Home() {
                     <a
                       href={streamer.tiktok}
                       target="_blank"
+                      rel="noreferrer"
                       className="px-8 py-3 border border-pink-500 text-pink-400 rounded-2xl font-bold hover:bg-pink-500 hover:text-white transition shadow-[0_0_18px_rgba(236,72,153,0.4)]"
                     >
                       TikTok

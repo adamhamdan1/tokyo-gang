@@ -45,6 +45,11 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "media.discordapp.net",
       },
+      {
+        protocol: "https",
+        hostname: "files.kick.com",
+        pathname: "/images/user/**",
+      },
     ],
   },
 };
