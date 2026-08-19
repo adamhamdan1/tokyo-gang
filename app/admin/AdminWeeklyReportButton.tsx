@@ -17,7 +17,7 @@ export function AdminWeeklyReportButton() {
         return;
       }
 
-      alert("تم إرسال التقرير الأسبوعي");
+      alert("تم إرسال تقرير النشاط");
     } finally {
       setLoading(false);
     }

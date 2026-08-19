@@ -10,41 +10,6 @@ import { AnnouncementsFeed } from "./AnnouncementsFeed";
 import { MobileMenu } from "./MobileMenu";
 import { TOKYO_RULES } from "@/lib/tokyo-content";
 
-const members = [
-  ["لومي المخفي", "الشبح"],
-  ["أبو صقير كروز", "الدب المميز"],
-  ["ريد كروز", "الزرقاوي الأصيل"],
-  ["سنفور كروز", "ابن القائد"],
-  ["بابلو كروز", "ستريمرنا"],
-  ["جوكر كروز", "مقاتل"],
-  ["عبدو كروز", "مقاتل"],
-  ["أبو فايز كروز", "مقاتل"],
-  ["ريكاردو كروز", "مقاتل"],
-  ["ادم كروز", "مقاتل"],
-  ["ابو الليل كروز", "مقاتل"],
-  ["دنقل كروز", "مقاتل"],
-  ["زورو كروز", "مقاتل"],
-  ["شلبي كروز", "مقاتل"],
-  ["ايهم كروز", "مقاتل"],
-  ["قصي كروز", "مقاتل"],
-  ["ليبي كروز", "مقاتل"],
-  ["مختار كروز", "مقاتل"],
-  ["كلاشين كروز", "مقاتل"],
-  ["مافيا كروز", "مقاتل"],
-  ["امير كروز", "مقاتل"],
-  ["زيد كروز", "مقاتل"],
-  ["صقر كروز", "مقاتل"],
-  ["شتخمص كروز", "مقاتل"],
-  ["بشار كروز", "مقاتل"],
-  ["أبو سند كروز", "مقاتل"],
-  ["ريفن كروز", "مقاتل"],
-  ["سراج كروز", "مقاتل"],
-  ["ريموند كروز", "مقاتل"],
-  ["وليد كروز", "مقاتل"],
-  ["برهوم كروز", "مقاتل"],
-  ["صلاحات كروز", "مقاتل"],
-];
-
 const killfeed = [
   "TOKYO secured North Side",
   "Target neutralized",
@@ -67,48 +32,13 @@ const loadingSteps = [
   "ARMING ADMIN CONSOLE",
 ];
 
-type DiscordMember = {
-  id: string;
-  name: string;
-  username: string;
-  image: string | null;
-  status?: "online" | "idle" | "dnd";
-};
-
 type SiteAlert = {
   id: string;
   title: string;
   message: string;
 };
 
-type SpotlightMember = {
-  id: string;
-  displayName: string;
-  username: string;
-  image: string | null;
-  status: string;
-  internalRank: string;
-  behaviorScore: number;
-};
-
-type HonorMember = {
-  label: string;
-  member: SpotlightMember;
-};
-
 const discordInviteUrl = "https://discord.gg/u7G6E6nvS7";
-
-const memberStatusStyles = {
-  online: "border-green-400/40 bg-green-400/10 text-green-300",
-  idle: "border-yellow-400/40 bg-yellow-400/10 text-yellow-200",
-  dnd: "border-red-500/40 bg-red-500/10 text-red-300",
-};
-
-const memberStatusLabels = {
-  online: "ONLINE",
-  idle: "IDLE",
-  dnd: "DND",
-};
 
 function RevealSection({
   id,
@@ -206,17 +136,11 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [playing, setPlaying] = useState(false);
   const [volume, setVolume] = useState(40);
-  const [search, setSearch] = useState("");
-  const [rank, setRank] = useState("الكل");
   const [showBackToTop, setShowBackToTop] = useState(false);
-  const [discordMembers, setDiscordMembers] = useState<DiscordMember[]>([]);
   const [onlineCount, setOnlineCount] = useState<number | null>(null);
-  const [tokyoOnlineCount, setTokyoOnlineCount] = useState<number | null>(null);
   const [roleMemberCount, setRoleMemberCount] = useState<number | null>(null);
   const [lastDiscordSync, setLastDiscordSync] = useState<Date | null>(null);
   const [siteAlert, setSiteAlert] = useState<SiteAlert | null>(null);
-  const [spotlight, setSpotlight] = useState<SpotlightMember | null>(null);
-  const [honors, setHonors] = useState<HonorMember[]>([]);
   const [loadHeroVideo, setLoadHeroVideo] = useState(false);
   const [performanceMode, setPerformanceMode] = useState(false);
 
@@ -261,31 +185,6 @@ export default function Home() {
   }, [loading, performanceMode]);
 
   useEffect(() => {
-    let active = true;
-
-    const loadSpotlight = async () => {
-      const response = await fetch(`/api/spotlight?t=${Date.now()}`, { cache: "no-store" });
-      const data = (await response.json().catch(() => null)) as { member?: SpotlightMember | null; honors?: HonorMember[] } | null;
-      if (active) setSpotlight(data?.member ?? null);
-      if (active) setHonors(data?.honors ?? []);
-    };
-
-    const loadWhenVisible = () => {
-      if (document.visibilityState === "visible") void loadSpotlight();
-    };
-
-    loadWhenVisible();
-    const interval = window.setInterval(loadWhenVisible, 60_000);
-    document.addEventListener("visibilitychange", loadWhenVisible);
-
-    return () => {
-      active = false;
-      window.clearInterval(interval);
-      document.removeEventListener("visibilitychange", loadWhenVisible);
-    };
-  }, []);
-
-  useEffect(() => {
     const updateBackToTop = () => {
       setShowBackToTop(window.scrollY > 500);
     };
@@ -326,23 +225,13 @@ export default function Home() {
         cache: "default",
       });
       const data = (await response.json().catch(() => null)) as {
-        members?: DiscordMember[] | null;
         onlineCount?: number | null;
-        tokyoOnlineCount?: number | null;
         roleMemberCount?: number | null;
       } | null;
 
-      if (!active || !response.ok || !Array.isArray(data?.members)) return;
+      if (!active || !response.ok) return;
 
-      const nextMembers = data.members;
-
-      setDiscordMembers((currentMembers) => {
-        const currentIds = currentMembers.map((member) => member.id).join(",");
-        const nextIds = nextMembers.map((member) => member.id).join(",");
-        return currentIds === nextIds ? currentMembers : nextMembers;
-      });
       setOnlineCount(data?.onlineCount ?? null);
-      setTokyoOnlineCount(data?.tokyoOnlineCount ?? nextMembers.length);
       setRoleMemberCount(data?.roleMemberCount ?? null);
       setLastDiscordSync(new Date());
     };
@@ -386,31 +275,6 @@ export default function Home() {
     };
   }, []);
 
-  const filteredMembers = members.filter(([name, role]) => {
-    const matchesSearch = name.toLowerCase().includes(search.toLowerCase());
-    const matchesRank = rank === "الكل" || role === rank;
-    return matchesSearch && matchesRank;
-  });
-  const syncedTokyoMemberCount = roleMemberCount ?? null;
-  const spotlightMember = spotlight
-    ? {
-        id: spotlight.id,
-        name: spotlight.displayName,
-        username: spotlight.username,
-        image: spotlight.image,
-        status: spotlight.status,
-        rank: spotlight.internalRank,
-        score: spotlight.behaviorScore,
-      }
-    : {
-    id: "offline",
-    name: "TOKYO GANG",
-    username: "high_command",
-    image: null,
-    status: "online" as const,
-    rank: "HIGH COMMAND",
-    score: 100,
-  };
   const toggleMusic = () => {
     if (!audioRef.current) return;
 
@@ -475,7 +339,7 @@ export default function Home() {
             </div>
             <div className="absolute inset-x-6 bottom-7 flex items-center justify-between text-[10px] font-black tracking-[4px] text-white/55 md:text-xs">
               <span>SERVER: TOKYO GANG</span>
-              <span>JUSTICE CITY</span>
+              <span>STATUS: ONLINE</span>
             </div>
 
             <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 py-20 text-center">
@@ -595,20 +459,27 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      <nav className="fixed top-0 left-0 right-0 z-[90] overflow-hidden border-b border-white/10 bg-black/70 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center gap-5">
-          <h1 className="font-black tracking-[5px]">TOKYO GANG</h1>
+      <nav className="fixed left-0 right-0 top-0 z-[90] overflow-hidden border-b border-white/10 bg-black/75 shadow-[0_18px_60px_rgba(0,0,0,0.35)] backdrop-blur-2xl">
+        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-red-500/70 to-transparent" />
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-5 px-4 py-3 md:px-6">
+          <a href="#home" className="group flex items-center gap-3" aria-label="TOKYO GANG الرئيسية">
+            <span className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-white/[0.06] shadow-[0_0_24px_rgba(239,68,68,0.12)]">
+              <Image src="/tokyo-logo-clean.png" alt="" width={32} height={32} className="h-8 w-8 object-contain" />
+              <span className="absolute -bottom-1 -right-1 h-2.5 w-2.5 rounded-full border-2 border-black bg-green-400 shadow-[0_0_10px_lime]" />
+            </span>
+            <span>
+              <span className="block text-sm font-black tracking-[4px] text-white">TOKYO</span>
+              <span className="block text-[9px] font-black tracking-[3px] text-red-400">GANG PORTAL</span>
+            </span>
+          </a>
           <MobileMenu />
-          <div className="hidden md:flex gap-6 text-sm text-gray-300">
-            <a href="#home" className="hover:text-white">الرئيسية</a>
-            <a href="#server" className="hover:text-white">السيرفر</a>
-            <a href="#command" className="hover:text-white">القيادة</a>
-            <a href="#streamers" className="hover:text-white">الستريمرز</a>
-            <a href="#members" className="hover:text-white">الأعضاء</a>
-            <a href="#wanted" className="hover:text-white">المطلوبين</a>
-            <a href="#rules" className="hover:text-white">القوانين</a>
-            <a href="#wars" className="hover:text-white">الحروب</a>
-            <a href="#apply" className="hover:text-white">التقديم</a>
+          <div className="hidden items-center gap-1 rounded-2xl border border-white/10 bg-white/[0.035] p-1 text-xs font-bold text-gray-400 md:flex lg:text-sm">
+            <a href="#home" className="rounded-xl px-3 py-2 transition hover:bg-white/10 hover:text-white">الرئيسية</a>
+            <a href="#command" className="rounded-xl px-3 py-2 transition hover:bg-white/10 hover:text-white">القيادة</a>
+            <a href="#streamers" className="rounded-xl px-3 py-2 transition hover:bg-white/10 hover:text-white">الستريمرز</a>
+            <a href="#rules" className="rounded-xl px-3 py-2 transition hover:bg-white/10 hover:text-white">القوانين</a>
+            <a href="#wars" className="rounded-xl px-3 py-2 transition hover:bg-white/10 hover:text-white">الحروب</a>
+            <a href="#apply" className="rounded-xl px-3 py-2 transition hover:bg-white/10 hover:text-white">التقديم</a>
             {session.data?.user && (
               <>
                 <a href="/status" className="text-green-400 hover:text-green-300">طلبي</a>
@@ -647,7 +518,7 @@ export default function Home() {
             <button
               type="button"
               onClick={() => signIn("discord")}
-              className="rounded-full border border-white/20 bg-white px-5 py-2 text-sm font-black text-black transition hover:bg-gray-300"
+              className="rounded-xl border border-red-400/30 bg-red-500 px-5 py-2.5 text-sm font-black text-white shadow-[0_0_28px_rgba(239,68,68,0.22)] transition hover:-translate-y-0.5 hover:bg-red-400"
             >
               Discord
             </button>
@@ -824,7 +695,7 @@ export default function Home() {
 
           <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
             {[
-              [syncedTokyoMemberCount === null ? "SYNC" : String(syncedTokyoMemberCount), "عضو"],
+              ["TOKYO", "GANG"],
               ["TOP 1", "GANG"],
               ["24/7", "سيطرة"],
               ["∞", "نفوذ"],
@@ -866,203 +737,59 @@ export default function Home() {
         </motion.div>
       </section>
 
-      <section className="relative overflow-hidden border-y border-red-500/20 bg-red-950/10 py-4">
+      <section className="relative overflow-hidden border-y border-white/10 bg-zinc-950/95 px-6 py-4 shadow-[0_18px_50px_rgba(0,0,0,0.28)]">
+        <div className="absolute inset-y-0 left-0 w-28 bg-gradient-to-r from-black to-transparent" />
+        <div className="absolute inset-y-0 right-0 w-28 bg-gradient-to-l from-black to-transparent" />
         <motion.div
-          animate={{ x: ["-100%", "100%"] }}
-          transition={{ duration: 26, repeat: Infinity, ease: "linear" }}
-          className="whitespace-nowrap text-sm font-black tracking-[8px] text-red-300/90"
+          animate={{ x: ["-55%", "55%"] }}
+          transition={{ duration: 32, repeat: Infinity, ease: "linear" }}
+          className="flex min-w-max items-center gap-10 whitespace-nowrap text-xs font-black tracking-[4px] text-white/65 md:text-sm"
         >
-          POWER / LOYALTY / RESPECT / CONTROL / TOKYO GANG / POWER / LOYALTY / RESPECT / CONTROL / TOKYO GANG
-        </motion.div>
-      </section>
-
-      <section className="relative overflow-hidden border-y border-white/10 bg-black py-4">
-        <motion.div
-          animate={{ x: ["100%", "-100%"] }}
-          transition={{ duration: 22, repeat: Infinity, ease: "linear" }}
-          className="whitespace-nowrap text-sm md:text-base font-bold tracking-[4px] text-white/80"
-        >
-          ⚠ TOKYO GANG سيطرت على المنطقة الشرقية — ⚠ تم القضاء على أحد الخونة — ⚠ النفوذ يزداد يومياً — ⚠ TOP 1 GANG داخل السيرفر — ⚠ لا مكان للضعفاء داخل TOKYO —
-        </motion.div>
-      </section>
-
-      <section className="relative overflow-hidden border-b border-white/10 bg-zinc-950 px-6 py-5">
-        <motion.div
-          animate={{ x: ["-100%", "100%"] }}
-          transition={{ duration: 28, repeat: Infinity, ease: "linear" }}
-          className="whitespace-nowrap text-left text-xs font-black tracking-[4px] text-green-400/80"
-        >
-          {killfeed.map((item) => `// ${item}`).join("   ")}
+          <span className="text-red-400">TOKYO CONTROL</span>
+          <span>POWER / LOYALTY / RESPECT</span>
+          {killfeed.map((item) => <span key={item} className="text-green-300/80">● {item}</span>)}
+          <span className="text-red-400">TOKYO CONTROL</span>
+          <span>POWER / LOYALTY / RESPECT</span>
         </motion.div>
       </section>
 
       <section className="relative overflow-hidden border-y border-white/10 bg-black px-6 py-14">
-        <div className="mx-auto grid max-w-6xl gap-6 md:grid-cols-[1.1fr_0.9fr]">
-          <motion.div
-            initial={{ opacity: 0, x: 40 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            className="relative overflow-hidden rounded-3xl border border-red-500/25 bg-red-500/10 p-6 shadow-[0_0_45px_rgba(239,68,68,0.10)]"
-          >
-            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-red-400 to-transparent" />
-            <p className="text-xs font-black tracking-[5px] text-red-300">MEMBER SPOTLIGHT</p>
-            <div className="mt-5 flex items-center gap-5">
-              {spotlightMember.image ? (
-                <Image
-                  src={spotlightMember.image}
-                  alt={spotlightMember.name}
-                  width={96}
-                  height={96}
-                  className="h-24 w-24 rounded-full border border-white/20 object-cover shadow-[0_0_28px_rgba(255,255,255,0.18)]"
-                />
-              ) : (
-                <div className="flex h-24 w-24 items-center justify-center rounded-full bg-white text-3xl font-black text-black shadow-[0_0_28px_rgba(255,255,255,0.2)]">
-                  {spotlightMember.name[0]}
-                </div>
-              )}
-              <div>
-                <h2 className="text-4xl font-black text-white">{spotlightMember.name}</h2>
-                <p className="mt-1 text-sm text-gray-400">@{spotlightMember.username}</p>
-                <p className="mt-3 inline-flex rounded-full border border-green-400/25 px-3 py-1 text-xs font-black text-green-300">
-                  {spotlightMember.rank} - SCORE {spotlightMember.score}
-                </p>
+        <motion.div
+          initial={{ opacity: 0, y: 28 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="relative mx-auto max-w-5xl overflow-hidden rounded-[32px] border border-green-400/20 bg-gradient-to-l from-green-400/10 via-zinc-950 to-zinc-950 p-6 shadow-[0_0_55px_rgba(74,222,128,0.08)] md:p-8"
+        >
+          <div className="absolute inset-y-0 left-0 w-48 bg-green-400/10 blur-3xl" />
+          <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-xs font-black tracking-[5px] text-green-300">TOKYO DISCORD NETWORK</p>
+              <h2 className="mt-3 text-3xl font-black text-white md:text-4xl">ادخل مجتمع TOKYO الرسمي</h2>
+              <div className="mt-4 flex flex-wrap gap-3 text-sm text-gray-300">
+                <span className="rounded-full border border-white/10 bg-black/35 px-4 py-2">المتصلون: {onlineCount ?? "جاري التحديث"}</span>
+                <span className="rounded-full border border-white/10 bg-black/35 px-4 py-2">أعضاء الرتبة: {roleMemberCount ?? "جاري التحديث"}</span>
               </div>
             </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, x: -40 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            className="relative overflow-hidden rounded-3xl border border-green-400/20 bg-green-400/10 p-6 shadow-[0_0_45px_rgba(74,222,128,0.08)]"
-          >
-            <p className="text-xs font-black tracking-[5px] text-green-300">DISCORD INVITE PANEL</p>
-            <div className="mt-5 grid gap-3 text-sm text-gray-300">
-              <p>SERVER: TOKYO GANG</p>
-              <p>ONLINE: {onlineCount ?? "SYNCING"}</p>
-              <p>TOKYO ROLE: {roleMemberCount ?? "SYNCING"}</p>
-            </div>
-            <a href={discordInviteUrl} target="_blank" className="mt-6 inline-block rounded-2xl bg-green-300 px-6 py-3 font-black text-black transition hover:bg-white">
-              JOIN DISCORD
+            <a href={discordInviteUrl} target="_blank" className="shrink-0 rounded-2xl bg-green-300 px-7 py-4 text-center font-black text-black transition hover:bg-white">
+              دخول Discord
             </a>
-          </motion.div>
-        </div>
+          </div>
+        </motion.div>
       </section>
-
-      {honors.length > 0 && (
-        <RevealSection id="honors" className="relative overflow-hidden border-y border-red-500/20 bg-zinc-950 px-6 py-20">
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[length:100%_6px] opacity-70" />
-          <div className="relative mx-auto max-w-7xl">
-            <p className="text-center text-xs font-black tracking-[7px] text-red-300">TOKYO HONORS</p>
-            <h2 className="mt-4 text-center text-5xl font-black text-white drop-shadow-[0_0_28px_rgba(255,255,255,0.26)]">
-              لوحة الهيبة
-            </h2>
-            <div className="mt-12 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-              {honors.map((honor, index) => (
-                <motion.article
-                  key={`${honor.label}-${honor.member.id}`}
-                  initial={{ opacity: 0, y: 35 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.08 }}
-                  whileHover={{ y: -8, scale: 1.03 }}
-                  className="relative overflow-hidden rounded-[32px] border border-white/15 bg-black/55 p-6 text-center shadow-[0_0_50px_rgba(239,68,68,0.10)]"
-                >
-                  <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-red-400 to-transparent" />
-                  <p className="text-[10px] font-black tracking-[5px] text-red-300">{honor.label}</p>
-                  {honor.member.image ? (
-                    <Image
-                      src={honor.member.image}
-                      alt={honor.member.displayName}
-                      width={96}
-                      height={96}
-                      className="mx-auto mt-6 h-24 w-24 rounded-full border border-white/20 object-cover shadow-[0_0_28px_rgba(255,255,255,0.18)]"
-                    />
-                  ) : (
-                    <div className="mx-auto mt-6 flex h-24 w-24 items-center justify-center rounded-full bg-white text-3xl font-black text-black">
-                      {honor.member.displayName[0]}
-                    </div>
-                  )}
-                  <h3 className="mt-5 text-3xl font-black text-white">{honor.member.displayName}</h3>
-                  <p className="mt-1 text-xs text-gray-500">@{honor.member.username}</p>
-                  <p className="mt-4 rounded-full border border-green-400/20 px-3 py-2 text-xs font-black text-green-300">
-                    {honor.member.internalRank} - SCORE {honor.member.behaviorScore}
-                  </p>
-                </motion.article>
-              ))}
-            </div>
-          </div>
-        </RevealSection>
-      )}
-
-      <RevealSection id="server" className="relative overflow-hidden border-t border-white/10 bg-black px-4 py-16 md:px-6 md:py-24">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_24%_40%,rgba(239,68,68,0.22),transparent_30%),radial-gradient(circle_at_78%_48%,rgba(255,255,255,0.10),transparent_24%)]" />
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(to_right,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[length:100%_6px,88px_88px] opacity-60" />
-
-        <div className="relative mx-auto grid max-w-6xl items-center gap-8 md:grid-cols-[0.88fr_1.12fr] md:gap-12">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.92, rotateY: -10 }}
-            whileInView={{ opacity: 1, scale: 1, rotateY: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7, ease: "easeOut" }}
-            className="group relative mx-auto flex aspect-square w-full max-w-[360px] items-center justify-center overflow-hidden rounded-[34px] border border-white/15 bg-zinc-950/80 p-8 shadow-[0_0_80px_rgba(255,255,255,0.10)] md:max-w-[420px] md:rounded-[42px] md:p-10"
-          >
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.12),transparent_58%)]" />
-            <div className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent" />
-            <div className="absolute inset-y-10 right-0 w-px bg-gradient-to-b from-transparent via-red-400/70 to-transparent" />
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 22, repeat: Infinity, ease: "linear" }}
-              className="absolute inset-10 rounded-full border border-dashed border-white/10"
-            />
-            <motion.div
-              animate={{ scale: [0.94, 1.04, 0.94], opacity: [0.2, 0.42, 0.2] }}
-              transition={{ duration: 3.8, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute h-44 w-44 rounded-full bg-white/10 blur-3xl md:h-56 md:w-56"
-            />
-            <Image
-              src="/justice-city.gif"
-              alt="Justice City"
-              width={288}
-              height={288}
-              unoptimized
-              className="relative z-10 w-56 object-contain grayscale drop-shadow-[0_0_34px_rgba(255,255,255,0.35)] transition duration-500 group-hover:scale-105 group-hover:grayscale-0 md:w-72"
-            />
-          </motion.div>
-
-          <div className="text-center md:text-right">
-            <p className="text-xs font-black tracking-[6px] text-red-300 md:text-sm">مكان تواجدنا حالياً</p>
-            <h2 className="mt-4 text-4xl font-black leading-tight text-white drop-shadow-[0_0_28px_rgba(255,255,255,0.24)] sm:text-5xl md:text-6xl">
-              JUSTICE CITY
-            </h2>
-            <p className="mx-auto mt-6 max-w-2xl text-base leading-9 text-gray-300 md:mx-0 md:text-lg">
-              حالياً تتواجد عصابة TOKYO GANG داخل سيرفر Justice City، حيث نفرض حضورنا وهيبتنا داخل عالم فايف إم.
-            </p>
-
-            <div className="mt-7 grid gap-3 sm:grid-cols-3">
-              {[
-                ["SERVER", "ACTIVE"],
-                ["TOKYO PRESENCE", "LOCKED"],
-                ["STATUS", "CONTROL"],
-              ].map(([label, value]) => (
-                <div key={label} className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
-                  <p className="text-[10px] font-black tracking-[3px] text-gray-500">{label}</p>
-                  <p className="mt-2 text-lg font-black text-white">{value}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </RevealSection>
 
       <AnnouncementsFeed />
 
-      <RevealSection id="command" className="py-24 px-6 bg-black border-y border-white/10">
-        <h2 className="text-5xl font-black text-center mb-4">
+      <RevealSection id="command" className="relative overflow-hidden border-y border-white/10 bg-black px-6 py-24">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(239,68,68,0.12),transparent_34%)]" />
+        <div className="relative mx-auto mb-14 max-w-3xl text-center">
+          <span className="inline-flex rounded-full border border-red-400/20 bg-red-400/10 px-4 py-2 text-[10px] font-black tracking-[4px] text-red-300">TOKYO COMMAND</span>
+        <h2 className="tokyo-section-title mt-5 text-5xl font-black text-center mb-4 md:text-6xl">
           <GlitchTitle>القيادة العليا</GlitchTitle>
         </h2>
-        <p className="text-center text-gray-400 mb-14 tracking-[4px]">HIGH COMMAND</p>
+        <p className="text-center leading-7 text-gray-400">المستوى الأعلى في منظومة TOKYO وصنّاع القرار داخل العصابة.</p>
+        </div>
 
-        <div className="max-w-7xl mx-auto grid sm:grid-cols-2 lg:grid-cols-5 gap-6">
+        <div className="relative mx-auto grid max-w-7xl gap-6 sm:grid-cols-2 lg:grid-cols-5">
           {[
             ["سيلفادور كروز", "القائد الأعلى"],
             ["توتي كروز", "الزعيم"],
@@ -1076,7 +803,7 @@ export default function Home() {
               whileInView={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ delay: index * 0.15, duration: 0.8 }}
               whileHover={{ scale: 1.07, y: -10 }}
-              className="relative overflow-hidden bg-zinc-950 border border-white/20 rounded-[30px] p-6 text-center group shadow-[0_0_40px_rgba(255,255,255,0.08)]"
+              className="tokyo-glass group relative overflow-hidden rounded-[30px] p-6 text-center transition-colors hover:border-red-400/35"
             >
               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-500 bg-gradient-to-br from-white/15 via-transparent to-red-500/10" />
               <motion.div
@@ -1126,18 +853,6 @@ export default function Home() {
     kick: "https://kick.com/br-berlin",
     logo: "/berlin.webp",
   },
-  {
-    name: "أبو فايز كروز",
-    role: "ستريمر رسمي",
-    kick: "https://kick.com/1abufayez1",
-    logo: "/abufayez.webp",
-  },
-  {
-    name: "صلاحات كروز",
-    role: "ستريمر رسمي",
-    kick: "https://kick.com/salahat8",
-    logo: "/salahat.webp",
-  },
 ].map((streamer, index) => (
             <motion.div
               key={streamer.name}
@@ -1183,194 +898,6 @@ export default function Home() {
                     </a>
                   )}
                 </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </RevealSection>
-
-      <RevealSection id="members" className="py-24 px-6 bg-black">
-        <h2 className="text-5xl font-black text-center mb-6">
-          <GlitchTitle>أعضاء TOKYO GANG</GlitchTitle>
-        </h2>
-        <p className="text-center text-gray-400 mb-10">
-          قاعدة بيانات كاملة لأعضاء العصابة وعددهم {syncedTokyoMemberCount === null ? "جاري المزامنة" : `${syncedTokyoMemberCount} عضو`}
-        </p>
-
-        <div className="mx-auto mb-14 max-w-7xl">
-          <p className="mb-6 text-center text-sm font-black tracking-[5px] text-green-400">
-            <span className="inline-flex items-center gap-3">
-              <span className="h-2 w-2 rounded-full bg-green-400 shadow-[0_0_14px_lime]" />
-              TOKYO ROLE ONLINE: {tokyoOnlineCount ?? "SYNCING"}
-            </span>
-          </p>
-          {discordMembers.length > 0 ? (
-            <motion.div layout className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <AnimatePresence mode="popLayout">
-                {discordMembers.slice(0, 12).map((member) => (
-                <motion.div
-                  key={member.id}
-                  layout
-                  initial={{ opacity: 0, y: 14, scale: 0.96 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -10, scale: 0.96 }}
-                  transition={{ duration: 0.25, ease: "easeOut" }}
-                  whileHover={{ scale: 1.04, y: -6 }}
-                  className="group relative flex items-center gap-4 overflow-hidden rounded-3xl border border-green-400/20 bg-green-400/5 p-4 shadow-[0_0_28px_rgba(74,222,128,0.08)]"
-                >
-                  <motion.div
-                    animate={{ x: ["-120%", "140%"] }}
-                    transition={{ duration: 2.4, repeat: Infinity, ease: "linear" }}
-                    className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-green-300/10 to-transparent"
-                  />
-                  {member.image ? (
-                    <Image
-                      src={member.image}
-                      alt={member.name}
-                      width={56}
-                      height={56}
-                      className="relative z-10 h-14 w-14 rounded-full border border-white/20 object-cover shadow-[0_0_18px_rgba(74,222,128,0.20)]"
-                    />
-                  ) : (
-                    <div className="relative z-10 flex h-14 w-14 items-center justify-center rounded-full bg-white text-xl font-black text-black">
-                      {member.name[0]}
-                    </div>
-                  )}
-                  <div className="relative z-10 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="truncate font-black text-white">{member.name}</p>
-                      {member.status && (
-                        <span className={`rounded-full border px-2 py-0.5 text-[10px] font-black ${memberStatusStyles[member.status]}`}>
-                          {memberStatusLabels[member.status]}
-                        </span>
-                      )}
-                    </div>
-                    <p className="truncate text-xs text-gray-500">@{member.username}</p>
-                  </div>
-                </motion.div>
-                ))}
-              </AnimatePresence>
-            </motion.div>
-          ) : (
-            <div className="relative overflow-hidden rounded-3xl border border-green-400/10 bg-white/[0.03] px-6 py-10 text-center">
-              <motion.div
-                animate={{ x: ["-100%", "100%"] }}
-                transition={{ duration: 2.8, repeat: Infinity, ease: "linear" }}
-                className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-green-400/10 to-transparent"
-              />
-              <div className="relative z-10">
-                <div className="mx-auto mb-4 h-3 w-3 rounded-full bg-green-400 shadow-[0_0_18px_lime]" />
-                <p className="text-sm font-black tracking-[5px] text-green-400">TOKYO CHANNEL QUIET</p>
-                <p className="mt-3 text-sm font-bold text-gray-500">لا يوجد أعضاء TOKYO أونلاين حالياً</p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row gap-4 mb-10">
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="ابحث عن عضو..."
-            className="flex-1 bg-zinc-950 border border-white/20 rounded-2xl p-4 outline-none"
-          />
-
-          <select
-            value={rank}
-            onChange={(e) => setRank(e.target.value)}
-            className="bg-zinc-950 border border-white/20 rounded-2xl p-4 outline-none"
-          >
-            {["الكل", "العقل المدبر", "الشبح", "الدب المميز", "الزرقاوي الأصيل", "ابن القائد", "ستريمرنا", "مقاتل"].map((r) => (
-              <option key={r}>{r}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="max-w-7xl mx-auto grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {filteredMembers.map(([name, role], index) => (
-            <motion.div
-              key={`${name}-${index}`}
-              initial={{ opacity: 0, y: 60 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: (index % 8) * 0.05 }}
-              className="group relative overflow-hidden bg-zinc-950 border border-white/15 rounded-3xl p-6 hover:border-white transition duration-300 shadow-[0_0_35px_rgba(255,255,255,0.04)]"
-            >
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-br from-white/10 via-transparent to-red-500/10" />
-              <motion.div
-                animate={{ y: ["-120%", "120%"] }}
-                transition={{ duration: 3.2, repeat: Infinity, delay: (index % 4) * 0.2, ease: "easeInOut" }}
-                className="absolute inset-x-0 h-1/3 bg-gradient-to-b from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100"
-              />
-              <div className="absolute right-4 top-4 rounded-full border border-red-500/25 px-3 py-1 text-[10px] font-black tracking-[3px] text-red-300 opacity-70">
-                FILE
-              </div>
-
-              <div className="relative z-10">
-                <div className="w-20 h-20 rounded-full bg-white text-black mx-auto mb-5 flex items-center justify-center font-black text-2xl shadow-[0_0_24px_rgba(255,255,255,0.35)] ring-4 ring-white/10 group-hover:ring-red-500/25 transition">
-                  {name[0]}
-                </div>
-
-                <h3 className="text-3xl md:text-4xl font-black text-center tracking-[4px] uppercase text-white drop-shadow-[0_0_18px_white] group-hover:scale-110 transition duration-300">
-                  {name}
-                </h3>
-
-                <p className="text-center text-gray-400 mt-2">{role}</p>
-
-                <div className="mt-6 space-y-4">
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-green-400 font-bold drop-shadow-[0_0_8px_lime] animate-pulse">● متواجد</span>
-                    <span className="text-red-500 font-black tracking-[2px] drop-shadow-[0_0_12px_red]">خطير جداً</span>
-                  </div>
-
-                  <div className="relative h-2 bg-white/10 rounded-full overflow-hidden">
-                    <motion.div
-                      initial={{ width: "0%" }}
-                      whileInView={{ width: "100%" }}
-                      transition={{ duration: 2 }}
-                      className="absolute inset-0 bg-gradient-to-r from-red-700 via-red-500 to-white shadow-[0_0_20px_red]"
-                    />
-                  </div>
-
-                  <div className="flex justify-between text-xs text-gray-500 tracking-[2px]">
-                    <span>THREAT LEVEL</span>
-                    <span>MAXIMUM</span>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </RevealSection>
-
-      <RevealSection id="wanted" className="py-24 px-6 bg-black border-y border-white/10">
-        <h2 className="text-5xl font-black text-center mb-4">MOST WANTED</h2>
-        <p className="text-center text-gray-500 tracking-[4px] mb-14">TOKYO TARGET DATABASE</p>
-
-        <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
-          {[
-            ["C-1", "بلاك ليست ومطلوب", "BLACKLIST"],
-            ["F-0", "مطلوب", "WANTED"],
-          ].map(([name, type, status], index) => (
-            <motion.div
-              key={name}
-              initial={{ opacity: 0, y: 70 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.15 }}
-              whileHover={{ scale: 1.05, y: -8 }}
-              className="relative overflow-hidden rounded-[35px] bg-zinc-950 border border-red-500/35 p-8 text-center shadow-[0_0_40px_rgba(255,0,0,0.14)]"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 to-transparent" />
-
-              <div className="relative z-10">
-                <div className="mx-auto mb-6 w-28 h-28 rounded-full bg-red-950 border border-red-500/50 flex items-center justify-center text-red-500 text-4xl font-black drop-shadow-[0_0_15px_red]">
-                  !
-                </div>
-
-                <p className="text-xs tracking-[5px] text-red-500 mb-3">{status}</p>
-                <h3 className="text-5xl font-black text-white drop-shadow-[0_0_18px_white]">{name}</h3>
-                <p className="mt-3 text-gray-400">{type}</p>
-                <div className="mt-6 h-[2px] bg-gradient-to-r from-transparent via-red-500 to-transparent" />
-                <p className="mt-5 text-red-500 font-black tracking-[3px]">THREAT: MAXIMUM</p>
               </div>
             </motion.div>
           ))}

@@ -9,9 +9,8 @@ export function MobileMenu() {
 
   const links = [
     ["الرئيسية", "#home"],
-    ["السيرفر", "#server"],
     ["القيادة", "#command"],
-    ["الأعضاء", "#members"],
+    ["الستريمرز", "#streamers"],
     ["القوانين", "#rules"],
     ["التقديم", "#apply"],
   ];

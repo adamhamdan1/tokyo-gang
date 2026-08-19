@@ -15,7 +15,6 @@ import { AdminDiscordTestButton } from "./AdminDiscordTestButton";
 import { AdminLogDeleteButton } from "./AdminLogDeleteButton";
 import { AdminLeaveDecisionButtons } from "./AdminLeaveDecisionButtons";
 import { AdminSignOutButton } from "./AdminSignOutButton";
-import { AdminSpotlightForm } from "./AdminSpotlightForm";
 import { AdminManagerForm } from "./AdminManagerForm";
 import { AdminWeeklyReportButton } from "./AdminWeeklyReportButton";
 import { AdminDiagnosticsButton } from "./AdminDiagnosticsButton";
@@ -54,6 +53,11 @@ const capabilityLabels: Record<string, string> = {
 };
 
 const modeDetails: Record<string, { eyebrow: string; title: string; description: string }> = {
+  OVERVIEW: {
+    eyebrow: "مركز التحكم",
+    title: "نظرة شاملة على كل عمليات الإدارة",
+    description: "الأولويات الحالية، حالة النظام، وسرعة الوصول إلى التقديمات والأعضاء والانضباط والتقارير.",
+  },
   APPLICATIONS: {
     eyebrow: "طلبات الانضمام",
     title: "مراجعة التقديمات واتخاذ القرار",
@@ -76,8 +80,33 @@ const modeDetails: Record<string, { eyebrow: string; title: string; description:
   },
 };
 
-function buildAdminHref(status: string, query: string, logs?: string) {
+function readBoundedInteger(value: string | undefined, fallback: number, min: number, max: number) {
+  const parsed = Number(value);
+
+  if (!Number.isInteger(parsed)) return fallback;
+
+  return Math.min(max, Math.max(min, parsed));
+}
+
+function readSearchParam(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] ?? "" : value ?? "";
+}
+
+type AdminHrefOptions = {
+  mode?: string;
+  status?: string;
+  query?: string;
+  logs?: string;
+  members?: string;
+  page?: number;
+};
+
+function buildAdminHref({ mode = "OVERVIEW", status = "ALL", query = "", logs, members, page }: AdminHrefOptions) {
   const params = new URLSearchParams();
+
+  if (mode !== "OVERVIEW") {
+    params.set("mode", mode);
+  }
 
   if (status !== "ALL") {
     params.set("status", status);
@@ -91,6 +120,14 @@ function buildAdminHref(status: string, query: string, logs?: string) {
     params.set("logs", logs);
   }
 
+  if (members && members !== "ALL") {
+    params.set("members", members);
+  }
+
+  if (page && page > 1) {
+    params.set("page", String(page));
+  }
+
   const value = params.toString();
   return value ? `/admin?${value}` : "/admin";
 }
@@ -98,23 +135,30 @@ function buildAdminHref(status: string, query: string, logs?: string) {
 export default async function AdminPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ status?: string; q?: string; logs?: string; members?: string; mode?: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const admin = await getAdminContext();
   const params = await searchParams;
-  const activeStatus = ["PRIORITY", "PENDING", "ACCEPTED", "REJECTED", "INTERVIEW", "TRIAL"].includes(params?.status ?? "")
-    ? params?.status
+  const statusParam = readSearchParam(params?.status);
+  const modeParam = readSearchParam(params?.mode);
+  const memberParam = readSearchParam(params?.members);
+  const activeStatus = ["PRIORITY", "PENDING", "ACCEPTED", "REJECTED", "INTERVIEW", "TRIAL"].includes(statusParam)
+    ? statusParam
     : "ALL";
-  const query = params?.q?.trim() ?? "";
-  const showAllLogs = params?.logs === "all";
-  const mode = ["APPLICATIONS", "DISCIPLINE", "MEMBERS", "SYSTEM"].includes(params?.mode ?? "") ? params?.mode : "APPLICATIONS";
-  const memberFilter = ["WARNED", "HIGH_RISK", "LEAVE", "SUMMONED", "RISK"].includes(params?.members ?? "")
-    ? params?.members
+  const query = readSearchParam(params?.q).trim();
+  const showAllLogs = readSearchParam(params?.logs) === "all";
+  const mode = ["OVERVIEW", "APPLICATIONS", "DISCIPLINE", "MEMBERS", "SYSTEM"].includes(modeParam) ? modeParam : "OVERVIEW";
+  const memberFilter = ["WARNED", "HIGH_RISK", "LEAVE", "SUMMONED", "RISK"].includes(memberParam)
+    ? memberParam
     : "ALL";
   // eslint-disable-next-line react-hooks/purity
   const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const applicationPageSize = readBoundedInteger(process.env.ADMIN_DASHBOARD_PAGE_SIZE, 24, 8, 60);
+  const activityWindowDays = readBoundedInteger(process.env.ADMIN_ACTIVITY_WINDOW_DAYS, 7, 1, 30);
+  const memberSyncIntervalSeconds = readBoundedInteger(process.env.TOKYO_MEMBER_SYNC_INTERVAL_SECONDS, 60, 15, 300);
+  const applicationPage = readBoundedInteger(readSearchParam(params?.page), 1, 1, 10_000);
   // eslint-disable-next-line react-hooks/purity
-  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const activitySince = new Date(Date.now() - activityWindowDays * 24 * 60 * 60 * 1000);
 
   if (!admin) {
     return (
@@ -133,16 +177,40 @@ export default async function AdminPage({
     );
   }
 
-  const shouldSyncMembers = mode === "MEMBERS" || mode === "DISCIPLINE" || mode === "SYSTEM";
+  const shouldSyncMembers = mode === "MEMBERS" || mode === "DISCIPLINE";
   const tokyoSync = shouldSyncMembers ? await syncTokyoMembersSafely() : null;
 
   if (shouldSyncMembers) {
     await syncWarningsSafely();
   }
 
+  const applicationWhere = {
+    ...(activeStatus === "ALL" || activeStatus === "PRIORITY" ? {} : { status: activeStatus }),
+    ...(activeStatus === "PRIORITY"
+      ? {
+          status: "PENDING",
+          hasMic: true,
+        }
+      : {}),
+    ...(query
+      ? {
+          OR: [
+            { name: { contains: query, mode: "insensitive" as const } },
+            { age: { contains: query, mode: "insensitive" as const } },
+            { experience: { contains: query, mode: "insensitive" as const } },
+            { reason: { contains: query, mode: "insensitive" as const } },
+            { user: { username: { contains: query, mode: "insensitive" as const } } },
+            { user: { discordId: { contains: query, mode: "insensitive" as const } } },
+          ],
+        }
+      : {}),
+  };
+
   const [
     applications,
+    filteredApplicationCount,
     totalApplications,
+    pendingApplicationCount,
     acceptedApplications,
     rejectedApplications,
     trialApplications,
@@ -167,35 +235,19 @@ export default async function AdminPage({
     knownUsers,
   ] = await Promise.all([
     prisma.application.findMany({
-      where: {
-        ...(activeStatus === "ALL" || activeStatus === "PRIORITY" ? {} : { status: activeStatus }),
-        ...(activeStatus === "PRIORITY"
-          ? {
-              status: "PENDING",
-              hasMic: true,
-            }
-          : {}),
-        ...(query
-          ? {
-              OR: [
-                { name: { contains: query, mode: "insensitive" as const } },
-                { age: { contains: query, mode: "insensitive" as const } },
-                { experience: { contains: query, mode: "insensitive" as const } },
-                { reason: { contains: query, mode: "insensitive" as const } },
-                { user: { username: { contains: query, mode: "insensitive" as const } } },
-                { user: { discordId: { contains: query, mode: "insensitive" as const } } },
-              ],
-            }
-          : {}),
-      },
+      where: applicationWhere,
       include: {
         user: true,
       },
       orderBy: {
         createdAt: "desc",
       },
+      skip: (applicationPage - 1) * applicationPageSize,
+      take: applicationPageSize,
     }),
+    prisma.application.count({ where: applicationWhere }),
     prisma.application.count(),
+    prisma.application.count({ where: { status: "PENDING" } }),
     prisma.application.count({ where: { status: "ACCEPTED" } }),
     prisma.application.count({ where: { status: "REJECTED" } }),
     prisma.application.count({ where: { status: "TRIAL" } }),
@@ -263,15 +315,15 @@ export default async function AdminPage({
       take: 8,
     }),
     getDatabaseAdminIds(),
-    prisma.application.count({ where: { createdAt: { gte: weekAgo } } }),
-    prisma.application.count({ where: { status: "ACCEPTED", decidedAt: { gte: weekAgo } } }),
-    prisma.memberWarning.count({ where: { createdAt: { gte: weekAgo } } }),
-    prisma.summon.count({ where: { createdAt: { gte: weekAgo } } }),
-    prisma.complaint.count({ where: { createdAt: { gte: weekAgo } } }),
+    prisma.application.count({ where: { createdAt: { gte: activitySince } } }),
+    prisma.application.count({ where: { status: "ACCEPTED", decidedAt: { gte: activitySince } } }),
+    prisma.memberWarning.count({ where: { createdAt: { gte: activitySince } } }),
+    prisma.summon.count({ where: { createdAt: { gte: activitySince } } }),
+    prisma.complaint.count({ where: { createdAt: { gte: activitySince } } }),
     prisma.adminLog.groupBy({
       by: ["adminDiscordId"],
       where: {
-        createdAt: { gte: weekAgo },
+        createdAt: { gte: activitySince },
         adminDiscordId: { not: null },
       },
       _count: { _all: true },
@@ -329,15 +381,17 @@ export default async function AdminPage({
   const healthItems = [
     ["بوت Discord", process.env.DISCORD_BOT_TOKEN ? "متصل" : "غير مربوط"],
     ["قاعدة البيانات", "متصلة"],
-    ["مزامنة الأعضاء", tokyoSync ? `${tokyoSync.count} عضو` : "جاهزة"],
+    ["مزامنة الأعضاء", tokyoSync ? `${tokyoSync.count} عضو` : `كل ${memberSyncIntervalSeconds} ثانية`],
     ["مزامنة التحذيرات", "عند الحاجة"],
+    ["التقديمات", `${applicationPageSize} لكل صفحة`],
+    ["نافذة التقارير", `${activityWindowDays} أيام`],
   ];
   const highRiskMemberCount = tokyoMembers.filter((member) => {
     const risk = calculateMemberRisk(member);
     return risk.level === "HIGH" || risk.level === "CRITICAL";
   }).length;
   const quickReviewItems = [
-    ["تقديمات للمراجعة", applications.filter((application) => application.status === "PENDING").length],
+    ["تقديمات للمراجعة", pendingApplicationCount],
     ["تحذيرات قرب الانتهاء", warningCount],
     ["أعضاء Risk عالي", highRiskMemberCount],
     ["شكاوي مفتوحة", complaints.filter((item) => item.status !== "RESOLVED" && item.status !== "DISMISSED").length],
@@ -348,32 +402,92 @@ export default async function AdminPage({
     : Object.entries(admin.capabilities)
         .filter(([, enabled]) => enabled)
         .map(([capability]) => capability);
-  const activeModeDetails = modeDetails[mode ?? "APPLICATIONS"] ?? modeDetails.APPLICATIONS;
+  const activeModeDetails = modeDetails[mode ?? "OVERVIEW"] ?? modeDetails.OVERVIEW;
+  const applicationPageCount = Math.max(1, Math.ceil(filteredApplicationCount / applicationPageSize));
+  const moduleCards = [
+    {
+      mode: "APPLICATIONS",
+      label: "التقديمات",
+      value: pendingApplicationCount,
+      detail: "طلب ينتظر قرار الإدارة",
+      features: ["قبول ورفض", "مقابلات", "فترة تجربة"],
+      tone: "border-yellow-400/25 bg-yellow-400/10 text-yellow-200",
+    },
+    {
+      mode: "DISCIPLINE",
+      label: "الانضباط والشكاوى",
+      value: complaints.filter((item) => item.status !== "RESOLVED" && item.status !== "DISMISSED").length + activeSummons.filter((item) => item.status === "ACTIVE").length,
+      detail: "حالة مفتوحة تحتاج متابعة",
+      features: ["شكاوى وتصويت", "استدعاءات", "إجازات"],
+      tone: "border-red-400/25 bg-red-400/10 text-red-200",
+    },
+    {
+      mode: "MEMBERS",
+      label: "ملفات الأعضاء",
+      value: tokyoMembers.length,
+      detail: `${highRiskMemberCount} أعضاء بمستوى خطورة مرتفع`,
+      features: ["تحذيرات", "رتب وتقييم", "بلاك ليست"],
+      tone: "border-cyan-400/25 bg-cyan-400/10 text-cyan-200",
+    },
+    {
+      mode: "SYSTEM",
+      label: "النظام والتقارير",
+      value: adminLogCount,
+      detail: "حدث مسجل في لوحة الإدارة",
+      features: ["إعلانات وتنبيهات", "فريق الإدارة", "تقارير وتشخيص"],
+      tone: "border-green-400/25 bg-green-400/10 text-green-200",
+    },
+  ];
+  const adminNavigation = [
+    { label: "نظرة عامة", value: "OVERVIEW", hint: "مركز القيادة", badge: quickReviewItems.reduce((sum, [, value]) => sum + Number(value), 0) },
+    { label: "التقديمات", value: "APPLICATIONS", hint: "الطلبات والقرارات", badge: pendingApplicationCount },
+    { label: "الانضباط", value: "DISCIPLINE", hint: "الشكاوى والاستدعاءات", badge: complaints.filter((item) => item.status !== "RESOLVED" && item.status !== "DISMISSED").length },
+    { label: "الأعضاء", value: "MEMBERS", hint: "الملفات والمخاطر", badge: highRiskMemberCount },
+    { label: "النظام", value: "SYSTEM", hint: "التقارير والتكاملات", badge: 0 },
+  ];
 
   return (
     <main dir="rtl" className="tokyo-dashboard relative min-h-screen overflow-hidden px-3 py-5 text-white sm:px-5 md:p-10">
       <div className="pointer-events-none fixed inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(to_right,rgba(255,255,255,0.035)_1px,transparent_1px)] bg-[length:100%_6px,80px_80px] opacity-55" />
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(239,68,68,0.16),transparent_28%),radial-gradient(circle_at_80%_20%,rgba(34,211,238,0.10),transparent_26%),radial-gradient(circle_at_center,transparent_42%,rgba(0,0,0,0.72)_100%)]" />
       <div className="relative z-10 mx-auto max-w-7xl">
-        <div className="mb-6 overflow-hidden rounded-2xl border border-white/10 bg-zinc-950/80 p-5 shadow-[0_0_50px_rgba(255,255,255,0.05)] backdrop-blur-xl md:mb-10 md:rounded-3xl md:p-8">
+        <div className="tokyo-glass mb-6 rounded-2xl p-5 md:mb-10 md:rounded-[32px] md:p-8">
+          <div className="pointer-events-none absolute -left-24 -top-32 h-80 w-80 rounded-full bg-red-500/10 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-32 right-0 h-72 w-72 rounded-full bg-cyan-400/[0.07] blur-3xl" />
           <div className="mb-5 flex flex-col gap-2 border-b border-white/10 pb-4 text-[10px] font-black tracking-[3px] text-gray-500 sm:flex-row sm:items-center sm:justify-between md:mb-6 md:text-xs md:tracking-[4px]">
             <span>مركز قيادة TOKYO</span>
-            <span className="flex items-center gap-2 text-green-400">
+            <span className="flex w-fit items-center gap-2 rounded-full border border-green-400/15 bg-green-400/[0.07] px-3 py-1.5 text-green-400">
               <span className="h-2 w-2 rounded-full bg-green-400 shadow-[0_0_14px_lime]" />
               النظام يعمل
             </span>
           </div>
-          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div>
+          <div className="relative flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+          <div className="max-w-3xl">
             <p className="text-xs font-black tracking-[5px] text-red-500 md:text-sm md:tracking-[6px]">TOKYO ADMIN</p>
-            <h1 className="mt-3 text-3xl font-black leading-tight drop-shadow-[0_0_28px_rgba(255,255,255,0.35)] sm:text-4xl md:text-5xl">
+            <h1 className="tokyo-section-title mt-3 text-3xl font-black leading-tight drop-shadow-[0_0_28px_rgba(255,255,255,0.35)] sm:text-4xl md:text-6xl">
               لوحة الإدارة المركزية
             </h1>
+            <p className="mt-4 max-w-2xl text-sm leading-7 text-gray-400 md:text-base">
+              كل قرارات العصابة وملفات الأعضاء والانضباط والتقارير في مركز واحد سريع وواضح.
+            </p>
           </div>
 
-          <div className="w-fit rounded-2xl border border-white/15 bg-zinc-950 px-4 py-2 text-sm text-gray-300 md:px-5 md:py-3">
-            {admin.name}
+          <div className="w-fit rounded-2xl border border-white/15 bg-black/40 px-4 py-3 text-sm text-gray-300 shadow-[0_16px_38px_rgba(0,0,0,0.28)] md:px-5">
+            <span className="block text-[10px] font-black tracking-[3px] text-gray-500">ACTIVE OPERATOR</span>
+            <span className="mt-1 block font-black text-white">{admin.name}</span>
           </div>
+          </div>
+          <div className="relative mt-7 grid grid-cols-3 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+            {[
+              ["بانتظار القرار", pendingApplicationCount],
+              ["حالات مفتوحة", complaints.filter((item) => item.status !== "RESOLVED" && item.status !== "DISMISSED").length + activeSummons.filter((item) => item.status === "ACTIVE").length],
+              ["أعضاء مراقبون", highRiskMemberCount],
+            ].map(([label, value]) => (
+              <div key={label} className="border-l border-white/10 p-3 last:border-l-0 md:p-4">
+                <p className="text-[10px] text-gray-500 md:text-xs">{label}</p>
+                <p className="mt-1 text-xl font-black text-white md:text-2xl">{value}</p>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -394,7 +508,7 @@ export default async function AdminPage({
           {stats.map(([label, value]) => (
             <div
               key={label}
-              className="group relative overflow-hidden rounded-2xl border border-white/15 bg-zinc-950/85 p-4 shadow-[0_0_40px_rgba(255,255,255,0.06)] md:rounded-3xl md:p-6"
+              className="tokyo-admin-stat tokyo-glass group rounded-2xl p-4 md:rounded-3xl md:p-6"
             >
               <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/45 to-transparent opacity-60" />
               <div className="absolute inset-0 opacity-0 transition group-hover:opacity-100 bg-[linear-gradient(110deg,transparent,rgba(255,255,255,0.08),transparent)]" />
@@ -406,11 +520,11 @@ export default async function AdminPage({
           ))}
         </section>
 
-        <section className="mb-8 rounded-2xl border border-white/10 bg-zinc-950 p-5 md:mb-10 md:rounded-3xl md:p-6">
+        <section className="tokyo-glass mb-8 rounded-2xl p-5 md:mb-10 md:rounded-3xl md:p-6">
           <p className="text-xs font-black tracking-[5px] text-white">نظرة سريعة</p>
           <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-5">
             {quickReviewItems.map(([label, value]) => (
-              <div key={label} className="rounded-2xl border border-white/10 bg-black/40 p-4">
+              <div key={label} className="tokyo-admin-stat rounded-2xl border border-white/10 bg-black/40 p-4">
                 <p className="text-xs text-gray-500">{label}</p>
                 <p className="mt-2 text-3xl font-black text-white">{value}</p>
               </div>
@@ -419,7 +533,7 @@ export default async function AdminPage({
         </section>
 
         <section className="mb-8 grid gap-4 md:mb-10 lg:grid-cols-[0.9fr_1.1fr]">
-          <div className="rounded-2xl border border-cyan-400/20 bg-zinc-950 p-5 md:rounded-3xl md:p-6">
+          <div className="tokyo-glass rounded-2xl border-cyan-400/20 p-5 md:rounded-3xl md:p-6">
             <p className="text-xs font-black tracking-[5px] text-cyan-300">حالة النظام</p>
             <div className="mt-5 grid grid-cols-2 gap-3">
               {healthItems.map(([label, value]) => (
@@ -430,7 +544,7 @@ export default async function AdminPage({
               ))}
             </div>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-zinc-950 p-5 md:rounded-3xl md:p-6">
+          <div className="tokyo-glass rounded-2xl p-5 md:rounded-3xl md:p-6">
             <p className="text-xs font-black tracking-[5px] text-white">صلاحيات الحساب</p>
             <div className="mt-5 flex flex-wrap gap-2">
               {visibleCapabilities.map((capability) => (
@@ -442,33 +556,61 @@ export default async function AdminPage({
           </div>
         </section>
 
-        <section className="tokyo-scrollbar sticky top-2 z-40 mb-8 flex gap-2 overflow-x-auto rounded-2xl border border-white/10 bg-black/85 p-3 backdrop-blur-xl md:mb-10 md:flex-wrap md:rounded-3xl">
-          {[
-            ["التقديمات", "APPLICATIONS"],
-            ["الانضباط والشكاوى", "DISCIPLINE"],
-            ["دليل الأعضاء", "MEMBERS"],
-            ["النظام والتقارير", "SYSTEM"],
-          ].map(([label, value]) => (
+        <section className="tokyo-scrollbar sticky top-2 z-40 mb-8 grid auto-cols-[minmax(150px,1fr)] grid-flow-col gap-2 overflow-x-auto rounded-2xl border border-white/10 bg-black/85 p-2 shadow-[0_20px_60px_rgba(0,0,0,0.36)] backdrop-blur-2xl md:mb-10 md:grid-flow-row md:grid-cols-5 md:rounded-3xl">
+          {adminNavigation.map((item) => (
             <Link
-              key={value}
-              href={`/admin?mode=${value}${query ? `&q=${encodeURIComponent(query)}` : ""}`}
-              className={`shrink-0 rounded-2xl border px-4 py-3 text-xs font-black transition ${
-                mode === value ? "border-white bg-white text-black" : "border-white/15 text-gray-300 hover:border-white/30 hover:text-white"
+              key={item.value}
+              href={buildAdminHref({ mode: item.value, query })}
+              aria-current={mode === item.value ? "page" : undefined}
+              className={`group relative min-w-0 rounded-2xl border px-4 py-3 text-xs font-black transition ${
+                mode === item.value ? "border-white bg-white text-black shadow-[0_12px_35px_rgba(255,255,255,0.13)]" : "border-transparent text-gray-300 hover:border-white/15 hover:bg-white/[0.05] hover:text-white"
               }`}
             >
-              {label}
+              <span className="block">{item.label}</span>
+              <span className={`mt-1 block truncate text-[9px] font-bold ${mode === item.value ? "text-black/55" : "text-gray-600 group-hover:text-gray-400"}`}>{item.hint}</span>
+              {item.badge > 0 && (
+                <span className={`absolute left-2 top-2 rounded-full px-2 py-0.5 text-[9px] ${mode === item.value ? "bg-black text-white" : "bg-red-500/15 text-red-300"}`}>
+                  {item.badge}
+                </span>
+              )}
             </Link>
           ))}
         </section>
 
         <section className="tokyo-panel mb-8 p-5 md:mb-10 md:p-7">
           <p className="text-xs font-black tracking-[4px] text-red-400">{activeModeDetails.eyebrow}</p>
-          <h2 className="mt-3 text-2xl font-black text-white md:text-3xl">{activeModeDetails.title}</h2>
+          <h2 className="tokyo-section-title mt-3 text-2xl font-black text-white md:text-4xl">{activeModeDetails.title}</h2>
           <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-400">{activeModeDetails.description}</p>
         </section>
 
-        {mode === "SYSTEM" && (
+        {mode === "OVERVIEW" && (
+          <section className="mb-8 grid gap-4 md:mb-10 md:grid-cols-2 xl:grid-cols-4">
+            {moduleCards.map((card) => (
+              <Link
+                key={card.mode}
+                href={buildAdminHref({ mode: card.mode })}
+                className={`tokyo-admin-stat group relative overflow-hidden rounded-3xl border p-5 transition duration-300 hover:shadow-[0_24px_70px_rgba(0,0,0,0.35)] ${card.tone}`}
+              >
+                <div className="absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-current to-transparent opacity-50" />
+                <p className="text-sm font-black">{card.label}</p>
+                <p className="mt-4 text-4xl font-black text-white">{card.value}</p>
+                <p className="mt-2 text-xs leading-6 opacity-75">{card.detail}</p>
+                <div className="mt-4 flex flex-wrap gap-1.5">
+                  {card.features.map((feature) => (
+                    <span key={feature} className="rounded-full border border-current/20 bg-black/20 px-2.5 py-1 text-[10px] font-black text-white/80">
+                      {feature}
+                    </span>
+                  ))}
+                </div>
+                <span className="mt-5 inline-flex text-xs font-black text-white transition group-hover:translate-x-[-4px]">فتح القسم ←</span>
+              </Link>
+            ))}
+          </section>
+        )}
+
+        {(mode === "SYSTEM" || mode === "OVERVIEW") && (
           <section className="mb-8 grid gap-3 rounded-2xl border border-cyan-400/15 bg-cyan-400/[0.04] p-4 sm:grid-cols-2 lg:mb-10 lg:flex lg:flex-wrap">
+            <div className="flex items-center px-2 text-xs font-black tracking-[3px] text-cyan-200">أدوات سريعة</div>
             <AdminDiscordTestButton />
             <AdminDiagnosticsButton />
             <AdminSyncButton />
@@ -495,10 +637,9 @@ export default async function AdminPage({
               }))}
           />
         )}
-        {mode === "SYSTEM" && <AdminSpotlightForm members={tokyoMembers} />}
         {mode === "DISCIPLINE" && <AdminSummonForm members={tokyoMembers} />}
 
-        {(mode === "DISCIPLINE" || mode === "MEMBERS" || mode === "SYSTEM") && pendingLeaves.length > 0 && (
+        {(mode === "OVERVIEW" || mode === "DISCIPLINE" || mode === "MEMBERS" || mode === "SYSTEM") && pendingLeaves.length > 0 && (
           <section className="mb-8 rounded-2xl border border-emerald-400/20 bg-zinc-950 p-5 md:mb-10 md:rounded-3xl md:p-6">
             <p className="text-xs font-black tracking-[5px] text-emerald-300">PENDING LEAVES</p>
             <div className="mt-5 grid gap-4 md:grid-cols-2">
@@ -524,7 +665,7 @@ export default async function AdminPage({
           </section>
         )}
 
-        {(mode === "DISCIPLINE" || mode === "SYSTEM") && <section className="mb-8 grid gap-4 lg:mb-10 lg:grid-cols-[0.9fr_1.1fr]">
+        {(mode === "OVERVIEW" || mode === "DISCIPLINE" || mode === "SYSTEM") && <section className="mb-8 grid gap-4 lg:mb-10 lg:grid-cols-[0.9fr_1.1fr]">
           <div className="rounded-2xl border border-green-400/20 bg-green-400/10 p-5 md:rounded-3xl md:p-6">
             <p className="text-xs font-black tracking-[5px] text-green-300">ADMIN NOTIFICATIONS</p>
             <div className="mt-5 grid gap-3 text-sm">
@@ -549,7 +690,7 @@ export default async function AdminPage({
               </div>
               {adminLogCount > 3 && (
                 <Link
-                  href={buildAdminHref(activeStatus ?? "ALL", query, showAllLogs ? undefined : "all")}
+                  href={buildAdminHref({ mode, status: activeStatus ?? "ALL", query, logs: showAllLogs ? undefined : "all" })}
                   className="rounded-xl border border-cyan-400/25 px-4 py-2 text-xs font-black text-cyan-300 transition hover:bg-cyan-400 hover:text-black"
                 >
                   {showAllLogs ? "عرض آخر 3" : "عرض الكل"}
@@ -578,7 +719,7 @@ export default async function AdminPage({
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-xs font-black tracking-[5px] text-white">WEEKLY REPORT</p>
-                <p className="mt-1 text-xs text-gray-500">آخر 7 أيام من نشاط الإدارة والنظام.</p>
+                <p className="mt-1 text-xs text-gray-500">آخر {activityWindowDays} أيام من نشاط الإدارة والنظام.</p>
               </div>
               <AdminWeeklyReportButton />
             </div>
@@ -605,7 +746,7 @@ export default async function AdminPage({
                     <p className="mt-1 text-xl font-black text-white">{item._count._all}</p>
                   </div>
                 ))}
-                {adminActivity.length === 0 && <p className="text-sm text-gray-500">لا يوجد نشاط إداري هذا الأسبوع.</p>}
+                {adminActivity.length === 0 && <p className="text-sm text-gray-500">لا يوجد نشاط إداري خلال الفترة المحددة.</p>}
               </div>
             </div>
           </section>
@@ -624,7 +765,7 @@ export default async function AdminPage({
             ].map(([label, value]) => (
               <Link
                 key={value}
-                href={`/admin?members=${value}${query ? `&q=${encodeURIComponent(query)}` : ""}`}
+                href={buildAdminHref({ mode: "MEMBERS", members: value, query })}
                 className={`rounded-xl border px-4 py-2 text-xs font-black ${
                   memberFilter === value ? "border-white bg-white text-black" : "border-white/15 text-gray-300 hover:text-white"
                 }`}
@@ -748,7 +889,7 @@ export default async function AdminPage({
           </section>
         )}
 
-        {(mode === "SYSTEM" || mode === "APPLICATIONS") && announcements.length > 0 && (
+        {(mode === "OVERVIEW" || mode === "SYSTEM" || mode === "APPLICATIONS") && announcements.length > 0 && (
           <section className="mb-8 grid gap-4 md:mb-10 md:grid-cols-2">
             {announcements.map((announcement) => (
               <article key={announcement.id} className="rounded-2xl border border-white/15 bg-zinc-950 p-5 md:rounded-3xl md:p-6">
@@ -763,6 +904,7 @@ export default async function AdminPage({
 
         {mode === "APPLICATIONS" && <section className="sticky top-2 z-40 mb-8 rounded-2xl border border-white/10 bg-black/85 p-3 backdrop-blur-xl md:top-0 md:rounded-3xl md:p-4">
           <form className="mb-4 flex flex-col gap-3 md:flex-row" action="/admin">
+            <input type="hidden" name="mode" value="APPLICATIONS" />
             {activeStatus !== "ALL" && <input type="hidden" name="status" value={activeStatus} />}
             <input
               name="q"
@@ -774,14 +916,14 @@ export default async function AdminPage({
               بحث
             </button>
             {query && (
-              <Link href={buildAdminHref(activeStatus ?? "ALL", "")} className="rounded-2xl border border-white/15 px-6 py-3 text-center font-black text-gray-300">
+              <Link href={buildAdminHref({ mode: "APPLICATIONS", status: activeStatus ?? "ALL" })} className="rounded-2xl border border-white/15 px-6 py-3 text-center font-black text-gray-300">
                 مسح
               </Link>
             )}
           </form>
           <div className="flex gap-2 overflow-x-auto pb-1 md:flex-wrap md:overflow-visible md:pb-0">
           {filterTabs.map(([label, status]) => {
-            const href = buildAdminHref(status, query);
+            const href = buildAdminHref({ mode: "APPLICATIONS", status, query });
             const active = activeStatus === status;
 
             return (
@@ -922,6 +1064,31 @@ export default async function AdminPage({
               </article>
             );
           })}
+          {applicationPageCount > 1 && (
+            <nav className="tokyo-panel flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between" aria-label="صفحات التقديمات">
+              <p className="text-sm text-gray-400">
+                صفحة <span className="font-black text-white">{Math.min(applicationPage, applicationPageCount)}</span> من {applicationPageCount} — {filteredApplicationCount} نتيجة
+              </p>
+              <div className="flex gap-2">
+                {applicationPage > 1 && (
+                  <Link
+                    href={buildAdminHref({ mode: "APPLICATIONS", status: activeStatus ?? "ALL", query, page: applicationPage - 1 })}
+                    className="rounded-xl border border-white/15 px-5 py-3 text-sm font-black text-gray-200 transition hover:border-white/35 hover:text-white"
+                  >
+                    السابق
+                  </Link>
+                )}
+                {applicationPage < applicationPageCount && (
+                  <Link
+                    href={buildAdminHref({ mode: "APPLICATIONS", status: activeStatus ?? "ALL", query, page: applicationPage + 1 })}
+                    className="rounded-xl bg-white px-5 py-3 text-sm font-black text-black transition hover:bg-gray-300"
+                  >
+                    التالي
+                  </Link>
+                )}
+              </div>
+            </nav>
+          )}
         </section>}
       </div>
     </main>

@@ -1,36 +1,33 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TOKYO GANG
 
-## Getting Started
+الموقع الرسمي ولوحة الإدارة المركزية لـ TOKYO GANG. المشروع مبني باستخدام Next.js ويعمل على Cloudflare Workers عبر OpenNext.
 
-First, run the development server:
+## التشغيل محلياً
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## إعدادات لوحة الإدارة
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+هذه إعدادات عادية وليست أسراراً، والقيم الفعلية موجودة في `wrangler.jsonc`:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| المتغير | وظيفته | القيمة الحالية |
+| --- | --- | --- |
+| `ADMIN_DASHBOARD_PAGE_SIZE` | عدد التقديمات في كل صفحة | `24` |
+| `ADMIN_ACTIVITY_WINDOW_DAYS` | مدة التقرير الإداري | `7` أيام |
+| `TOKYO_MEMBER_SYNC_INTERVAL_SECONDS` | الفاصل بين مزامنة أعضاء Discord | `60` ثانية |
 
-## Learn More
+مفاتيح Discord وقاعدة البيانات تبقى Cloudflare Secrets ولا يجب إضافتها إلى Git.
 
-To learn more about Next.js, take a look at the following resources:
+## الفحص والنشر
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm run lint
+npm run build
+npx opennextjs-cloudflare build
+npx wrangler deploy
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+الموقع: [www.tokyo-gang.com](https://www.tokyo-gang.com)

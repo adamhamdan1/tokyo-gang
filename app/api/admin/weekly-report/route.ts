@@ -10,19 +10,21 @@ export async function POST() {
     return NextResponse.json({ error: "Access Denied" }, { status: 403 });
   }
 
-  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const configuredDays = Number(process.env.ADMIN_ACTIVITY_WINDOW_DAYS ?? 7);
+  const activityWindowDays = Number.isInteger(configuredDays) ? Math.min(30, Math.max(1, configuredDays)) : 7;
+  const activitySince = new Date(Date.now() - activityWindowDays * 24 * 60 * 60 * 1000);
   const [applications, accepted, rejected, warnings, summons, complaints, leaves] = await Promise.all([
-    prisma.application.count({ where: { createdAt: { gte: weekAgo } } }),
-    prisma.application.count({ where: { status: "ACCEPTED", decidedAt: { gte: weekAgo } } }),
-    prisma.application.count({ where: { status: "REJECTED", decidedAt: { gte: weekAgo } } }),
-    prisma.memberWarning.count({ where: { createdAt: { gte: weekAgo } } }),
-    prisma.summon.count({ where: { createdAt: { gte: weekAgo } } }),
-    prisma.complaint.count({ where: { createdAt: { gte: weekAgo } } }),
-    prisma.leaveRequest.count({ where: { createdAt: { gte: weekAgo } } }),
+    prisma.application.count({ where: { createdAt: { gte: activitySince } } }),
+    prisma.application.count({ where: { status: "ACCEPTED", decidedAt: { gte: activitySince } } }),
+    prisma.application.count({ where: { status: "REJECTED", decidedAt: { gte: activitySince } } }),
+    prisma.memberWarning.count({ where: { createdAt: { gte: activitySince } } }),
+    prisma.summon.count({ where: { createdAt: { gte: activitySince } } }),
+    prisma.complaint.count({ where: { createdAt: { gte: activitySince } } }),
+    prisma.leaveRequest.count({ where: { createdAt: { gte: activitySince } } }),
   ]);
 
   await sendAdminEmbed({
-    title: "TOKYO Weekly Command Report",
+    title: `TOKYO Command Report — ${activityWindowDays} Days`,
     color: 16_711_680,
     fields: [
       { name: "التقديمات", value: String(applications), inline: true },

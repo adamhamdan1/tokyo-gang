@@ -47,6 +47,41 @@ select {
     linear-gradient(180deg, #070707 0%, #020202 100%);
 }
 
+.tokyo-glass {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.055), transparent 42%),
+    rgba(9, 9, 11, 0.78);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.34), inset 0 1px rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(20px);
+}
+
+.tokyo-glass::after {
+  content: "";
+  position: absolute;
+  inset-inline: 8%;
+  top: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.52), transparent);
+  pointer-events: none;
+}
+
+.tokyo-admin-stat {
+  transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
+}
+
+.tokyo-admin-stat:hover {
+  transform: translateY(-4px);
+  border-color: rgba(255, 255, 255, 0.24);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.38), 0 0 34px rgba(255, 255, 255, 0.06);
+}
+
+.tokyo-section-title {
+  text-wrap: balance;
+}
+
 .tokyo-panel {
   position: relative;
   overflow: hidden;
@@ -114,5 +149,9 @@ select {
   .tokyo-glitch::before,
   .tokyo-glitch::after {
     animation: none;
+  }
+
+  .tokyo-admin-stat:hover {
+    transform: none;
   }
 }

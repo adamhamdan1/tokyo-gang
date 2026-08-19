@@ -19,8 +19,8 @@ const syncState: {
 };
 
 function getAutoSyncIntervalMs() {
-  const seconds = Number(process.env.TOKYO_MEMBER_SYNC_INTERVAL_SECONDS ?? 30);
-  const safeSeconds = Number.isFinite(seconds) ? Math.max(15, seconds) : 30;
+  const seconds = Number(process.env.TOKYO_MEMBER_SYNC_INTERVAL_SECONDS ?? 60);
+  const safeSeconds = Number.isFinite(seconds) ? Math.max(15, seconds) : 60;
 
   return safeSeconds * 1000;
 }
