@@ -31,6 +31,7 @@ import { TokyoCommandPalette } from "../TokyoCommandPalette";
 import { getTokyoRoleOverrides } from "@/lib/tokyo-role-settings";
 import { ensureTokyoWebhooksSafely } from "@/lib/discord";
 import { parseStoredSiteContent } from "@/lib/site-content";
+import { STREAMER_APPLICATION_FLAG, isStreamerApplication } from "@/lib/application-types";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -55,6 +56,7 @@ const filterTabs = [
 const capabilityLabels: Record<string, string> = {
   ALL: "كامل الصلاحيات",
   APPLICATIONS: "إدارة التقديمات",
+  STREAMERS: "إدارة تقديمات الستريمرز",
   WARNINGS: "إدارة التحذيرات",
   MEMBERS: "إدارة الأعضاء",
   LOGS: "سجل الإدارة",
@@ -70,6 +72,11 @@ const modeDetails: Record<string, { eyebrow: string; title: string; description:
     eyebrow: "طلبات الانضمام",
     title: "مراجعة التقديمات واتخاذ القرار",
     description: "البحث والفلترة والمقابلات والقبول أو الرفض بدون تشتيت من أدوات الأقسام الأخرى.",
+  },
+  STREAMERS: {
+    eyebrow: "فريق المحتوى",
+    title: "تقديمات رتبة Streamer",
+    description: "ملفات صناع المحتوى، روابط القنوات، المقابلات والقبول المباشر مع إعطاء رتبة Streamer.",
   },
   DISCIPLINE: {
     eyebrow: "الانضباط الداخلي",
@@ -155,7 +162,7 @@ export default async function AdminPage({
     : "ALL";
   const query = readSearchParam(params?.q).trim();
   const showAllLogs = readSearchParam(params?.logs) === "all";
-  const mode = ["OVERVIEW", "APPLICATIONS", "DISCIPLINE", "MEMBERS", "SYSTEM"].includes(modeParam) ? modeParam : "OVERVIEW";
+  const requestedMode = ["OVERVIEW", "APPLICATIONS", "STREAMERS", "DISCIPLINE", "MEMBERS", "SYSTEM"].includes(modeParam) ? modeParam : "OVERVIEW";
   const memberFilter = ["WARNED", "HIGH_RISK", "LEAVE", "SUMMONED", "RISK"].includes(memberParam)
     ? memberParam
     : "ALL";
@@ -185,6 +192,28 @@ export default async function AdminPage({
     );
   }
 
+  const canAccessMode = (candidate: string) => {
+    if (admin.capabilities.ALL) return true;
+    if (candidate === "APPLICATIONS") return admin.capabilities.APPLICATIONS;
+    if (candidate === "STREAMERS") return admin.capabilities.STREAMERS;
+    if (candidate === "DISCIPLINE") return admin.capabilities.WARNINGS;
+    if (candidate === "MEMBERS") return admin.capabilities.MEMBERS;
+    if (candidate === "SYSTEM") return admin.capabilities.LOGS;
+    return false;
+  };
+  const defaultMode = admin.capabilities.ALL
+    ? "OVERVIEW"
+    : admin.capabilities.APPLICATIONS
+      ? "APPLICATIONS"
+      : admin.capabilities.STREAMERS
+        ? "STREAMERS"
+        : admin.capabilities.WARNINGS
+          ? "DISCIPLINE"
+          : admin.capabilities.MEMBERS
+            ? "MEMBERS"
+            : "SYSTEM";
+  const mode = canAccessMode(requestedMode) ? requestedMode : defaultMode;
+  const applicationMode = mode === "APPLICATIONS" || mode === "STREAMERS";
   const shouldSyncMembers = mode === "OVERVIEW" || mode === "MEMBERS" || mode === "DISCIPLINE" || mode === "SYSTEM";
   const tokyoSync = shouldSyncMembers ? await syncTokyoMembersSafely() : null;
 
@@ -192,7 +221,13 @@ export default async function AdminPage({
     await syncWarningsSafely();
   }
 
+  const regularApplicationScope = {
+    OR: [{ reviewFlag: null }, { reviewFlag: { not: STREAMER_APPLICATION_FLAG } }],
+  };
+  const streamerApplicationScope = { reviewFlag: STREAMER_APPLICATION_FLAG };
+  const applicationScope = mode === "STREAMERS" ? streamerApplicationScope : regularApplicationScope;
   const applicationWhere = {
+    AND: [applicationScope],
     ...(activeStatus === "ALL" || activeStatus === "PRIORITY" ? {} : { status: activeStatus }),
     ...(activeStatus === "PRIORITY"
       ? {
@@ -219,6 +254,7 @@ export default async function AdminPage({
     filteredApplicationCount,
     totalApplications,
     pendingApplicationCount,
+    pendingStreamerApplicationCount,
     acceptedApplications,
     rejectedApplications,
     trialApplications,
@@ -256,12 +292,13 @@ export default async function AdminPage({
       take: applicationPageSize,
     }),
     prisma.application.count({ where: applicationWhere }),
-    prisma.application.count(),
-    prisma.application.count({ where: { status: "PENDING" } }),
-    prisma.application.count({ where: { status: "ACCEPTED" } }),
-    prisma.application.count({ where: { status: "REJECTED" } }),
-    prisma.application.count({ where: { status: "TRIAL" } }),
-    prisma.application.count({ where: { status: "PENDING", createdAt: { gte: dayAgo } } }),
+    prisma.application.count({ where: regularApplicationScope }),
+    prisma.application.count({ where: { AND: [regularApplicationScope], status: "PENDING" } }),
+    prisma.application.count({ where: { status: "PENDING", reviewFlag: STREAMER_APPLICATION_FLAG } }),
+    prisma.application.count({ where: { AND: [regularApplicationScope], status: "ACCEPTED" } }),
+    prisma.application.count({ where: { AND: [regularApplicationScope], status: "REJECTED" } }),
+    prisma.application.count({ where: { AND: [regularApplicationScope], status: "TRIAL" } }),
+    prisma.application.count({ where: { AND: [regularApplicationScope], status: "PENDING", createdAt: { gte: dayAgo } } }),
     prisma.announcement.findMany({ orderBy: { createdAt: "desc" }, take: 10 }),
     prisma.tokyoMember.findMany({
       where: { inTokyoRole: true },
@@ -448,6 +485,14 @@ export default async function AdminPage({
       tone: "border-yellow-400/25 bg-yellow-400/10 text-yellow-200",
     },
     {
+      mode: "STREAMERS",
+      label: "تقديمات الستريمرز",
+      value: pendingStreamerApplicationCount,
+      detail: "ملف Streamer ينتظر المراجعة",
+      features: ["روابط القنوات", "مقابلات", "رتبة تلقائية"],
+      tone: "border-lime-400/25 bg-lime-400/10 text-lime-200",
+    },
+    {
       mode: "DISCIPLINE",
       label: "الانضباط والشكاوى",
       value: complaints.filter((item) => item.status !== "RESOLVED" && item.status !== "DISMISSED").length + activeSummons.filter((item) => item.status === "ACTIVE").length,
@@ -471,14 +516,15 @@ export default async function AdminPage({
       features: ["إعلانات وتنبيهات", "فريق الإدارة", "تقارير وتشخيص"],
       tone: "border-green-400/25 bg-green-400/10 text-green-200",
     },
-  ];
+  ].filter((card) => canAccessMode(card.mode));
   const adminNavigation = [
     { label: "نظرة عامة", value: "OVERVIEW", hint: "مركز القيادة", badge: quickReviewItems.reduce((sum, [, value]) => sum + Number(value), 0) },
     { label: "التقديمات", value: "APPLICATIONS", hint: "الطلبات والقرارات", badge: pendingApplicationCount },
+    { label: "الستريمرز", value: "STREAMERS", hint: "تقديمات فريق المحتوى", badge: pendingStreamerApplicationCount },
     { label: "الانضباط", value: "DISCIPLINE", hint: "الشكاوى والاستدعاءات", badge: complaints.filter((item) => item.status !== "RESOLVED" && item.status !== "DISMISSED").length },
     { label: "الأعضاء", value: "MEMBERS", hint: "الملفات والمخاطر", badge: highRiskMemberCount },
     { label: "النظام", value: "SYSTEM", hint: "التقارير والتكاملات", badge: 0 },
-  ];
+  ].filter((item) => canAccessMode(item.value));
 
   return (
     <main dir="rtl" className="tokyo-dashboard relative min-h-screen overflow-hidden px-3 py-5 text-white sm:px-5 md:p-10">
@@ -596,7 +642,7 @@ export default async function AdminPage({
           </div>
         </section>
 
-        <section className="tokyo-scrollbar sticky top-2 z-40 mb-8 grid auto-cols-[minmax(150px,1fr)] grid-flow-col gap-2 overflow-x-auto rounded-2xl border border-white/10 bg-black/85 p-2 shadow-[0_20px_60px_rgba(0,0,0,0.36)] backdrop-blur-2xl md:mb-10 md:grid-flow-row md:grid-cols-5 md:rounded-3xl">
+        <section className="tokyo-scrollbar sticky top-2 z-40 mb-8 grid auto-cols-[minmax(150px,1fr)] grid-flow-col gap-2 overflow-x-auto rounded-2xl border border-white/10 bg-black/85 p-2 shadow-[0_20px_60px_rgba(0,0,0,0.36)] backdrop-blur-2xl md:mb-10 md:auto-cols-fr md:overflow-visible md:rounded-3xl">
           {adminNavigation.map((item) => (
             <Link
               key={item.value}
@@ -943,7 +989,7 @@ export default async function AdminPage({
           </section>
         )}
 
-        {(mode === "OVERVIEW" || mode === "SYSTEM" || mode === "APPLICATIONS") && announcements.length > 0 && (
+        {(mode === "OVERVIEW" || mode === "SYSTEM" || applicationMode) && announcements.length > 0 && (
           <section className="mb-8 grid gap-4 md:mb-10 md:grid-cols-2">
             {announcements.map((announcement) => (
               <article key={announcement.id} className="rounded-2xl border border-white/15 bg-zinc-950 p-5 md:rounded-3xl md:p-6">
@@ -956,9 +1002,9 @@ export default async function AdminPage({
           </section>
         )}
 
-        {mode === "APPLICATIONS" && <section className="sticky top-2 z-40 mb-8 rounded-2xl border border-white/10 bg-black/85 p-3 backdrop-blur-xl md:top-0 md:rounded-3xl md:p-4">
+        {applicationMode && <section className="sticky top-2 z-40 mb-8 rounded-2xl border border-white/10 bg-black/85 p-3 backdrop-blur-xl md:top-0 md:rounded-3xl md:p-4">
           <form className="mb-4 flex flex-col gap-3 md:flex-row" action="/admin">
-            <input type="hidden" name="mode" value="APPLICATIONS" />
+            <input type="hidden" name="mode" value={mode} />
             {activeStatus !== "ALL" && <input type="hidden" name="status" value={activeStatus} />}
             <input
               name="q"
@@ -970,14 +1016,14 @@ export default async function AdminPage({
               بحث
             </button>
             {query && (
-              <Link href={buildAdminHref({ mode: "APPLICATIONS", status: activeStatus ?? "ALL" })} className="rounded-2xl border border-white/15 px-6 py-3 text-center font-black text-gray-300">
+              <Link href={buildAdminHref({ mode, status: activeStatus ?? "ALL" })} className="rounded-2xl border border-white/15 px-6 py-3 text-center font-black text-gray-300">
                 مسح
               </Link>
             )}
           </form>
           <div className="flex gap-2 overflow-x-auto pb-1 md:flex-wrap md:overflow-visible md:pb-0">
           {filterTabs.map(([label, status]) => {
-            const href = buildAdminHref({ mode: "APPLICATIONS", status, query });
+            const href = buildAdminHref({ mode, status, query });
             const active = activeStatus === status;
 
             return (
@@ -1002,10 +1048,11 @@ export default async function AdminPage({
           </div>
         </section>}
 
-        {mode === "APPLICATIONS" && <section className="grid gap-5 md:gap-6">
-          {applications.length === 0 && <AdminEmptyState title="لا توجد تقديمات" message="لا توجد طلبات مطابقة للفلاتر الحالية." />}
+        {applicationMode && <section className="grid gap-5 md:gap-6">
+          {applications.length === 0 && <AdminEmptyState title={mode === "STREAMERS" ? "لا توجد تقديمات Streamer" : "لا توجد تقديمات"} message="لا توجد طلبات مطابقة للفلاتر الحالية." />}
           {applications.map((app) => {
             const style = statusStyles[app.status] ?? statusStyles.PENDING;
+            const streamerApplication = isStreamerApplication(app.reviewFlag);
             const quality = calculateApplicationQuality(app);
             const submittedAt = new Intl.DateTimeFormat("ar", {
               dateStyle: "medium",
@@ -1041,7 +1088,7 @@ export default async function AdminPage({
 
                   <div className="flex flex-wrap items-center gap-3">
                     <AdminStatusBadge value={app.status} />
-                    <span className={`rounded-full border px-4 py-2 text-sm font-black ${
+                    {!streamerApplication && <span className={`rounded-full border px-4 py-2 text-sm font-black ${
                       quality.level === "STRONG"
                         ? "border-green-400/25 bg-green-400/10 text-green-300"
                         : quality.level === "NORMAL"
@@ -1049,7 +1096,8 @@ export default async function AdminPage({
                           : "border-red-500/25 bg-red-500/10 text-red-300"
                     }`}>
                       QUALITY {quality.score} - {quality.label}
-                    </span>
+                    </span>}
+                    {streamerApplication && <span className="rounded-full border border-lime-400/25 bg-lime-400/10 px-4 py-2 text-sm font-black text-lime-300">STREAMER FILE</span>}
                     <span className="rounded-full border border-white/15 bg-black/35 px-4 py-2 text-sm text-gray-300">
                       {submittedAt}
                     </span>
@@ -1062,33 +1110,37 @@ export default async function AdminPage({
                     <p className="mt-2 font-bold text-white">{app.age}</p>
                   </div>
                   <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
-                    <p className="text-xs text-gray-500">المدينة</p>
+                    <p className="text-xs text-gray-500">{streamerApplication ? "منصة البث" : "المدينة"}</p>
                     <p className="mt-2 font-bold text-white">{app.city ?? "غير محدد"}</p>
                   </div>
                   <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
-                    <p className="text-xs text-gray-500">ساعات اللعب / المايك</p>
+                    <p className="text-xs text-gray-500">{streamerApplication ? "التفرغ / المايك" : "ساعات اللعب / المايك"}</p>
                     <p className="mt-2 font-bold text-white">
                       {app.dailyHours ?? "غير محدد"} - {app.hasMic ? "معه مايك" : "بدون مايك"}
                     </p>
                   </div>
-                  {app.reviewFlag && (
+                  {app.reviewFlag && !streamerApplication && (
                     <div className="rounded-2xl border border-yellow-400/20 bg-yellow-400/10 p-4 md:col-span-3">
                       <p className="text-xs text-yellow-300">تنبيه مراجعة</p>
                       <p className="mt-2 leading-8 text-white">{app.reviewFlag}</p>
                     </div>
                   )}
-                  {quality.notes.length > 0 && (
+                  {!streamerApplication && quality.notes.length > 0 && (
                     <div className="rounded-2xl border border-orange-400/20 bg-orange-400/10 p-4 md:col-span-3">
                       <p className="text-xs text-orange-300">ملاحظات جودة التقديم</p>
                       <p className="mt-2 leading-8 text-white">{quality.notes.join("، ")}</p>
                     </div>
                   )}
                   <div className="rounded-2xl border border-white/10 bg-black/30 p-4 md:col-span-2">
-                    <p className="text-xs text-gray-500">الخبرة</p>
-                    <p className="mt-2 leading-8 text-white">{app.experience}</p>
+                    <p className="text-xs text-gray-500">{streamerApplication ? "رابط القناة" : "الخبرة"}</p>
+                    {streamerApplication ? (
+                      <a href={app.experience} target="_blank" rel="noreferrer" dir="ltr" className="mt-2 block break-all text-left font-bold leading-8 text-lime-300 hover:text-white">{app.experience}</a>
+                    ) : (
+                      <p className="mt-2 leading-8 text-white">{app.experience}</p>
+                    )}
                   </div>
                   <div className="rounded-2xl border border-white/10 bg-black/30 p-4 md:col-span-3">
-                    <p className="text-xs text-gray-500">سبب الانضمام</p>
+                    <p className="text-xs text-gray-500">{streamerApplication ? "الخبرة ونوع المحتوى" : "سبب الانضمام"}</p>
                     <p className="mt-2 leading-8 text-white">{app.reason}</p>
                   </div>
                   {app.decisionReason && (
@@ -1101,7 +1153,7 @@ export default async function AdminPage({
                     <div className="rounded-2xl border border-yellow-400/20 bg-yellow-400/10 p-4 md:col-span-3">
                       <p className="text-xs text-yellow-300">معلومات المقابلة</p>
                       <p className="mt-2 leading-8 text-white">
-                        {app.interviewAt ? `${app.interviewAt.toLocaleString("ar")} - ` : ""}
+                        {app.interviewAt ? `${app.interviewAt.toLocaleString("ar", { timeZone: "Europe/Stockholm" })} - ` : ""}
                         {app.interviewNote}
                       </p>
                     </div>
@@ -1114,7 +1166,7 @@ export default async function AdminPage({
                   )}
                 </div>
 
-                <AdminDecisionButtons applicationId={app.id} status={app.status} />
+                <AdminDecisionButtons applicationId={app.id} status={app.status} applicationType={streamerApplication ? "STREAMER" : "GANG"} />
               </article>
             );
           })}
@@ -1126,7 +1178,7 @@ export default async function AdminPage({
               <div className="flex gap-2">
                 {applicationPage > 1 && (
                   <Link
-                    href={buildAdminHref({ mode: "APPLICATIONS", status: activeStatus ?? "ALL", query, page: applicationPage - 1 })}
+                    href={buildAdminHref({ mode, status: activeStatus ?? "ALL", query, page: applicationPage - 1 })}
                     className="rounded-xl border border-white/15 px-5 py-3 text-sm font-black text-gray-200 transition hover:border-white/35 hover:text-white"
                   >
                     السابق
@@ -1134,7 +1186,7 @@ export default async function AdminPage({
                 )}
                 {applicationPage < applicationPageCount && (
                   <Link
-                    href={buildAdminHref({ mode: "APPLICATIONS", status: activeStatus ?? "ALL", query, page: applicationPage + 1 })}
+                    href={buildAdminHref({ mode, status: activeStatus ?? "ALL", query, page: applicationPage + 1 })}
                     className="rounded-xl bg-white px-5 py-3 text-sm font-black text-black transition hover:bg-gray-300"
                   >
                     التالي

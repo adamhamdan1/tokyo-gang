@@ -10,6 +10,7 @@ export const PRIMARY_NAVIGATION = [
 
 export const MEMBER_NAVIGATION = [
   { label: "حالة طلبي", href: "/status", code: "FILE", tone: "green" },
+  { label: "تقديم Streamer", href: "/streamer-apply", code: "MEDIA", tone: "emerald" },
   { label: "الشكاوي", href: "/complaints", code: "CASE", tone: "cyan" },
   { label: "الإجازات", href: "/leave", code: "LEAVE", tone: "emerald" },
   { label: "القوانين الداخلية", href: "/rules-internal", code: "LAW", tone: "yellow" },

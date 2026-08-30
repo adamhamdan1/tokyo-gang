@@ -148,6 +148,12 @@ export const TOKYO_ROLE_CATEGORIES = [
         description: "مسؤول عن استقبال الطلبات وقبول الأعضاء الجدد في العصابة.",
       },
       {
+        key: "STREAMER_MANAGER",
+        discordName: "Streamer Manager ش",
+        label: "مسؤول الستريمرز",
+        description: "مسؤول عن مراجعة تقديمات الستريمرز والمقابلات والقبول في الفريق الإعلامي.",
+      },
+      {
         key: "ON_LEAVE",
         discordName: "On Leave ش",
         label: "بإجازة",

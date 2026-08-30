@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import { isStreamerApplication } from "@/lib/application-types";
 
 const statusLabels: Record<string, string> = {
   PENDING: "قيد المراجعة",
@@ -45,6 +46,7 @@ export default async function StatusPage() {
   });
 
   const application = user?.applications[0];
+  const streamerApplication = isStreamerApplication(application?.reviewFlag);
 
   return (
     <main dir="rtl" className="tokyo-dashboard min-h-screen p-5 text-white md:p-10">
@@ -54,8 +56,8 @@ export default async function StatusPage() {
         </Link>
 
         <section className="tokyo-panel p-6 md:p-8">
-          <p className="text-sm font-black tracking-[6px] text-red-500">TOKYO APPLICATION</p>
-          <h1 className="mt-3 text-4xl font-black md:text-5xl">حالة الطلب</h1>
+          <p className="text-sm font-black tracking-[6px] text-red-500">{streamerApplication ? "TOKYO STREAMER APPLICATION" : "TOKYO APPLICATION"}</p>
+          <h1 className="mt-3 text-4xl font-black md:text-5xl">{streamerApplication ? "حالة تقديم Streamer" : "حالة الطلب"}</h1>
           <p className="mt-3 text-sm leading-7 text-gray-400">تابع آخر تحديث لتقديمك وموعد المقابلة أو سبب القرار من مكان واحد.</p>
 
           {!application ? (
@@ -76,11 +78,11 @@ export default async function StatusPage() {
                   <p className="mt-2 font-bold">{application.createdAt.toLocaleString("ar")}</p>
                 </div>
                 <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
-                  <p className="text-xs text-gray-500">المدينة</p>
+                  <p className="text-xs text-gray-500">{streamerApplication ? "منصة البث" : "المدينة"}</p>
                   <p className="mt-2 font-bold">{application.city ?? "غير محدد"}</p>
                 </div>
                 <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
-                  <p className="text-xs text-gray-500">ساعات اللعب / المايك</p>
+                  <p className="text-xs text-gray-500">{streamerApplication ? "التفرغ / المايك" : "ساعات اللعب / المايك"}</p>
                   <p className="mt-2 font-bold">
                     {application.dailyHours ?? "غير محدد"} - {application.hasMic ? "معه مايك" : "بدون مايك"}
                   </p>
@@ -98,7 +100,7 @@ export default async function StatusPage() {
                 <div className="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-4">
                   <p className="text-xs text-cyan-300">معلومات المقابلة</p>
                   <p className="mt-2 leading-8">
-                    {application.interviewAt ? `${application.interviewAt.toLocaleString("ar")} - ` : ""}
+                    {application.interviewAt ? `${application.interviewAt.toLocaleString("ar", { timeZone: "Europe/Stockholm" })} - ` : ""}
                     {application.interviewNote}
                   </p>
                 </div>

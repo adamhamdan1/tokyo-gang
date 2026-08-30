@@ -932,6 +932,10 @@ export default function Home() {
             <span className="h-2 w-2 animate-pulse rounded-full bg-[#53fc18] shadow-[0_0_14px_#53fc18]" />
             OFFICIAL TOKYO CREATORS
           </div>
+          <a href="/streamer-apply" className="mx-auto mt-5 inline-flex items-center gap-3 rounded-2xl border border-[#53fc18]/25 bg-[#53fc18]/10 px-6 py-3.5 text-sm font-black text-[#78ff4c] shadow-[0_0_30px_rgba(83,252,24,0.08)] transition hover:-translate-y-0.5 hover:bg-[#53fc18] hover:text-black">
+            <span className="text-lg font-black">K</span>
+            تقديم رتبة Streamer
+          </a>
         </div>
 
         <div className="relative mx-auto grid max-w-7xl grid-cols-1 gap-7 md:grid-cols-2 lg:grid-cols-6">

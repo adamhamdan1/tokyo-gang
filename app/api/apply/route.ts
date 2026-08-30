@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { isDiscordSnowflake, requireTokyoGuildMember, sendManagedWebhook } from "@/lib/discord";
 import { prisma } from "@/lib/prisma";
 import { cleanBoundedText, validateJsonWriteRequest } from "@/lib/request-security";
+import { STREAMER_APPLICATION_FLAG } from "@/lib/application-types";
 
 type ApplyBody = {
   name?: string;
@@ -109,6 +110,7 @@ export async function POST(req: Request) {
   const existingApplication = await prisma.application.findFirst({
     where: {
       userId: user.id,
+      OR: [{ reviewFlag: null }, { reviewFlag: { not: STREAMER_APPLICATION_FLAG } }],
       status: {
         in: ["PENDING", "ACCEPTED", "INTERVIEW"],
       },

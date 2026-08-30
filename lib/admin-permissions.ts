@@ -3,7 +3,7 @@ import { getTokyoGuildMember, resolveCatalogRoleId } from "@/lib/discord";
 import { prisma } from "@/lib/prisma";
 import { getTokyoRoleOption } from "@/lib/tokyo-content";
 
-export type AdminCapability = "ALL" | "APPLICATIONS" | "WARNINGS" | "MEMBERS" | "LOGS";
+export type AdminCapability = "ALL" | "APPLICATIONS" | "STREAMERS" | "WARNINGS" | "MEMBERS" | "LOGS";
 
 export type AdminContext = {
   id: string;
@@ -15,6 +15,7 @@ export type AdminContext = {
 
 const capabilityRoleKeys: Record<Exclude<AdminCapability, "ALL">, string[]> = {
   APPLICATIONS: ["RECRUITMENT_MANAGER", "MANAGER", "STAFF"],
+  STREAMERS: ["STREAMER_MANAGER"],
   WARNINGS: ["WARNINGS_MANAGER", "MANAGER", "STAFF"],
   MEMBERS: ["MANAGER", "STAFF"],
   LOGS: ["MANAGER", "STAFF"],
@@ -79,6 +80,7 @@ export async function getAdminContext(): Promise<AdminContext | null> {
       capabilities: {
         ALL: true,
         APPLICATIONS: true,
+        STREAMERS: true,
         WARNINGS: true,
         MEMBERS: true,
         LOGS: true,
@@ -95,6 +97,7 @@ export async function getAdminContext(): Promise<AdminContext | null> {
       capabilities: {
         ALL: true,
         APPLICATIONS: true,
+        STREAMERS: true,
         WARNINGS: true,
         MEMBERS: true,
         LOGS: true,
@@ -104,8 +107,9 @@ export async function getAdminContext(): Promise<AdminContext | null> {
 
   const member = await getTokyoGuildMember(session.user.id).catch(() => null);
   const roles = member?.roles ?? [];
-  const [applicationRoleIds, warningRoleIds, memberRoleIds, logRoleIds] = await Promise.all([
+  const [applicationRoleIds, streamerRoleIds, warningRoleIds, memberRoleIds, logRoleIds] = await Promise.all([
     getCapabilityRoleIds(capabilityRoleKeys.APPLICATIONS),
+    getCapabilityRoleIds(capabilityRoleKeys.STREAMERS),
     getCapabilityRoleIds(capabilityRoleKeys.WARNINGS),
     getCapabilityRoleIds(capabilityRoleKeys.MEMBERS),
     getCapabilityRoleIds(capabilityRoleKeys.LOGS),
@@ -113,6 +117,7 @@ export async function getAdminContext(): Promise<AdminContext | null> {
   const capabilities = {
     ALL: false,
     APPLICATIONS: hasAnyRole(roles, applicationRoleIds),
+    STREAMERS: hasAnyRole(roles, streamerRoleIds),
     WARNINGS: hasAnyRole(roles, warningRoleIds),
     MEMBERS: hasAnyRole(roles, memberRoleIds),
     LOGS: hasAnyRole(roles, logRoleIds),

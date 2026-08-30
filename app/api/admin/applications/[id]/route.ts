@@ -1,7 +1,10 @@
-import { giveAcceptedRole, giveTrialRole, sendAdminLog, sendDiscordDm } from "@/lib/discord";
+import { giveAcceptedRole, giveCatalogRole, giveTrialRole, sendAdminLog, sendDiscordDm } from "@/lib/discord";
 import { createAdminLog } from "@/lib/admin-log";
-import { requireAdminCapability } from "@/lib/admin-permissions";
+import { getAdminContext } from "@/lib/admin-permissions";
+import { isStreamerApplication } from "@/lib/application-types";
 import { prisma } from "@/lib/prisma";
+import { validateJsonWriteRequest } from "@/lib/request-security";
+import { getTokyoRoleOption } from "@/lib/tokyo-content";
 import { NextResponse } from "next/server";
 
 type RouteContext = {
@@ -19,16 +22,19 @@ type UpdateBody = {
 };
 
 export async function PATCH(req: Request, context: RouteContext) {
-  const admin = await requireAdminCapability("APPLICATIONS");
+  const requestError = validateJsonWriteRequest(req, 12_000);
+  if (requestError) return NextResponse.json({ error: requestError }, { status: 400 });
+
+  const admin = await getAdminContext();
 
   if (!admin) {
     return NextResponse.json({ error: "Access Denied" }, { status: 403 });
   }
 
   const { id } = await context.params;
-  const body = (await req.json()) as UpdateBody;
+  const body = (await req.json().catch(() => null)) as UpdateBody | null;
 
-  if (!body.status || !["ACCEPTED", "REJECTED", "PENDING", "INTERVIEW", "TRIAL"].includes(body.status)) {
+  if (!body?.status || !["ACCEPTED", "REJECTED", "PENDING", "INTERVIEW", "TRIAL"].includes(body.status)) {
     return NextResponse.json({ error: "حالة غير صحيحة" }, { status: 400 });
   }
 
@@ -43,13 +49,27 @@ export async function PATCH(req: Request, context: RouteContext) {
     return NextResponse.json({ error: "التقديم غير موجود" }, { status: 404 });
   }
 
+  const streamerApplication = isStreamerApplication(currentApplication.reviewFlag);
+  const canReview = admin.capabilities.ALL || (streamerApplication ? admin.capabilities.STREAMERS : admin.capabilities.APPLICATIONS);
+  if (!canReview) return NextResponse.json({ error: "لا تملك صلاحية إدارة هذا النوع من التقديمات" }, { status: 403 });
+
+  if (streamerApplication && body.status === "TRIAL") {
+    return NextResponse.json({ error: "فترة التجربة متاحة لتقديمات العصابة فقط" }, { status: 400 });
+  }
+
   if (currentApplication.status === "ACCEPTED" && body.status === "ACCEPTED") {
     return NextResponse.json({ error: "هذا الطلب مقبول بالفعل" }, { status: 409 });
   }
 
   if (body.status === "ACCEPTED") {
     try {
-      await giveAcceptedRole(currentApplication.user.discordId);
+      if (streamerApplication) {
+        const streamerRole = getTokyoRoleOption("STREAMER");
+        if (!streamerRole) throw new Error("إعداد رتبة Streamer غير موجود");
+        await giveCatalogRole(currentApplication.user.discordId, streamerRole.key, streamerRole.discordName);
+      } else {
+        await giveAcceptedRole(currentApplication.user.discordId);
+      }
     } catch (error) {
       return NextResponse.json(
         { error: error instanceof Error ? error.message : "فشل إعطاء الرتبة" },
@@ -73,8 +93,13 @@ export async function PATCH(req: Request, context: RouteContext) {
     body.status === "REJECTED"
       ? body.decisionReason?.trim() || "لم يتم ذكر سبب"
       : null;
-  const interviewAt =
-    body.status === "INTERVIEW" && body.interviewAt ? new Date(body.interviewAt) : null;
+  let interviewAt: Date | null = null;
+  if (body.status === "INTERVIEW") {
+    if (!body.interviewAt) return NextResponse.json({ error: "حدد تاريخ ووقت المقابلة" }, { status: 400 });
+    const parsedInterviewAt = new Date(body.interviewAt);
+    if (Number.isNaN(parsedInterviewAt.getTime())) return NextResponse.json({ error: "صيغة موعد المقابلة غير صحيحة" }, { status: 400 });
+    interviewAt = parsedInterviewAt;
+  }
   const interviewNote =
     body.status === "INTERVIEW" ? body.interviewNote?.trim() || "تم تحديد مقابلة" : null;
 
@@ -94,7 +119,9 @@ export async function PATCH(req: Request, context: RouteContext) {
   if (body.status === "ACCEPTED") {
     await sendDiscordDm(
       currentApplication.user.discordId,
-      `TOKYO GANG\n\nتم قبول طلبك رسمياً.\nتم إعطاؤك الرتبة تلقائياً، أهلاً في العصابة.\n\nالتزم بالقوانين وخليك قد الثقة.`
+      streamerApplication
+        ? `TOKYO MEDIA\n\nتم قبول تقديمك كـ Streamer رسمياً.\nتم إعطاؤك رتبة Streamer تلقائياً.\n\nمثّل TOKYO بأفضل صورة وخليك قد الثقة.`
+        : `TOKYO GANG\n\nتم قبول طلبك رسمياً.\nتم إعطاؤك الرتبة تلقائياً، أهلاً في العصابة.\n\nالتزم بالقوانين وخليك قد الثقة.`
     ).catch((error) => console.error("Discord DM failed", error));
   }
 
@@ -116,7 +143,7 @@ export async function PATCH(req: Request, context: RouteContext) {
     await sendDiscordDm(
       currentApplication.user.discordId,
       `TOKYO GANG\n\nطلبك انتقل لمرحلة المقابلة.\nالموعد: ${
-        interviewAt ? interviewAt.toLocaleString("ar") : "سيتم تحديده قريباً"
+        interviewAt ? interviewAt.toLocaleString("ar", { timeZone: "Europe/Stockholm" }) : "سيتم تحديده قريباً"
       }\nملاحظة: ${interviewNote}\n\nراجع القوانين قبل المقابلة.`
     ).catch((error) => console.error("Discord DM failed", error));
   }
@@ -146,7 +173,7 @@ export async function PATCH(req: Request, context: RouteContext) {
 }
 
 export async function DELETE(_req: Request, context: RouteContext) {
-  const admin = await requireAdminCapability("APPLICATIONS");
+  const admin = await getAdminContext();
 
   if (!admin) {
     return NextResponse.json({ error: "Access Denied" }, { status: 403 });
@@ -157,6 +184,11 @@ export async function DELETE(_req: Request, context: RouteContext) {
     where: { id },
     include: { user: true },
   });
+
+  if (!application) return NextResponse.json({ error: "التقديم غير موجود" }, { status: 404 });
+  const streamerApplication = isStreamerApplication(application.reviewFlag);
+  const canDelete = admin.capabilities.ALL || (streamerApplication ? admin.capabilities.STREAMERS : admin.capabilities.APPLICATIONS);
+  if (!canDelete) return NextResponse.json({ error: "لا تملك صلاحية حذف هذا التقديم" }, { status: 403 });
 
   await prisma.application.delete({
     where: { id },
