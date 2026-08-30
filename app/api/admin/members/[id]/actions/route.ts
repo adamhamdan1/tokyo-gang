@@ -4,6 +4,7 @@ import { applyInternalRankRole, giveCatalogRole, giveLeaveRole, removeCatalogRol
 import { prisma } from "@/lib/prisma";
 import { getTokyoRoleOption } from "@/lib/tokyo-content";
 import { NextResponse } from "next/server";
+import { ensureCommandSchema } from "@/lib/command-schema";
 
 type RouteContext = {
   params: Promise<{
@@ -22,6 +23,10 @@ type ActionBody = {
   durationDays?: number;
   roleKey?: string;
   mode?: string;
+  loyaltyScore?: number;
+  activityScore?: number;
+  securityClearance?: string;
+  intelligenceTags?: string;
 };
 
 const allowedRanks = ["MEMBER", "SENIOR", "OFFICER", "DEPUTY", "LEADER"];
@@ -32,6 +37,7 @@ export async function POST(req: Request, context: RouteContext) {
   if (!admin) {
     return NextResponse.json({ error: "Access Denied" }, { status: 403 });
   }
+  await ensureCommandSchema();
 
   const { id } = await context.params;
   const body = (await req.json()) as ActionBody;
@@ -145,6 +151,38 @@ export async function POST(req: Request, context: RouteContext) {
       targetMemberId: member.id,
     });
 
+    return NextResponse.json({ success: true });
+  }
+  if (body.action === "INTELLIGENCE") {
+    const loyaltyScore = Number(body.loyaltyScore);
+    const activityScore = Number(body.activityScore);
+    const securityClearance = body.securityClearance?.toUpperCase() ?? "";
+    const tags = body.intelligenceTags?.split(",").map((tag) => tag.trim()).filter(Boolean).slice(0, 12) ?? [];
+    if (![loyaltyScore, activityScore].every((score) => Number.isFinite(score) && score >= 0 && score <= 100)) {
+      return NextResponse.json({ error: "تقييم الولاء والنشاط لازم يكون بين 0 و100" }, { status: 400 });
+    }
+    if (!["STANDARD", "TRUSTED", "RESTRICTED", "HIGH_COMMAND"].includes(securityClearance)) {
+      return NextResponse.json({ error: "مستوى التصريح غير صحيح" }, { status: 400 });
+    }
+    const updated = await prisma.tokyoMember.update({
+      where: { id: member.id },
+      data: {
+        loyaltyScore: Math.round(loyaltyScore),
+        activityScore: Math.round(activityScore),
+        securityClearance,
+        intelligenceTags: tags.length ? JSON.stringify(tags) : null,
+        lastReviewedAt: new Date(),
+      },
+    });
+    await createAdminLog({
+      action: "MEMBER_INTELLIGENCE_REVIEW",
+      title: `تحديث ملف استخبارات ${member.displayName}`,
+      details: `ولاء ${updated.loyaltyScore}/100 — نشاط ${updated.activityScore}/100 — تصريح ${updated.securityClearance}${tags.length ? `\nTags: ${tags.join(", ")}` : ""}`,
+      adminDiscordId: admin.id,
+      targetType: "MEMBER",
+      targetId: member.id,
+      targetMemberId: member.id,
+    });
     return NextResponse.json({ success: true });
   }
 

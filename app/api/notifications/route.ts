@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { ensureCommandSchema } from "@/lib/command-schema";
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +26,7 @@ const applicationCopy: Record<string, { title: string; message: string; level: N
 };
 
 export async function GET() {
+  await ensureCommandSchema();
   const session = await auth();
   const now = new Date();
   const notifications: TokyoNotification[] = [];

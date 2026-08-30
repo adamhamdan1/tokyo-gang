@@ -3,7 +3,7 @@ import { getTokyoGuildMember, resolveCatalogRoleId } from "@/lib/discord";
 import { prisma } from "@/lib/prisma";
 import { getTokyoRoleOption } from "@/lib/tokyo-content";
 
-export type AdminCapability = "ALL" | "APPLICATIONS" | "STREAMERS" | "WARNINGS" | "MEMBERS" | "LOGS";
+export type AdminCapability = "ALL" | "APPLICATIONS" | "STREAMERS" | "OPERATIONS" | "WARNINGS" | "MEMBERS" | "LOGS";
 
 export type AdminContext = {
   id: string;
@@ -16,6 +16,7 @@ export type AdminContext = {
 const capabilityRoleKeys: Record<Exclude<AdminCapability, "ALL">, string[]> = {
   APPLICATIONS: ["RECRUITMENT_MANAGER", "MANAGER", "STAFF"],
   STREAMERS: ["STREAMER_MANAGER"],
+  OPERATIONS: ["OWNER_LEADER", "CO_LEADER", "MANAGER", "STAFF"],
   WARNINGS: ["WARNINGS_MANAGER", "MANAGER", "STAFF"],
   MEMBERS: ["MANAGER", "STAFF"],
   LOGS: ["MANAGER", "STAFF"],
@@ -81,6 +82,7 @@ export async function getAdminContext(): Promise<AdminContext | null> {
         ALL: true,
         APPLICATIONS: true,
         STREAMERS: true,
+        OPERATIONS: true,
         WARNINGS: true,
         MEMBERS: true,
         LOGS: true,
@@ -98,6 +100,7 @@ export async function getAdminContext(): Promise<AdminContext | null> {
         ALL: true,
         APPLICATIONS: true,
         STREAMERS: true,
+        OPERATIONS: true,
         WARNINGS: true,
         MEMBERS: true,
         LOGS: true,
@@ -107,9 +110,10 @@ export async function getAdminContext(): Promise<AdminContext | null> {
 
   const member = await getTokyoGuildMember(session.user.id).catch(() => null);
   const roles = member?.roles ?? [];
-  const [applicationRoleIds, streamerRoleIds, warningRoleIds, memberRoleIds, logRoleIds] = await Promise.all([
+  const [applicationRoleIds, streamerRoleIds, operationRoleIds, warningRoleIds, memberRoleIds, logRoleIds] = await Promise.all([
     getCapabilityRoleIds(capabilityRoleKeys.APPLICATIONS),
     getCapabilityRoleIds(capabilityRoleKeys.STREAMERS),
+    getCapabilityRoleIds(capabilityRoleKeys.OPERATIONS),
     getCapabilityRoleIds(capabilityRoleKeys.WARNINGS),
     getCapabilityRoleIds(capabilityRoleKeys.MEMBERS),
     getCapabilityRoleIds(capabilityRoleKeys.LOGS),
@@ -118,6 +122,7 @@ export async function getAdminContext(): Promise<AdminContext | null> {
     ALL: false,
     APPLICATIONS: hasAnyRole(roles, applicationRoleIds),
     STREAMERS: hasAnyRole(roles, streamerRoleIds),
+    OPERATIONS: hasAnyRole(roles, operationRoleIds),
     WARNINGS: hasAnyRole(roles, warningRoleIds),
     MEMBERS: hasAnyRole(roles, memberRoleIds),
     LOGS: hasAnyRole(roles, logRoleIds),

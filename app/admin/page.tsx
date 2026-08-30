@@ -34,6 +34,7 @@ import { parseStoredSiteContent } from "@/lib/site-content";
 import { STREAMER_APPLICATION_FLAG, isStreamerApplication } from "@/lib/application-types";
 import Link from "next/link";
 import Image from "next/image";
+import { ensureCommandSchema } from "@/lib/command-schema";
 
 const statusStyles: Record<string, string> = {
   PENDING: "border-yellow-400/40 bg-yellow-400/10 text-yellow-300 shadow-[0_0_24px_rgba(250,204,21,0.12)]",
@@ -57,6 +58,7 @@ const capabilityLabels: Record<string, string> = {
   ALL: "كامل الصلاحيات",
   APPLICATIONS: "إدارة التقديمات",
   STREAMERS: "إدارة تقديمات الستريمرز",
+  OPERATIONS: "إدارة العمليات والحضور",
   WARNINGS: "إدارة التحذيرات",
   MEMBERS: "إدارة الأعضاء",
   LOGS: "سجل الإدارة",
@@ -220,6 +222,8 @@ export default async function AdminPage({
   if (shouldSyncMembers) {
     await syncWarningsSafely();
   }
+
+  await ensureCommandSchema();
 
   const regularApplicationScope = {
     OR: [{ reviewFlag: null }, { reviewFlag: { not: STREAMER_APPLICATION_FLAG } }],
@@ -579,6 +583,14 @@ export default async function AdminPage({
             الرجوع للرئيسية
           </Link>
           <AdminSignOutButton />
+          {(admin.capabilities.ALL || admin.capabilities.OPERATIONS) && (
+            <Link
+              href="/admin/operations"
+              className="flex items-center justify-center gap-2 rounded-2xl border border-red-400/25 bg-red-400/10 px-5 py-3 text-sm font-black text-red-200 transition hover:border-red-400/45 hover:bg-red-400/15"
+            >
+              مركز العمليات
+            </Link>
+          )}
           <TokyoCommandPalette
             variant="admin"
             label="بحث سريع"
@@ -671,6 +683,23 @@ export default async function AdminPage({
 
         {mode === "OVERVIEW" && (
           <section className="mb-8 grid gap-4 md:mb-10 md:grid-cols-2 xl:grid-cols-4">
+            {(admin.capabilities.ALL || admin.capabilities.OPERATIONS) && (
+              <Link
+                href="/admin/operations"
+                className="tokyo-admin-stat group relative overflow-hidden rounded-3xl border border-red-400/25 bg-red-400/10 p-5 text-red-200 transition duration-300 hover:shadow-[0_24px_70px_rgba(239,68,68,0.14)]"
+              >
+                <div className="absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-red-300 to-transparent opacity-60" />
+                <p className="text-sm font-black">مركز العمليات</p>
+                <p className="mt-4 text-4xl font-black text-white">OPS</p>
+                <p className="mt-2 text-xs leading-6 opacity-75">تخطيط، تكليف، حضور ونتائج</p>
+                <div className="mt-4 flex flex-wrap gap-1.5">
+                  {['قائد وفريق', 'متابعة مباشرة', 'أرشيف النتائج'].map((feature) => (
+                    <span key={feature} className="rounded-full border border-current/20 bg-black/20 px-2.5 py-1 text-[10px] font-black text-white/80">{feature}</span>
+                  ))}
+                </div>
+                <span className="mt-5 inline-flex text-xs font-black text-white transition group-hover:translate-x-[-4px]">فتح المركز ←</span>
+              </Link>
+            )}
             {moduleCards.map((card) => (
               <Link
                 key={card.mode}
@@ -1156,6 +1185,14 @@ export default async function AdminPage({
                         {app.interviewAt ? `${app.interviewAt.toLocaleString("ar", { timeZone: "Europe/Stockholm" })} - ` : ""}
                         {app.interviewNote}
                       </p>
+                      {app.interviewAssignedTo && <p className="mt-2 text-xs font-black text-cyan-300">المسؤول: {app.interviewAssignedTo}</p>}
+                      {app.interviewScore !== null && (
+                        <div className="mt-3 flex flex-wrap items-center gap-2">
+                          <span className="rounded-full border border-cyan-400/25 bg-cyan-400/10 px-3 py-1 text-xs font-black text-cyan-200">التقييم {app.interviewScore}/100</span>
+                          {app.interviewAttendance && <span className="rounded-full border border-white/10 px-3 py-1 text-xs text-zinc-300">{app.interviewAttendance}</span>}
+                        </div>
+                      )}
+                      {app.interviewEvaluation && <p className="mt-3 text-sm leading-7 text-zinc-300">{app.interviewEvaluation}</p>}
                     </div>
                   )}
                   {app.internalNote && (
@@ -1166,7 +1203,7 @@ export default async function AdminPage({
                   )}
                 </div>
 
-                <AdminDecisionButtons applicationId={app.id} status={app.status} applicationType={streamerApplication ? "STREAMER" : "GANG"} />
+                <AdminDecisionButtons applicationId={app.id} status={app.status} applicationType={streamerApplication ? "STREAMER" : "GANG"} interviewAssignedTo={app.interviewAssignedTo} interviewScore={app.interviewScore} />
               </article>
             );
           })}

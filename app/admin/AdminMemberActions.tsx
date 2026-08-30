@@ -9,6 +9,10 @@ type Props = {
   displayName: string;
   currentRank: string;
   currentScore: number;
+  loyaltyScore: number;
+  activityScore: number;
+  securityClearance: string;
+  intelligenceTags?: string | null;
 };
 
 const noteTemplates = [
@@ -19,7 +23,7 @@ const noteTemplates = [
   "يفضل استدعاؤه لمراجعة الوضع",
 ];
 
-export function AdminMemberActions({ memberId, displayName, currentRank, currentScore }: Props) {
+export function AdminMemberActions({ memberId, displayName, currentRank, currentScore, loyaltyScore, activityScore, securityClearance, intelligenceTags }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
   const [noteTemplate, setNoteTemplate] = useState("");
@@ -89,6 +93,16 @@ export function AdminMemberActions({ memberId, displayName, currentRank, current
     });
   };
 
+  const updateIntelligence = (formData: FormData) => {
+    sendAction({
+      action: "INTELLIGENCE",
+      loyaltyScore: Number(formData.get("loyaltyScore")),
+      activityScore: Number(formData.get("activityScore")),
+      securityClearance: formData.get("securityClearance"),
+      intelligenceTags: formData.get("intelligenceTags"),
+    });
+  };
+
   const blacklist = () => {
     const reason = prompt("سبب البلاك ليست")?.trim();
     if (!reason) return;
@@ -101,6 +115,16 @@ export function AdminMemberActions({ memberId, displayName, currentRank, current
     <section className="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-5 md:rounded-3xl md:p-6">
       <p className="text-xs font-black tracking-[5px] text-cyan-300">MEMBER CONTROL</p>
       <div className="mt-5 grid gap-5">
+        <form action={updateIntelligence} className="grid gap-3 rounded-2xl border border-red-400/20 bg-red-400/[0.06] p-4">
+          <div><p className="font-black text-white">ملف الاستخبارات</p><p className="mt-1 text-xs text-zinc-500">تقييم داخلي سري يظهر لأصحاب الصلاحية فقط.</p></div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="grid gap-2 text-xs font-black text-zinc-400">الولاء<input name="loyaltyScore" type="number" min="0" max="100" defaultValue={loyaltyScore} className="rounded-xl border border-white/15 bg-black px-4 py-3 text-white outline-none" /></label>
+            <label className="grid gap-2 text-xs font-black text-zinc-400">النشاط<input name="activityScore" type="number" min="0" max="100" defaultValue={activityScore} className="rounded-xl border border-white/15 bg-black px-4 py-3 text-white outline-none" /></label>
+          </div>
+          <select name="securityClearance" defaultValue={securityClearance} className="rounded-xl border border-white/15 bg-black px-4 py-3 outline-none"><option value="STANDARD">STANDARD — عادي</option><option value="TRUSTED">TRUSTED — موثوق</option><option value="RESTRICTED">RESTRICTED — مقيد</option><option value="HIGH_COMMAND">HIGH COMMAND — قيادة</option></select>
+          <input name="intelligenceTags" defaultValue={(() => { try { return JSON.parse(intelligenceTags ?? "[]").join(", "); } catch { return intelligenceTags ?? ""; } })()} placeholder="وسوم مفصولة بفاصلة: نشط، قائد ميدان، مراقبة" className="rounded-xl border border-white/15 bg-black px-4 py-3 outline-none" />
+          <button disabled={loading === "INTELLIGENCE"} className="rounded-xl bg-red-500 px-5 py-3 font-black text-white disabled:opacity-50">اعتماد المراجعة الاستخباراتية</button>
+        </form>
         <form action={changeRank} className="grid gap-3 rounded-2xl border border-white/10 bg-black/35 p-4">
           <p className="font-black text-white">ترقية / تنزيل رتبة</p>
           <select name="rank" defaultValue={currentRank} className="rounded-xl border border-white/15 bg-black px-4 py-3 outline-none">

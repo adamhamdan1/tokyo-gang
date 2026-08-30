@@ -7,37 +7,42 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  discordId     String    @unique
-  username      String
-  image         String?
-  applications  Application[]
-  createdAt     DateTime  @default(now())
+  id           String        @id @default(cuid())
+  discordId    String        @unique
+  username     String
+  image        String?
+  applications Application[]
+  createdAt    DateTime      @default(now())
 }
 
 model Application {
-  id          String   @id @default(cuid())
-  name        String
-  age         String
-  city        String?
-  experience  String
-  reason      String
-  dailyHours  String?
-  hasMic      Boolean  @default(false)
-  acceptedRules Boolean @default(false)
-  reviewFlag  String?
-  status      String   @default("PENDING")
-  decisionReason String?
-  decidedBy   String?
-  decidedAt   DateTime?
-  internalNote String?
-  interviewAt DateTime?
-  interviewNote String?
+  id                   String    @id @default(cuid())
+  name                 String
+  age                  String
+  city                 String?
+  experience           String
+  reason               String
+  dailyHours           String?
+  hasMic               Boolean   @default(false)
+  acceptedRules        Boolean   @default(false)
+  reviewFlag           String?
+  status               String    @default("PENDING")
+  decisionReason       String?
+  decidedBy            String?
+  decidedAt            DateTime?
+  internalNote         String?
+  interviewAt          DateTime?
+  interviewNote        String?
+  interviewAssignedTo  String?
+  interviewAttendance  String?
+  interviewScore       Int?
+  interviewEvaluation  String?
+  interviewCompletedAt DateTime?
 
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
 
-  createdAt   DateTime @default(now())
+  createdAt DateTime @default(now())
 }
 
 model Announcement {
@@ -50,13 +55,13 @@ model Announcement {
 }
 
 model SiteAlert {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   title     String
   message   String
-  active    Boolean  @default(true)
+  active    Boolean   @default(true)
   expiresAt DateTime?
   createdBy String?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 }
 
 model SiteSetting {
@@ -67,68 +72,112 @@ model SiteSetting {
 }
 
 model TokyoMember {
-  id           String   @id @default(cuid())
-  discordId    String   @unique
-  username     String
-  displayName  String
-  image        String?
-  inTokyoRole  Boolean  @default(true)
-  status       String   @default("ACTIVE")
-  internalRank String   @default("MEMBER")
-  behaviorScore Int     @default(100)
-  adminNote    String?
-  lastSyncedAt DateTime @default(now())
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  summons      Summon[]
-  warnings     MemberWarning[]
-  adminLogs    AdminLog[]
-  rankChanges  RoleAudit[]
-  leaveRequests LeaveRequest[]
-  notes        MemberNote[]
-  blacklistEntries BlacklistEntry[]
-  complaintsFiled Complaint[] @relation("ComplaintReporter")
-  complaintsAgainst Complaint[] @relation("ComplaintAccused")
+  id                   String                 @id @default(cuid())
+  discordId            String                 @unique
+  username             String
+  displayName          String
+  image                String?
+  inTokyoRole          Boolean                @default(true)
+  status               String                 @default("ACTIVE")
+  internalRank         String                 @default("MEMBER")
+  behaviorScore        Int                    @default(100)
+  loyaltyScore         Int                    @default(100)
+  activityScore        Int                    @default(50)
+  securityClearance    String                 @default("STANDARD")
+  intelligenceTags     String?
+  lastReviewedAt       DateTime?
+  adminNote            String?
+  lastSyncedAt         DateTime               @default(now())
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  summons              Summon[]
+  warnings             MemberWarning[]
+  adminLogs            AdminLog[]
+  rankChanges          RoleAudit[]
+  leaveRequests        LeaveRequest[]
+  notes                MemberNote[]
+  blacklistEntries     BlacklistEntry[]
+  complaintsFiled      Complaint[]            @relation("ComplaintReporter")
+  complaintsAgainst    Complaint[]            @relation("ComplaintAccused")
+  commandedOperations  Operation[]            @relation("OperationCommander")
+  operationAssignments OperationParticipant[]
+}
+
+model Operation {
+  id           String                 @id @default(cuid())
+  code         String                 @unique
+  title        String
+  type         String                 @default("MISSION")
+  objective    String
+  location     String?
+  startsAt     DateTime
+  priority     String                 @default("NORMAL")
+  status       String                 @default("PLANNED")
+  briefing     String?
+  outcome      String?
+  commanderId  String?
+  commander    TokyoMember?           @relation("OperationCommander", fields: [commanderId], references: [id])
+  createdBy    String
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+  participants OperationParticipant[]
+}
+
+model OperationParticipant {
+  id          String      @id @default(cuid())
+  operationId String
+  operation   Operation   @relation(fields: [operationId], references: [id], onDelete: Cascade)
+  memberId    String
+  member      TokyoMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  role        String      @default("UNIT")
+  status      String      @default("INVITED")
+  note        String?
+  checkedInAt DateTime?
+  createdAt   DateTime    @default(now())
+
+  @@unique([operationId, memberId])
+  @@index([memberId])
+  @@index([operationId])
 }
 
 model Summon {
-  id          String      @id @default(cuid())
-  memberId    String
-  member      TokyoMember @relation(fields: [memberId], references: [id])
-  reason      String
-  details     String?
-  summonedBy  String
-  status      String      @default("ACTIVE")
-  createdAt   DateTime    @default(now())
+  id         String      @id @default(cuid())
+  memberId   String
+  member     TokyoMember @relation(fields: [memberId], references: [id])
+  reason     String
+  details    String?
+  summonedBy String
+  status     String      @default("ACTIVE")
+  createdAt  DateTime    @default(now())
 }
 
 model Complaint {
-  id          String      @id @default(cuid())
+  id          String          @id @default(cuid())
   reporterId  String
-  reporter    TokyoMember @relation("ComplaintReporter", fields: [reporterId], references: [id])
+  reporter    TokyoMember     @relation("ComplaintReporter", fields: [reporterId], references: [id])
   accusedId   String
-  accused     TokyoMember @relation("ComplaintAccused", fields: [accusedId], references: [id])
+  accused     TokyoMember     @relation("ComplaintAccused", fields: [accusedId], references: [id])
   category    String
   reason      String
   evidenceUrl String?
   details     String?
-  status      String      @default("OPEN")
+  status      String          @default("OPEN")
   reviewedBy  String?
   adminNote   String?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  votes        ComplaintVote[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  votes       ComplaintVote[]
 }
 
 model MemberWarning {
-  id          String      @id @default(cuid())
-  memberId    String
-  member      TokyoMember @relation(fields: [memberId], references: [id])
-  reason      String
-  severity    String      @default("NORMAL")
-  details     String?
-  issuedBy    String
-  createdAt   DateTime    @default(now())
+  id        String      @id @default(cuid())
+  memberId  String
+  member    TokyoMember @relation(fields: [memberId], references: [id])
+  reason    String
+  severity  String      @default("NORMAL")
+  details   String?
+  issuedBy  String
+  createdAt DateTime    @default(now())
 }
 
 model AdminLog {
@@ -145,29 +194,29 @@ model AdminLog {
 }
 
 model RoleAudit {
-  id             String       @id @default(cuid())
+  id             String      @id @default(cuid())
   memberId       String
-  member         TokyoMember  @relation(fields: [memberId], references: [id])
+  member         TokyoMember @relation(fields: [memberId], references: [id])
   action         String
   rank           String
   discordRoleId  String?
   reason         String?
   adminDiscordId String
-  createdAt      DateTime     @default(now())
+  createdAt      DateTime    @default(now())
 }
 
 model LeaveRequest {
-  id             String       @id @default(cuid())
-  memberId       String
-  member         TokyoMember  @relation(fields: [memberId], references: [id])
-  reason         String
-  startsAt       DateTime?
-  endsAt         DateTime?
-  status         String       @default("PENDING")
-  reviewedBy     String?
-  adminNote      String?
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  id         String      @id @default(cuid())
+  memberId   String
+  member     TokyoMember @relation(fields: [memberId], references: [id])
+  reason     String
+  startsAt   DateTime?
+  endsAt     DateTime?
+  status     String      @default("PENDING")
+  reviewedBy String?
+  adminNote  String?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
 }
 
 model BlacklistEntry {
@@ -184,22 +233,22 @@ model BlacklistEntry {
 }
 
 model MemberNote {
-  id             String       @id @default(cuid())
+  id             String      @id @default(cuid())
   memberId       String
-  member         TokyoMember  @relation(fields: [memberId], references: [id])
+  member         TokyoMember @relation(fields: [memberId], references: [id])
   note           String
   adminDiscordId String
-  createdAt      DateTime     @default(now())
+  createdAt      DateTime    @default(now())
 }
 
 model ComplaintVote {
-  id             String       @id @default(cuid())
+  id             String    @id @default(cuid())
   complaintId    String
-  complaint      Complaint    @relation(fields: [complaintId], references: [id])
+  complaint      Complaint @relation(fields: [complaintId], references: [id])
   adminDiscordId String
   vote           String
   note           String?
-  createdAt      DateTime     @default(now())
+  createdAt      DateTime  @default(now())
 
   @@unique([complaintId, adminDiscordId])
 }

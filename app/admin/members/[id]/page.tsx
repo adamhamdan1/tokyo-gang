@@ -1,4 +1,4 @@
-import { auth } from "@/auth";
+import { getAdminContext } from "@/lib/admin-permissions";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -10,6 +10,7 @@ import { WarningCountdown } from "../../WarningCountdown";
 import { getWarningExpiryDate, syncWarningsSafely } from "@/lib/warning-sync";
 import { buildMemberIntelligence, buildMemberTimeline, calculateMemberRisk } from "@/lib/member-insights";
 import Image from "next/image";
+import { ensureCommandSchema } from "@/lib/command-schema";
 
 type Props = {
   params: Promise<{
@@ -48,15 +49,10 @@ const memberStatusLabels: Record<string, string> = {
   BLACKLISTED: "قائمة سوداء",
 };
 
-function getAdminIds() {
-  return process.env.ADMIN_DISCORD_IDS?.split(",").map((id) => id.trim()).filter(Boolean) || [];
-}
-
 export default async function AdminMemberPage({ params }: Props) {
-  const session = await auth();
-  const adminIds = getAdminIds();
+  const admin = await getAdminContext();
 
-  if (!session?.user?.id || !adminIds.includes(session.user.id)) {
+  if (!admin || (!admin.capabilities.ALL && !admin.capabilities.MEMBERS)) {
     return (
       <main dir="rtl" className="min-h-screen bg-black p-8 text-white">
         <div className="mx-auto max-w-2xl rounded-3xl border border-red-500/25 bg-red-500/10 p-8 text-center">
@@ -66,6 +62,8 @@ export default async function AdminMemberPage({ params }: Props) {
       </main>
     );
   }
+
+  await ensureCommandSchema();
 
   const { id } = await params;
   await syncWarningsSafely({ memberId: id });
@@ -108,6 +106,11 @@ export default async function AdminMemberPage({ params }: Props) {
       blacklistEntries: {
         orderBy: { createdAt: "desc" },
         take: 3,
+      },
+      operationAssignments: {
+        orderBy: { createdAt: "desc" },
+        take: 10,
+        include: { operation: true },
       },
     },
   });
@@ -181,6 +184,9 @@ export default async function AdminMemberPage({ params }: Props) {
             ["شكاوي عليه", member.complaintsAgainst.length],
             ["شكاوي رفعها", member.complaintsFiled.length],
             ["التقييم", member.behaviorScore],
+            ["الولاء", member.loyaltyScore],
+            ["النشاط", member.activityScore],
+            ["التصريح", member.securityClearance],
             ["الرتبة", member.internalRank],
             ["Risk", `${risk.score}/100`],
             ["المستوى", risk.label],
@@ -204,9 +210,13 @@ export default async function AdminMemberPage({ params }: Props) {
                   </p>
                 ))}
               </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {(() => { try { return JSON.parse(member.intelligenceTags ?? "[]") as string[]; } catch { return []; } })().map((tag) => <span key={tag} className="rounded-full border border-red-300/20 bg-black/30 px-3 py-1 text-xs font-black text-red-100">#{tag}</span>)}
+              </div>
+              <p className="mt-4 text-xs text-zinc-500">آخر مراجعة: {member.lastReviewedAt ? member.lastReviewedAt.toLocaleString("ar") : "لم تتم المراجعة بعد"}</p>
             </section>
             <AdminWarningForm memberId={member.id} />
-            <AdminMemberActions memberId={member.id} displayName={member.displayName} currentRank={member.internalRank} currentScore={member.behaviorScore} />
+            <AdminMemberActions memberId={member.id} displayName={member.displayName} currentRank={member.internalRank} currentScore={member.behaviorScore} loyaltyScore={member.loyaltyScore} activityScore={member.activityScore} securityClearance={member.securityClearance} intelligenceTags={member.intelligenceTags} />
           </div>
 
           <section className="rounded-2xl border border-white/10 bg-zinc-950 p-5 md:rounded-3xl md:p-6">
@@ -257,6 +267,12 @@ export default async function AdminMemberPage({ params }: Props) {
         </section>
 
         <section className="mt-5 grid gap-5 md:mt-6 md:gap-6 lg:grid-cols-3">
+          <Panel title="العمليات والتكليفات">
+            {member.operationAssignments.length === 0 && <p className="text-sm text-zinc-600">لا يوجد تكليفات مسجلة.</p>}
+            {member.operationAssignments.map((assignment) => (
+              <Item key={assignment.id} title={`${assignment.operation.code}: ${assignment.operation.title}`} meta={`${assignment.role} — ${assignment.status} — ${assignment.operation.startsAt.toLocaleString("ar")}`} />
+            ))}
+          </Panel>
           <Panel title="سجل الرتب">
             {member.rankChanges.map((change) => (
               <Item key={change.id} title={`${change.action}: ${change.rank}`} meta={`${change.reason ?? "بدون سبب"} - ${change.createdAt.toLocaleString("ar")}`} />

@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { validateJsonWriteRequest } from "@/lib/request-security";
 import { getTokyoRoleOption } from "@/lib/tokyo-content";
 import { NextResponse } from "next/server";
+import { ensureCommandSchema } from "@/lib/command-schema";
 
 type RouteContext = {
   params: Promise<{
@@ -14,11 +15,16 @@ type RouteContext = {
 };
 
 type UpdateBody = {
+  action?: string;
   status?: string;
   decisionReason?: string;
   internalNote?: string;
   interviewAt?: string;
   interviewNote?: string;
+  interviewAssignedTo?: string;
+  interviewAttendance?: string;
+  interviewScore?: number;
+  interviewEvaluation?: string;
 };
 
 export async function PATCH(req: Request, context: RouteContext) {
@@ -34,10 +40,6 @@ export async function PATCH(req: Request, context: RouteContext) {
   const { id } = await context.params;
   const body = (await req.json().catch(() => null)) as UpdateBody | null;
 
-  if (!body?.status || !["ACCEPTED", "REJECTED", "PENDING", "INTERVIEW", "TRIAL"].includes(body.status)) {
-    return NextResponse.json({ error: "حالة غير صحيحة" }, { status: 400 });
-  }
-
   const currentApplication = await prisma.application.findUnique({
     where: { id },
     include: {
@@ -48,10 +50,49 @@ export async function PATCH(req: Request, context: RouteContext) {
   if (!currentApplication) {
     return NextResponse.json({ error: "التقديم غير موجود" }, { status: 404 });
   }
+  await ensureCommandSchema();
 
   const streamerApplication = isStreamerApplication(currentApplication.reviewFlag);
   const canReview = admin.capabilities.ALL || (streamerApplication ? admin.capabilities.STREAMERS : admin.capabilities.APPLICATIONS);
   if (!canReview) return NextResponse.json({ error: "لا تملك صلاحية إدارة هذا النوع من التقديمات" }, { status: 403 });
+
+  if (body?.action === "INTERVIEW_RESULT") {
+    const score = Number(body.interviewScore);
+    const attendance = body.interviewAttendance;
+    const evaluation = body.interviewEvaluation?.trim();
+    if (!attendance || !["PRESENT", "ABSENT", "RESCHEDULED"].includes(attendance)) {
+      return NextResponse.json({ error: "حدد حالة حضور المقابلة" }, { status: 400 });
+    }
+    if (!Number.isFinite(score) || score < 0 || score > 100) {
+      return NextResponse.json({ error: "تقييم المقابلة لازم يكون بين 0 و100" }, { status: 400 });
+    }
+    if (!evaluation || evaluation.length > 1_000) {
+      return NextResponse.json({ error: "اكتب خلاصة المقابلة بحد أقصى 1000 حرف" }, { status: 400 });
+    }
+    const application = await prisma.application.update({
+      where: { id },
+      data: {
+        interviewAttendance: attendance,
+        interviewScore: Math.round(score),
+        interviewEvaluation: evaluation,
+        interviewCompletedAt: new Date(),
+        internalNote: [currentApplication.internalNote, `تقييم المقابلة ${Math.round(score)}/100: ${evaluation}`].filter(Boolean).join("\n\n"),
+      },
+    });
+    await createAdminLog({
+      action: "INTERVIEW_EVALUATION",
+      title: `تقييم مقابلة ${currentApplication.user.username}: ${Math.round(score)}/100`,
+      details: `${attendance}\n${evaluation}`,
+      adminDiscordId: admin.id,
+      targetType: "APPLICATION",
+      targetId: id,
+    });
+    return NextResponse.json({ success: true, application });
+  }
+
+  if (!body?.status || !["ACCEPTED", "REJECTED", "PENDING", "INTERVIEW", "TRIAL"].includes(body.status)) {
+    return NextResponse.json({ error: "حالة غير صحيحة" }, { status: 400 });
+  }
 
   if (streamerApplication && body.status === "TRIAL") {
     return NextResponse.json({ error: "فترة التجربة متاحة لتقديمات العصابة فقط" }, { status: 400 });
@@ -102,6 +143,7 @@ export async function PATCH(req: Request, context: RouteContext) {
   }
   const interviewNote =
     body.status === "INTERVIEW" ? body.interviewNote?.trim() || "تم تحديد مقابلة" : null;
+  const interviewAssignedTo = body.status === "INTERVIEW" ? body.interviewAssignedTo?.trim().slice(0, 120) || admin.name : currentApplication.interviewAssignedTo;
 
   const application = await prisma.application.update({
     where: { id },
@@ -111,6 +153,7 @@ export async function PATCH(req: Request, context: RouteContext) {
       internalNote: body.internalNote?.trim() || currentApplication.internalNote,
       interviewAt,
       interviewNote,
+      interviewAssignedTo,
       decidedBy: admin.id,
       decidedAt: new Date(),
     },
@@ -144,7 +187,7 @@ export async function PATCH(req: Request, context: RouteContext) {
       currentApplication.user.discordId,
       `TOKYO GANG\n\nطلبك انتقل لمرحلة المقابلة.\nالموعد: ${
         interviewAt ? interviewAt.toLocaleString("ar", { timeZone: "Europe/Stockholm" }) : "سيتم تحديده قريباً"
-      }\nملاحظة: ${interviewNote}\n\nراجع القوانين قبل المقابلة.`
+      }\nمسؤول المقابلة: ${interviewAssignedTo}\nملاحظة: ${interviewNote}\n\nراجع القوانين قبل المقابلة.`
     ).catch((error) => console.error("Discord DM failed", error));
   }
 
@@ -178,6 +221,7 @@ export async function DELETE(_req: Request, context: RouteContext) {
   if (!admin) {
     return NextResponse.json({ error: "Access Denied" }, { status: 403 });
   }
+  await ensureCommandSchema();
 
   const { id } = await context.params;
   const application = await prisma.application.findUnique({

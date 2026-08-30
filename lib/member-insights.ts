@@ -7,6 +7,9 @@ export type RiskLevel = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 export type MemberRiskInput = {
   status: string;
   behaviorScore: number;
+  loyaltyScore?: number;
+  activityScore?: number;
+  securityClearance?: string;
   warnings: Array<{ severity: string }>;
   summons: Countable;
   complaintsAgainst: Countable;
@@ -149,6 +152,20 @@ export function buildMemberIntelligence(member: MemberRiskInput) {
   if (member.behaviorScore < 60) {
     issues.push("تقييمه منخفض");
     suggestions.push("يفضل وضعه تحت المراقبة أو تنزيل التقييم بشكل رسمي");
+  }
+
+  if ((member.loyaltyScore ?? 100) < 60) {
+    issues.push("مؤشر الولاء يحتاج مراجعة");
+    suggestions.push("لا تمنحه صلاحيات حساسة قبل مراجعة ملف الولاء");
+  }
+
+  if ((member.activityScore ?? 50) < 35) {
+    issues.push("نشاطه منخفض");
+    suggestions.push("راجع حضوره في العمليات والاجتماعات قبل الترقية");
+  }
+
+  if (member.securityClearance === "RESTRICTED") {
+    issues.push("تصريحه الأمني مقيّد");
   }
 
   if (issues.length === 0) {

@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { isStreamerApplication } from "@/lib/application-types";
+import { ensureCommandSchema } from "@/lib/command-schema";
 
 const statusLabels: Record<string, string> = {
   PENDING: "قيد المراجعة",
@@ -34,6 +35,8 @@ export default async function StatusPage() {
       </main>
     );
   }
+
+  await ensureCommandSchema();
 
   const user = await prisma.user.findUnique({
     where: { discordId: session.user.id },
@@ -103,6 +106,7 @@ export default async function StatusPage() {
                     {application.interviewAt ? `${application.interviewAt.toLocaleString("ar", { timeZone: "Europe/Stockholm" })} - ` : ""}
                     {application.interviewNote}
                   </p>
+                  {application.interviewAssignedTo && <p className="mt-2 text-sm font-black text-cyan-300">مسؤول المقابلة: {application.interviewAssignedTo}</p>}
                 </div>
               )}
             </div>
