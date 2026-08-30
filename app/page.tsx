@@ -921,7 +921,7 @@ export default function Home() {
         <div className="relative mx-auto mb-16 max-w-3xl text-center">
           <div className="mb-5 flex items-center justify-center gap-3 text-[10px] font-black tracking-[0.45em] text-red-400 sm:text-xs">
             <span className="h-px w-10 bg-gradient-to-l from-red-500 to-transparent sm:w-20" />
-            MEDIA DIVISION // 05
+            MEDIA DIVISION // {String(visibleStreamers.length).padStart(2, "0")}
             <span className="h-px w-10 bg-gradient-to-r from-red-500 to-transparent sm:w-20" />
           </div>
           <h2 className="tokyo-streamer-name text-5xl font-extrabold text-white sm:text-6xl lg:text-7xl">ستريمرز العصابة</h2>
@@ -946,7 +946,7 @@ export default function Home() {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.15 }}
               whileHover={{ y: -10 }}
-              className={`tokyo-streamer-card group relative min-h-[480px] overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-b from-zinc-900/85 via-[#070707] to-black p-7 text-center shadow-[0_28px_80px_rgba(0,0,0,0.55)] transition-[border-color,box-shadow] duration-500 hover:border-red-500/45 hover:shadow-[0_32px_100px_rgba(0,0,0,0.7),0_0_45px_rgba(239,68,68,0.12)] lg:col-span-2 ${index === 3 ? "lg:col-start-2" : ""} ${index === 4 ? "lg:col-start-4" : ""}`}
+              className={`tokyo-streamer-card group relative min-h-[480px] overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-b from-zinc-900/85 via-[#070707] to-black p-7 text-center shadow-[0_28px_80px_rgba(0,0,0,0.55)] transition-[border-color,box-shadow] duration-500 hover:border-red-500/45 hover:shadow-[0_32px_100px_rgba(0,0,0,0.7),0_0_45px_rgba(239,68,68,0.12)] lg:col-span-2 ${visibleStreamers.length % 3 === 1 && index === visibleStreamers.length - 1 ? "lg:col-start-3" : ""} ${visibleStreamers.length % 3 === 2 && index === visibleStreamers.length - 2 ? "lg:col-start-2" : ""} ${visibleStreamers.length % 3 === 2 && index === visibleStreamers.length - 1 ? "lg:col-start-4" : ""}`}
             >
               <div className="absolute left-6 top-6 font-mono text-xs font-black tracking-[0.24em] text-red-500/65">
                 CREATOR {String(index + 1).padStart(2, "0")}

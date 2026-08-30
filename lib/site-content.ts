@@ -104,6 +104,26 @@ export const DEFAULT_SITE_CONTENT: TokyoSiteContent = {
       verified: false,
       visible: true,
     },
+    {
+      id: "hamdan-streamer",
+      name: "حمدان كروز",
+      role: "ستريمر رسمي",
+      handle: "@hamdanco",
+      kick: "https://kick.com/hamdanco",
+      logo: "https://files.kick.com/images/user/25789297/profile_image/conversion/e8f9cba6-8f2d-41a0-8af6-60f0a9ff5a97-fullsize.webp",
+      verified: false,
+      visible: true,
+    },
+    {
+      id: "santiago-streamer",
+      name: "سانتيغو كروز",
+      role: "ستريمر رسمي",
+      handle: "@mor3b01",
+      kick: "https://kick.com/mor3b01",
+      logo: "https://files.kick.com/images/user/33595872/profile_image/conversion/f31acf5f-3cc5-4073-a89c-ca67f01f8f12-fullsize.webp",
+      verified: false,
+      visible: true,
+    },
   ],
   timeline: [
     { id: "foundation", title: "مرحلة التأسيس", description: "بداية TOKYO GANG وبناء القيادة الأساسية.", visible: true },
@@ -242,7 +262,19 @@ export function parseStoredSiteContent(value?: string | null) {
   if (!value) return DEFAULT_SITE_CONTENT;
 
   try {
-    return normalizeSiteContent(JSON.parse(value));
+    const content = normalizeSiteContent(JSON.parse(value));
+    const rosterAdditions = DEFAULT_SITE_CONTENT.streamers.filter(
+      (streamer) => streamer.id === "hamdan-streamer" || streamer.id === "santiago-streamer"
+    );
+    const existingIds = new Set(content.streamers.map((streamer) => streamer.id));
+    const existingKickUrls = new Set(content.streamers.map((streamer) => streamer.kick.toLowerCase()));
+    const missingStreamers = rosterAdditions.filter(
+      (streamer) => !existingIds.has(streamer.id) && !existingKickUrls.has(streamer.kick.toLowerCase())
+    );
+
+    return missingStreamers.length
+      ? { ...content, streamers: [...content.streamers, ...missingStreamers] }
+      : content;
   } catch {
     return DEFAULT_SITE_CONTENT;
   }
