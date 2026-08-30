@@ -2,8 +2,6 @@ import { prisma } from "@/lib/prisma";
 import { getAdminContext, getDatabaseAdminIds, getOwnerAdminIds } from "@/lib/admin-permissions";
 import { calculateApplicationQuality } from "@/lib/application-insights";
 import { calculateMemberRisk } from "@/lib/member-insights";
-import { syncTokyoMembersSafely } from "@/lib/tokyo-member-sync";
-import { syncWarningsSafely } from "@/lib/warning-sync";
 import { AdminDecisionButtons } from "./AdminDecisionButtons";
 import { AdminAlertForm } from "./AdminAlertForm";
 import { AdminAnnouncementDeleteButton } from "./AdminAnnouncementDeleteButton";
@@ -172,7 +170,6 @@ export default async function AdminPage({
   const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
   const applicationPageSize = readBoundedInteger(process.env.TOKYO_ADMIN_PAGE_SIZE, 24, 8, 60);
   const activityWindowDays = readBoundedInteger(process.env.TOKYO_REPORT_DAYS, 7, 1, 30);
-  const memberSyncIntervalSeconds = readBoundedInteger(process.env.TOKYO_SYNC_SECONDS, 60, 15, 300);
   const applicationPage = readBoundedInteger(readSearchParam(params?.page), 1, 1, 10_000);
   // eslint-disable-next-line react-hooks/purity
   const activitySince = new Date(Date.now() - activityWindowDays * 24 * 60 * 60 * 1000);
@@ -216,12 +213,10 @@ export default async function AdminPage({
             : "SYSTEM";
   const mode = canAccessMode(requestedMode) ? requestedMode : defaultMode;
   const applicationMode = mode === "APPLICATIONS" || mode === "STREAMERS";
-  const shouldSyncMembers = mode === "OVERVIEW" || mode === "MEMBERS" || mode === "DISCIPLINE" || mode === "SYSTEM";
-  const tokyoSync = shouldSyncMembers ? await syncTokyoMembersSafely() : null;
-
-  if (shouldSyncMembers) {
-    await syncWarningsSafely();
-  }
+  const overviewMode = mode === "OVERVIEW";
+  const systemMode = mode === "SYSTEM";
+  const disciplineMode = mode === "DISCIPLINE";
+  const membersMode = mode === "MEMBERS";
 
   await ensureCommandSchema();
 
@@ -284,7 +279,7 @@ export default async function AdminPage({
     knownUsers,
     activeSiteAlerts,
   ] = await Promise.all([
-    prisma.application.findMany({
+    applicationMode ? prisma.application.findMany({
       where: applicationWhere,
       include: {
         user: true,
@@ -294,8 +289,8 @@ export default async function AdminPage({
       },
       skip: (applicationPage - 1) * applicationPageSize,
       take: applicationPageSize,
-    }),
-    prisma.application.count({ where: applicationWhere }),
+    }) : Promise.resolve([]),
+    applicationMode ? prisma.application.count({ where: applicationWhere }) : Promise.resolve(0),
     prisma.application.count({ where: regularApplicationScope }),
     prisma.application.count({ where: { AND: [regularApplicationScope], status: "PENDING" } }),
     prisma.application.count({ where: { status: "PENDING", reviewFlag: STREAMER_APPLICATION_FLAG } }),
@@ -303,7 +298,9 @@ export default async function AdminPage({
     prisma.application.count({ where: { AND: [regularApplicationScope], status: "REJECTED" } }),
     prisma.application.count({ where: { AND: [regularApplicationScope], status: "TRIAL" } }),
     prisma.application.count({ where: { AND: [regularApplicationScope], status: "PENDING", createdAt: { gte: dayAgo } } }),
-    prisma.announcement.findMany({ orderBy: { createdAt: "desc" }, take: 10 }),
+    (overviewMode || systemMode || applicationMode)
+      ? prisma.announcement.findMany({ orderBy: { createdAt: "desc" }, take: 10 })
+      : Promise.resolve([]),
     prisma.tokyoMember.findMany({
       where: { inTokyoRole: true },
       orderBy: { displayName: "asc" },
@@ -336,14 +333,14 @@ export default async function AdminPage({
         },
       },
     }),
-    prisma.summon.findMany({
+    (overviewMode || disciplineMode || systemMode) ? prisma.summon.findMany({
       orderBy: { createdAt: "desc" },
       take: 6,
       include: {
         member: true,
       },
-    }),
-    prisma.complaint.findMany({
+    }) : Promise.resolve([]),
+    (overviewMode || disciplineMode || systemMode) ? prisma.complaint.findMany({
       orderBy: { createdAt: "desc" },
       take: 8,
       include: {
@@ -351,29 +348,29 @@ export default async function AdminPage({
         accused: true,
         votes: true,
       },
-    }),
-    prisma.adminLog.findMany({
+    }) : Promise.resolve([]),
+    (overviewMode || systemMode) ? prisma.adminLog.findMany({
       orderBy: { createdAt: "desc" },
       ...(showAllLogs ? {} : { take: 3 }),
-    }),
+    }) : Promise.resolve([]),
     prisma.adminLog.count(),
     prisma.memberWarning.count(),
     prisma.leaveRequest.count({ where: { status: "APPROVED" } }),
     prisma.blacklistEntry.count({ where: { active: true } }),
-    prisma.leaveRequest.findMany({
+    (overviewMode || disciplineMode || membersMode || systemMode) ? prisma.leaveRequest.findMany({
       where: { status: "PENDING" },
       include: { member: true },
       orderBy: { createdAt: "desc" },
       take: 8,
-    }),
+    }) : Promise.resolve([]),
     getDatabaseAdminIds(),
-    prisma.application.count({ where: { createdAt: { gte: activitySince } } }),
-    prisma.application.count({ where: { status: "ACCEPTED", decidedAt: { gte: activitySince } } }),
-    prisma.application.count({ where: { status: "REJECTED", decidedAt: { gte: activitySince } } }),
-    prisma.memberWarning.count({ where: { createdAt: { gte: activitySince } } }),
-    prisma.summon.count({ where: { createdAt: { gte: activitySince } } }),
-    prisma.complaint.count({ where: { createdAt: { gte: activitySince } } }),
-    prisma.adminLog.groupBy({
+    (overviewMode || systemMode) ? prisma.application.count({ where: { createdAt: { gte: activitySince } } }) : Promise.resolve(0),
+    (overviewMode || systemMode) ? prisma.application.count({ where: { status: "ACCEPTED", decidedAt: { gte: activitySince } } }) : Promise.resolve(0),
+    (overviewMode || systemMode) ? prisma.application.count({ where: { status: "REJECTED", decidedAt: { gte: activitySince } } }) : Promise.resolve(0),
+    (overviewMode || systemMode) ? prisma.memberWarning.count({ where: { createdAt: { gte: activitySince } } }) : Promise.resolve(0),
+    (overviewMode || systemMode) ? prisma.summon.count({ where: { createdAt: { gte: activitySince } } }) : Promise.resolve(0),
+    (overviewMode || systemMode) ? prisma.complaint.count({ where: { createdAt: { gte: activitySince } } }) : Promise.resolve(0),
+    (overviewMode || systemMode) ? prisma.adminLog.groupBy({
       by: ["adminDiscordId"],
       where: {
         createdAt: { gte: activitySince },
@@ -382,16 +379,16 @@ export default async function AdminPage({
       _count: { _all: true },
       orderBy: { _count: { adminDiscordId: "desc" } },
       take: 6,
-    }),
-    prisma.user.findMany({
+    }) : Promise.resolve([]),
+    (overviewMode || systemMode) ? prisma.user.findMany({
       orderBy: { username: "asc" },
       select: {
         discordId: true,
         username: true,
         image: true,
       },
-    }),
-    mode === "SYSTEM"
+    }) : Promise.resolve([]),
+    systemMode
       ? prisma.siteAlert.findMany({
           where: {
             active: true,
@@ -450,7 +447,7 @@ export default async function AdminPage({
     ["بوت Discord", process.env.DISCORD_BOT_TOKEN ? "متصل" : "غير مربوط"],
     ["Kick Live", process.env.KICK_CLIENT_ID && process.env.KICK_CLIENT_SECRET ? "متصل" : "جاهز للربط"],
     ["قاعدة البيانات", "متصلة"],
-    ["مزامنة الأعضاء", tokyoSync ? `${tokyoSync.count} عضو` : `كل ${memberSyncIntervalSeconds} ثانية`],
+    ["مزامنة الأعضاء", tokyoMembers.length > 0 ? `${tokyoMembers.length} عضو محفوظ` : "بانتظار المزامنة"],
     ["مزامنة التحذيرات", "عند الحاجة"],
     ["التقديمات", `${applicationPageSize} لكل صفحة`],
     ["نافذة التقارير", `${activityWindowDays} أيام`],
@@ -607,7 +604,7 @@ export default async function AdminPage({
             className="flex items-center justify-center gap-2 rounded-2xl border border-red-400/20 bg-red-400/[0.07] px-5 py-3 text-sm font-black text-red-200 transition hover:border-red-400/40 hover:bg-red-400/15"
           />
           <div className="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-5 py-3 text-center text-sm font-black text-cyan-300">
-            {tokyoSync ? `تمت مزامنة ${tokyoSync.count} عضو` : "البيانات مستقرة — بدون تحديث تلقائي"}
+            {tokyoMembers.length > 0 ? `${tokyoMembers.length} عضو جاهز — المزامنة عند الطلب` : "اضغط مزامنة لجلب أعضاء Discord"}
           </div>
         </div>
 

@@ -1,27 +1,52 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { usePathname } from "next/navigation";
 
 export function PageTransitionOverlay() {
   const [active, setActive] = useState(false);
+  const pathname = usePathname();
+  const fallbackTimer = useRef<number | null>(null);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => setActive(false));
+
+    if (fallbackTimer.current !== null) {
+      window.clearTimeout(fallbackTimer.current);
+      fallbackTimer.current = null;
+    }
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [pathname]);
 
   useEffect(() => {
     const handleClick = (event: MouseEvent) => {
+      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+        return;
+      }
+
       const target = event.target as HTMLElement | null;
       const link = target?.closest("a");
       const href = link?.getAttribute("href");
 
-      if (!href || href.startsWith("#") || href.startsWith("http") || link?.target === "_blank") {
+      if (!href || href.startsWith("#") || link?.target === "_blank" || link?.hasAttribute("download")) {
         return;
       }
 
+      const destination = new URL(href, window.location.href);
+      if (destination.origin !== window.location.origin || destination.href === window.location.href) return;
+
       setActive(true);
-      window.setTimeout(() => setActive(false), 900);
+      if (fallbackTimer.current !== null) window.clearTimeout(fallbackTimer.current);
+      fallbackTimer.current = window.setTimeout(() => setActive(false), 650);
     };
 
     document.addEventListener("click", handleClick);
-    return () => document.removeEventListener("click", handleClick);
+    return () => {
+      document.removeEventListener("click", handleClick);
+      if (fallbackTimer.current !== null) window.clearTimeout(fallbackTimer.current);
+    };
   }, []);
 
   return (
@@ -36,7 +61,7 @@ export function PageTransitionOverlay() {
           <motion.div
             initial={{ scaleX: 0 }}
             animate={{ scaleX: 1 }}
-            transition={{ duration: 0.55, ease: "easeInOut" }}
+            transition={{ duration: 0.32, ease: "easeOut" }}
             className="absolute inset-x-0 top-1/2 h-px origin-center bg-gradient-to-r from-transparent via-red-500 to-transparent"
           />
           <div className="text-center">
