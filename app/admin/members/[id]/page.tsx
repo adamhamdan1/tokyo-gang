@@ -112,6 +112,15 @@ export default async function AdminMemberPage({ params }: Props) {
         take: 10,
         include: { operation: true },
       },
+      taskAssignments: {
+        orderBy: { createdAt: "desc" },
+        take: 12,
+        include: { task: true },
+      },
+      achievements: {
+        orderBy: { awardedAt: "desc" },
+        include: { achievement: true },
+      },
     },
   });
 
@@ -186,6 +195,7 @@ export default async function AdminMemberPage({ params }: Props) {
             ["التقييم", member.behaviorScore],
             ["الولاء", member.loyaltyScore],
             ["النشاط", member.activityScore],
+            ["نقاط القيادة", member.commandPoints],
             ["التصريح", member.securityClearance],
             ["الرتبة", member.internalRank],
             ["Risk", `${risk.score}/100`],
@@ -272,6 +282,11 @@ export default async function AdminMemberPage({ params }: Props) {
             {member.operationAssignments.map((assignment) => (
               <Item key={assignment.id} title={`${assignment.operation.code}: ${assignment.operation.title}`} meta={`${assignment.role} — ${assignment.status} — ${assignment.operation.startsAt.toLocaleString("ar")}`} />
             ))}
+          </Panel>
+          <Panel title="المهام والإنجازات">
+            {member.taskAssignments.length === 0 && member.achievements.length === 0 && <p className="text-sm text-zinc-600">لا يوجد تقدم مسجل.</p>}
+            {member.taskAssignments.map((assignment) => <Item key={assignment.id} title={assignment.task.title} meta={`${assignment.status} — ${assignment.task.points} XP`} />)}
+            {member.achievements.map(({ achievement }) => <Item key={achievement.id} title={`${achievement.icon} ${achievement.title}`} meta={achievement.description} />)}
           </Panel>
           <Panel title="سجل الرتب">
             {member.rankChanges.map((change) => (

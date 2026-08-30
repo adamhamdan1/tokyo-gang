@@ -9,6 +9,7 @@ export const PRIMARY_NAVIGATION = [
 ] as const;
 
 export const MEMBER_NAVIGATION = [
+  { label: "بطاقتي الرقمية", href: "/card", code: "ID", tone: "red" },
   { label: "حالة طلبي", href: "/status", code: "FILE", tone: "green" },
   { label: "تقديم Streamer", href: "/streamer-apply", code: "MEDIA", tone: "emerald" },
   { label: "الشكاوي", href: "/complaints", code: "CASE", tone: "cyan" },

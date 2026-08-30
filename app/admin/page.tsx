@@ -591,6 +591,15 @@ export default async function AdminPage({
               مركز العمليات
             </Link>
           )}
+          {(admin.capabilities.ALL || admin.capabilities.MEMBERS) && (
+            <Link href="/admin/progression" className="flex items-center justify-center rounded-2xl border border-yellow-400/25 bg-yellow-400/10 px-5 py-3 text-sm font-black text-yellow-200 transition hover:bg-yellow-400/15">المهام والترقيات</Link>
+          )}
+          {(admin.capabilities.ALL || admin.capabilities.STREAMERS) && (
+            <Link href="/admin/media" className="flex items-center justify-center rounded-2xl border border-green-400/25 bg-green-400/10 px-5 py-3 text-sm font-black text-green-200 transition hover:bg-green-400/15">مركز الستريمرز</Link>
+          )}
+          {(admin.capabilities.ALL || admin.capabilities.LOGS) && (
+            <Link href="/admin/security" className="flex items-center justify-center rounded-2xl border border-cyan-400/25 bg-cyan-400/10 px-5 py-3 text-sm font-black text-cyan-200 transition hover:bg-cyan-400/15">مركز الأمن</Link>
+          )}
           <TokyoCommandPalette
             variant="admin"
             label="بحث سريع"

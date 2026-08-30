@@ -81,6 +81,7 @@ model TokyoMember {
   status               String                 @default("ACTIVE")
   internalRank         String                 @default("MEMBER")
   behaviorScore        Int                    @default(100)
+  commandPoints        Int                    @default(0)
   loyaltyScore         Int                    @default(100)
   activityScore        Int                    @default(50)
   securityClearance    String                 @default("STANDARD")
@@ -101,6 +102,90 @@ model TokyoMember {
   complaintsAgainst    Complaint[]            @relation("ComplaintAccused")
   commandedOperations  Operation[]            @relation("OperationCommander")
   operationAssignments OperationParticipant[]
+  taskAssignments      TaskAssignment[]
+  achievements         MemberAchievement[]
+}
+
+model MemberTask {
+  id          String           @id @default(cuid())
+  title       String
+  description String
+  category    String           @default("GENERAL")
+  points      Int              @default(10)
+  status      String           @default("ACTIVE")
+  dueAt       DateTime?
+  createdBy   String
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  assignments TaskAssignment[]
+}
+
+model TaskAssignment {
+  id          String      @id @default(cuid())
+  taskId      String
+  task        MemberTask  @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  memberId    String
+  member      TokyoMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  status      String      @default("ASSIGNED")
+  evidence    String?
+  adminNote   String?
+  completedAt DateTime?
+  createdAt   DateTime    @default(now())
+
+  @@unique([taskId, memberId])
+  @@index([memberId])
+}
+
+model Achievement {
+  id          String              @id @default(cuid())
+  code        String              @unique
+  title       String
+  description String
+  icon        String              @default("★")
+  points      Int                 @default(0)
+  active      Boolean             @default(true)
+  createdAt   DateTime            @default(now())
+  members     MemberAchievement[]
+}
+
+model MemberAchievement {
+  id            String      @id @default(cuid())
+  memberId      String
+  member        TokyoMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  achievementId String
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  awardedBy     String
+  awardedAt     DateTime    @default(now())
+
+  @@unique([memberId, achievementId])
+}
+
+model TokyoSeason {
+  id        String   @id @default(cuid())
+  name      String
+  startsAt  DateTime
+  endsAt    DateTime
+  active    Boolean  @default(true)
+  createdBy String
+  createdAt DateTime @default(now())
+}
+
+model StreamerMetric {
+  id             String    @id @default(cuid())
+  slug           String
+  streamerName   String
+  date           String
+  maxViewers     Int       @default(0)
+  liveMinutes    Int       @default(0)
+  streamCount    Int       @default(0)
+  wasLive        Boolean   @default(false)
+  lastLiveAt     DateTime?
+  lastObservedAt DateTime  @default(now())
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([slug, date])
+  @@index([slug])
 }
 
 model Operation {

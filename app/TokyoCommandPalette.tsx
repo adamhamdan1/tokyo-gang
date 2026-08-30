@@ -43,6 +43,10 @@ const publicCommands: Command[] = [
 const adminCommands: Command[] = [
   ["overview", "نظرة عامة", "مركز القيادة", "/admin"],
   ["applications", "التقديمات", "الطلبات والمقابلات والقرارات", "/admin?mode=APPLICATIONS"],
+  ["operations", "مركز العمليات", "التكليفات والحضور والنتائج", "/admin/operations"],
+  ["progression", "المهام والترقيات", "النقاط والإنجازات والمواسم", "/admin/progression"],
+  ["media", "مركز الستريمرز", "إحصائيات Kick الحية", "/admin/media"],
+  ["security", "مركز الأمن", "التدقيق والتشخيص والمراقبة", "/admin/security"],
   ["discipline", "الانضباط", "الشكاوى والاستدعاءات والإجازات", "/admin?mode=DISCIPLINE"],
   ["members", "الأعضاء", "ملفات وتقييمات أعضاء TOKYO", "/admin?mode=MEMBERS"],
   ["system", "النظام", "Discord والرتب والويب هوكس والمحتوى", "/admin?mode=SYSTEM"],
